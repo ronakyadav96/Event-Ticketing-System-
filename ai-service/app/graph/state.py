@@ -105,6 +105,10 @@ class AgentState(TypedDict, total=False):
     user_id: str
     user_name: Optional[str]
     is_authenticated: bool
+    city: Optional[str]          # city selected in the app (per turn, from the request)
+
+    # Reply language: "en" or "hi" (Hinglish); persists so short replies keep the conversation's language
+    lang: str
 
     # Persistent domain state
     search: Dict[str, Any]

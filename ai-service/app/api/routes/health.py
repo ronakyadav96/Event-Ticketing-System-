@@ -38,8 +38,8 @@ async def health() -> JSONResponse:
     except Exception as exc:
         checks["node_backend"] = f"error: {exc}"
 
-    checks["gemini"] = "configured" if settings.gemini_api_key else "not configured"
-    checks["models"] = {"intent": settings.GEMINI_MODEL_INTENT, "generation": settings.GEMINI_MODEL_GENERATION}
+    checks["llm"] = {"provider": settings.llm_provider, "status": "configured" if settings.llm_configured else "not configured"}
+    checks["models"] = {"intent": settings.model_intent, "generation": settings.model_generation}
 
     healthy = checks["node_backend"] == "ok" and not str(checks["conversation_store"]).startswith("error")
     return JSONResponse(

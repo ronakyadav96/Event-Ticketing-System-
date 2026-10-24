@@ -26,8 +26,10 @@ async def lifespan(app: FastAPI):
     logger.info("Starting AI service (env=%s)", settings.APP_ENV)
     if not settings.JWT_SECRET:
         logger.error("JWT_SECRET is not set: authenticated requests will be rejected.")
-    if not settings.gemini_api_key:
-        logger.error("GEMINI_API_KEY is not set: the assistant runs in degraded mode.")
+    if not settings.llm_configured:
+        logger.error("No API key for LLM provider %r: the assistant runs in degraded mode.", settings.llm_provider)
+    else:
+        logger.info("LLM provider: %s (intent=%s, generation=%s)", settings.llm_provider, settings.model_intent, settings.model_generation)
     await init_store()
     await turn_lock.connect()
     await init_checkpointer()

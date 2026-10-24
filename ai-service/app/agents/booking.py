@@ -27,6 +27,7 @@ from app.agents.common import (
     paise_to_rupees,
     rupees,
 )
+from app.agents import lang
 from app.agents.resolve import remember_events, resolve_event_reference
 from app.graph.state import BookingStage, empty_booking, empty_search
 from app.tools import catalog as catalog_tools
@@ -230,6 +231,13 @@ async def run_booking(
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
     booking = copy.deepcopy(state.get("booking") or empty_booking())
     search = copy.deepcopy(state.get("search") or empty_search())
+    idle = S(booking.get("stage") or S.IDLE.value) in (S.IDLE, S.COMPLETED)
+    if settings.CHAT_BOOKING_MODE.lower() == "app" and idle and not entities.get("payment_check"):
+        try:
+            reply = await _hand_off_to_app(search, entities, state.get("lang") or lang.EN)
+        except (NodeUnavailable, NodeAPIError) as exc:
+            reply = make_reply(backend_error_text(exc), AGENT, error="BACKEND_UNAVAILABLE")
+        return reply, booking, search
     try:
         reply = await _advance(booking, search, entities, token=token, is_authenticated=is_authenticated)
     except _Halt as halt:
@@ -238,6 +246,42 @@ async def run_booking(
         logger.warning("Booking step failed against Node: %s", exc)
         reply = make_reply(backend_error_text(exc), AGENT, error="BACKEND_UNAVAILABLE")
     return reply, booking, search
+
+
+async def _hand_off_to_app(search: Dict[str, Any], entities: Dict[str, Any], lang_code: str) -> Dict[str, Any]:
+    """Resolve which event the user wants to book and open its booking page in the app.
+
+    The app's booking page owns showtimes, the seat map and payment; login is enforced there.
+    """
+    if entities.get("cancel_draft"):
+        return make_reply(lang.t("which_event", lang_code), AGENT, quick_replies=lang.SUGGESTIONS[lang_code])
+    last = search.get("last_results") or []
+    named = entities.get("event_id") or entities.get("event_title")
+    fallback = None if named else (search.get("focus") or (last[0] if len(last) == 1 else None))
+    outcome, value = await resolve_event_reference(search, entities, fallback_id=fallback)
+
+    if outcome == "ambiguous":
+        remember_events(search, value, as_last_results=True)
+        lines = "\n".join(f"{i}. **{e['title']}** — {e.get('venue')}" for i, e in enumerate(value, 1))
+        return make_reply(f"{lang.t('which_to_book', lang_code)}\n\n{lines}", AGENT, events=value,
+                          quick_replies=[f"Book {e['title']}" for e in value[:4]])
+    if outcome == "none":
+        if entities.get("event_title"):
+            text = lang.t("not_found_named", lang_code, name=entities["event_title"])
+        else:
+            text = lang.t("which_event", lang_code)
+        options = [search["catalog"][i] for i in last if i in (search.get("catalog") or {})]
+        chips = [f"Book {e['title']}" for e in options[:4]] or lang.SUGGESTIONS[lang_code]
+        return make_reply(text, AGENT, quick_replies=chips)
+
+    remember_events(search, [value], as_last_results=False)
+    search["focus"] = value["id"]
+    if value.get("upcoming") is False:
+        # Nothing left to book: show the event page instead of an empty booking flow.
+        view = {"type": "event", "event_id": value["id"], "action": "details"}
+        return make_reply(lang.t("opening_details", lang_code, title=value["title"]), AGENT, view=view)
+    view = {"type": "event", "event_id": value["id"], "action": "book"}
+    return make_reply(lang.t("opening_booking", lang_code, title=value["title"]), AGENT, view=view)
 
 
 async def _advance(booking, search, entities, *, token, is_authenticated) -> Dict[str, Any]:

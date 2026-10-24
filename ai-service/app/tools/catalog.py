@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 
 from services.node_client import node_client
 
-_FACET_TTL_SECONDS = 300
+_FACET_TTL_SECONDS = 60  # new categories created by organisers become searchable within a minute
 _facet_cache: Dict[str, Any] = {"at": 0.0, "value": None}
 
 
@@ -37,6 +37,7 @@ def normalize_event(raw: Dict[str, Any]) -> Dict[str, Any]:
         "title": raw.get("title"),
         "category": raw.get("category"),
         "venue": raw.get("venue"),
+        "city": raw.get("city") or None,
         "price": raw.get("price"),
         "currency": "inr",
         "start_date": (raw.get("startDate") or raw.get("date") or None),
@@ -63,6 +64,9 @@ async def search_events(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     exclude: Optional[List[str]] = None,
+    city: Optional[str] = None,
+    live: bool = False,
+    upcoming: bool = False,
     page: int = 1,
     limit: int = 5,
 ) -> Dict[str, Any]:
@@ -77,6 +81,9 @@ async def search_events(
         date_from=date_from,
         date_to=date_to,
         exclude=exclude,
+        city=city,
+        live=live,
+        upcoming=upcoming,
         page=page,
         limit=limit,
     )
@@ -103,6 +110,6 @@ async def get_facets() -> Dict[str, Any]:
     try:
         value = await node_client.get_facets()
     except Exception:
-        return _facet_cache["value"] or {"categories": [], "venues": []}
+        return _facet_cache["value"] or {"categories": [], "venues": [], "cities": []}
     _facet_cache.update(at=now, value=value)
     return value

@@ -2,8 +2,10 @@ import { Injectable, computed, effect, inject, signal, untracked } from '@angula
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../auth/auth.service';
+import { CityService } from '../../../services/city.service';
 import { environment } from '../../../../environments/environment';
 import {
+  AppView,
   BookingView,
   ChatMessage,
   ChatResponse,
@@ -12,7 +14,7 @@ import {
   StoredMessage,
 } from '../models/chat.models';
 
-const DEFAULT_PROMPTS = ['Show me movies', 'Comedy shows', 'Concerts', 'My bookings'];
+const DEFAULT_PROMPTS = ['Comedy shows this weekend', 'Concerts dikhao', 'Show me movies', 'My bookings'];
 const PICKER_STAGES = ['SELECT_VENUE', 'SELECT_DATE', 'SELECT_SHOWTIME'];
 /** A booking a guest started; resumed automatically once they sign in. */
 const PENDING_BOOKING_KEY = 'eventai_pending_booking';
@@ -31,6 +33,7 @@ const TRUSTED_PAYMENT_PREFIX = 'https://checkout.stripe.com/';
 export class ChatService {
   private http = inject(HttpClient);
   private auth = inject(AuthService);
+  private cityService = inject(CityService);
   private router = inject(Router);
   private readonly api = environment.aiApiUrl;
 
@@ -164,7 +167,9 @@ export class ChatService {
     return {
       id: 'welcome',
       role: 'assistant',
-      text: `Hi${name ? ' ' + name : ''} 👋 I'm Event AI. Tell me what you'd like to watch — I'll find shows and book your seats.`,
+      text:
+        `Hi${name ? ' ' + name : ''} 👋 I'm Event AI. Tell me what you're in the mood for — in English or Hinglish ` +
+        `("is weekend comedy shows dikhao") — and I'll open the best matches right here in the app.`,
       timestamp: new Date(),
     };
   }
@@ -276,6 +281,7 @@ export class ChatService {
       timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
       events: meta['events'] || undefined,
       ticket: meta['booking_stage'] === 'COMPLETED' ? meta['ticket'] : null,
+      view: meta['view'] || null,
       isError: !!meta['error'] && meta['error'] === 'INTERNAL_ERROR',
       action: meta['error'] === 'LOGIN_REQUIRED' ? 'login' : null,
     };
@@ -301,7 +307,12 @@ export class ChatService {
     this.http
       .post<ChatResponse>(
         `${this.api}/chat`,
-        { message: text, conversation_id: conversationId, display_name: user?.name || undefined },
+        {
+          message: text,
+          conversation_id: conversationId,
+          display_name: user?.name || undefined,
+          city: this.cityService.currentCity,
+        },
         { headers }
       )
       .subscribe({
@@ -316,7 +327,9 @@ export class ChatService {
               role: 'assistant',
               text: res.response,
               timestamp: new Date(),
-              events: res.events?.length ? res.events : undefined,
+              // Results with a view are shown on the app page itself, not as cards in the chat.
+              events: res.events?.length && !res.view ? res.events : undefined,
+              view: res.view || null,
               seatMap: res.seat_map || null,
               ticket: res.booking?.stage === 'COMPLETED' ? res.booking.ticket : null,
               isError: !!res.error && !['PAYMENT_UNAVAILABLE', 'LOGIN_REQUIRED'].includes(res.error),
@@ -328,7 +341,11 @@ export class ChatService {
           }
           this.booking.set(res.booking || IDLE_BOOKING);
           this.quickReplies.set(res.quick_replies?.length ? res.quick_replies : DEFAULT_PROMPTS);
-          if (!this.isOpen()) this.unreadCount.update((c) => c + 1);
+          if (res.view) {
+            this.openView(res.view);
+          } else if (!this.isOpen()) {
+            this.unreadCount.update((c) => c + 1);
+          }
         },
         error: (err: HttpErrorResponse) => {
           if (epoch !== this.epoch) return;
@@ -348,6 +365,22 @@ export class ChatService {
 
   sendQuickReply(chip: string): void {
     this.sendMessage(chip);
+  }
+
+  /**
+   * Shows an answer in the app: search results on the explore page, an event on its page, or
+   * the booking page. The chat closes so the page is fully visible; reopening it continues the
+   * same conversation.
+   */
+  openView(view: AppView): void {
+    if (view.type === 'explore') {
+      this.router.navigate(['/explore'], { queryParams: view.params || {} });
+    } else if (view.type === 'event' && view.event_id) {
+      this.router.navigate(view.action === 'book' ? ['/book', view.event_id] : ['/events', view.event_id]);
+    } else {
+      return;
+    }
+    this.close();
   }
 
   goToLogin(): void {

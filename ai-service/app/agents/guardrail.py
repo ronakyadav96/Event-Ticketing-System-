@@ -10,16 +10,14 @@ import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.agents.common import first_name, make_reply
+from app.agents import lang
 from app.llm import LLMUnavailable, generate
 
 AGENT = "guardrail_agent"
 
-OUT_OF_DOMAIN_RESPONSE = (
-    "I’m your Event AI 🎬 I’m here to assist you with movies, events, bookings, and related questions. "
-    "I’m not able to help with that."
-)
+OUT_OF_DOMAIN_RESPONSE = lang.t("out_of_domain", lang.EN)
 
-SUGGESTIONS = ["Show me movies", "Upcoming events", "My bookings", "Cancellation policy"]
+SUGGESTIONS = lang.SUGGESTIONS[lang.EN]
 
 _INJECTION = [
     r"ignore\s+(all\s+|any\s+|the\s+)?(previous|prior|above)\s+(instructions|rules)",
@@ -42,19 +40,13 @@ def check_input(query: str) -> Optional[str]:
     return None
 
 
-def safety_reply(kind: str) -> Dict[str, Any]:
-    if kind == "SENSITIVE_DATA":
-        text = (
-            "🔒 Please don't share card numbers or other payment details in chat. "
-            "Payments are only taken on the secure Stripe checkout page."
-        )
-    else:
-        text = "I can only help with events, movies, bookings and related questions. What would you like to do?"
-    return make_reply(text, AGENT, quick_replies=SUGGESTIONS)
+def safety_reply(kind: str, lang_code: str = lang.EN) -> Dict[str, Any]:
+    text = lang.t("sensitive" if kind == "SENSITIVE_DATA" else "injection", lang_code)
+    return make_reply(text, AGENT, quick_replies=lang.SUGGESTIONS[lang_code])
 
 
-def out_of_domain_reply() -> Dict[str, Any]:
-    return make_reply(OUT_OF_DOMAIN_RESPONSE, AGENT, quick_replies=SUGGESTIONS)
+def out_of_domain_reply(lang_code: str = lang.EN) -> Dict[str, Any]:
+    return make_reply(lang.t("out_of_domain", lang_code), AGENT, quick_replies=lang.SUGGESTIONS[lang_code])
 
 
 SMALL_TALK_SYSTEM = """You are "Event AI", the friendly assistant of an event and movie ticket booking platform.
@@ -62,12 +54,23 @@ You help people discover movies and live events, book tickets, check bookings, c
 Reply to the user's small talk naturally and briefly (1–2 sentences), matching what they actually said
 (greeting, how are you, thanks, goodbye, what can you do...). Use their first name only if one is provided.
 You may gently offer help with events or movies. Do not mention specific events, prices, dates or availability,
-and do not answer anything outside this platform's scope."""
+and do not answer anything outside this platform's scope.
+Reply language: if REPLY_LANGUAGE is "hi", reply in natural Hinglish (Hindi written in Roman/English letters,
+the way people text in India, e.g. "Namaste! Batao, aaj kya dekhna hai?"); never use Devanagari script.
+Otherwise reply in English."""
 
 
-def _fallback_small_talk(query: str, name: str) -> str:
+def _fallback_small_talk(query: str, name: str, lang_code: str = lang.EN) -> str:
     q = query.lower()
     who = f" {name}" if name else ""
+    if lang_code == lang.HI:
+        if re.search(r"\b(thanks|thank\s+you|shukriya|dhanyavad)\b", q):
+            return f"Koi baat nahi{who}! Aur kuch chahiye to batana."
+        if re.search(r"\b(bye|alvida|chalta|chalti)\b", q):
+            return f"Bye{who}! Show enjoy karna 🎬"
+        if re.search(r"kaise\s+ho|kya\s+haal", q):
+            return f"Main badhiya hoon{who}, shukriya! 😊 Batao, kya dekhna hai — movie ya koi live event?"
+        return f"Namaste{who}! 👋 Batao, aaj kya dekhna hai — comedy, concert, sports ya movie?"
     if re.search(r"good\s+morning", q):
         return f"Good morning{who}! ☀️ What would you like to watch or attend?"
     if re.search(r"good\s+(evening|night)", q):
@@ -85,26 +88,24 @@ def _fallback_small_talk(query: str, name: str) -> str:
     return f"Hi{who}! 👋 How can I help you with movies and events today?"
 
 
-async def small_talk_reply(query: str, user_name: Optional[str], recent: List[Tuple[str, str]]) -> Dict[str, Any]:
+async def small_talk_reply(
+    query: str, user_name: Optional[str], recent: List[Tuple[str, str]], lang_code: str = lang.EN
+) -> Dict[str, Any]:
     name = first_name(user_name)
     convo = "\n".join(f"{role}: {text}" for role, text in recent[-4:])
-    prompt = f"User first name: {name or '(not provided)'}\nRecent conversation:\n{convo or '(none)'}\n\nUser says: {query}"
+    prompt = (
+        f"REPLY_LANGUAGE: {lang_code}\nUser first name: {name or '(not provided)'}\n"
+        f"Recent conversation:\n{convo or '(none)'}\n\nUser says: {query}"
+    )
     try:
         text = await generate(SMALL_TALK_SYSTEM, prompt, temperature=0.7)
     except LLMUnavailable:
-        text = _fallback_small_talk(query, name)
-    return make_reply(text, AGENT, quick_replies=SUGGESTIONS)
+        text = _fallback_small_talk(query, name, lang_code)
+    return make_reply(text, AGENT, quick_replies=lang.SUGGESTIONS[lang_code])
 
 
-def unknown_reply(degraded: bool) -> Dict[str, Any]:
+def unknown_reply(degraded: bool, lang_code: str = lang.EN) -> Dict[str, Any]:
+    chips = lang.SUGGESTIONS[lang_code]
     if degraded:
-        text = (
-            "I'm having trouble understanding requests right now. Please try again in a moment — "
-            "you can also browse events and manage bookings from the website meanwhile."
-        )
-        return make_reply(text, AGENT, quick_replies=SUGGESTIONS, error="LLM_UNAVAILABLE")
-    return make_reply(
-        "Sorry, I didn't quite get that. Could you rephrase? I can help with movies, events, bookings and refunds.",
-        AGENT,
-        quick_replies=SUGGESTIONS,
-    )
+        return make_reply(lang.t("degraded", lang_code), AGENT, quick_replies=chips, error="LLM_UNAVAILABLE")
+    return make_reply(lang.t("unknown", lang_code), AGENT, quick_replies=chips)

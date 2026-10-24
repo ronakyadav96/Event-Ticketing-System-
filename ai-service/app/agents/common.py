@@ -28,9 +28,11 @@ def make_reply(
     quick_replies: Optional[List[str]] = None,
     faq_sources: Optional[List[Dict[str, Any]]] = None,
     seat_map: Optional[Dict[str, Any]] = None,
+    view: Optional[Dict[str, Any]] = None,
     error: Optional[str] = None,
 ) -> Dict[str, Any]:
     return {
+        "view": view,
         "text": text,
         "agent": agent,
         "events": events or [],

@@ -2,6 +2,8 @@
 
 import pytest
 
+from app.agents import search as search_agent
+
 from app.graph.state import BookingStage
 from services.node_client import NodeAPIError
 from tests.conftest import Chat
@@ -295,7 +297,8 @@ async def test_no_match_returns_no_unrelated_events(graph, fake_node, model):
     assert "couldn't find" in out["reply"]["text"]
 
 
-async def test_repeated_more_pages_through_all_matches_without_repeats(graph, fake_node, model):
+async def test_repeated_more_pages_through_all_matches_without_repeats(graph, fake_node, model, monkeypatch):
+    monkeypatch.setattr(search_agent, "PAGE_SIZE", 4)  # 11 comedy events → three pages
     chat = Chat(graph)
     model.on("comedy", **search(category="Comedy"))
     model.on("more", **search(more_results=True))
@@ -309,7 +312,7 @@ async def test_repeated_more_pages_through_all_matches_without_repeats(graph, fa
     comedy_total = sum(1 for e in fake_node.events.values() if e["category"] == "Comedy")
     assert len(shown) == comedy_total
     out = await chat.say("more")
-    assert out["reply"]["events"] == [] and "seen all" in out["reply"]["text"]
+    assert out["reply"]["events"] == [] and "That's all" in out["reply"]["text"]
     # an event from the first page is still selectable by id
     model.on("details of the very first", intent="EVENT_DETAILS", event_id=shown[0])
     out = await chat.say("details of the very first")
@@ -390,7 +393,8 @@ def _model_down(monkeypatch):
     monkeypatch.setattr(intent_module, "extract", down)
 
 
-async def test_asking_for_the_same_search_again_pages_forward(graph, fake_node, model):
+async def test_asking_for_the_same_search_again_pages_forward(graph, fake_node, model, monkeypatch):
+    monkeypatch.setattr(search_agent, "PAGE_SIZE", 3)  # small pages so the fixture spans several
     chat = Chat(graph)
     model.on("show me comedy", **search(category="Comedy"))
     first = [e["id"] for e in (await chat.say("show me comedy"))["reply"]["events"]]

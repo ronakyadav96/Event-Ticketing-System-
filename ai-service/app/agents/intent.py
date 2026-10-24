@@ -22,6 +22,7 @@ from zoneinfo import ZoneInfo
 from pydantic import BaseModel, Field
 
 from app.agents.common import fmt_date, fmt_time
+from app.agents.vocab import find_category, find_topic, normalize_search
 from app.graph.state import BookingStage, Intent, RefundStage
 from app.llm import LLMUnavailable, extract
 from config import settings
@@ -38,7 +39,8 @@ class SearchEntities(BaseModel):
     text: Optional[str] = Field(None, description="Keywords to match in titles/descriptions: a full or partial title, performer, or topic (e.g. 'dark knight', 'space travel'). Never genre or category words.")
     category: Optional[str] = Field(None, description="Event category, chosen from the catalog categories when one applies (e.g. Movie, Concert, Comedy).")
     genre: Optional[str] = Field(None, description="Genre / style the user asked for, e.g. comedy, science fiction, rock.")
-    venue: Optional[str] = Field(None, description="Venue, theatre or city name the user asked for.")
+    venue: Optional[str] = Field(None, description="Venue or theatre name the user asked for (NOT a city).")
+    city: Optional[str] = Field(None, description="City the user asked for, copied from CONTEXT.catalog_cities when possible (e.g. 'comedy in Pune' → Pune). Leave empty if no city was named.")
     date_from: Optional[str] = Field(None, description="Earliest date YYYY-MM-DD.")
     date_to: Optional[str] = Field(None, description="Latest date YYYY-MM-DD.")
     max_price: Optional[float] = Field(None, description="Maximum ticket price in rupees.")
@@ -49,6 +51,7 @@ class SearchEntities(BaseModel):
 class Extraction(BaseModel):
     intent: IntentName
     confidence: float = Field(..., ge=0.0, le=1.0)
+    language: Literal["en", "hi"] = Field("en", description="'hi' if the user writes Hinglish/Hindi (Roman or Devanagari script), 'en' for English. For short neutral messages (a title, a number, 'yes') use the language of the user's previous messages.")
     event_id: Optional[str] = Field(None, description="ID of the event the user refers to. MUST be copied from KNOWN EVENTS; never invent IDs.")
     event_title: Optional[str] = Field(None, description="Event title the user named when it is not in KNOWN EVENTS.")
     search: Optional[SearchEntities] = None
@@ -63,8 +66,10 @@ class Extraction(BaseModel):
     payment_check: bool = Field(False, description="True when the user says they paid or asks whether payment went through.")
 
 
-SYSTEM_PROMPT = """You are the query-understanding component of an Event & Movie ticket booking assistant.
+SYSTEM_PROMPT = """You are the query-understanding component of an Event & Movie ticket booking assistant in India.
 Classify the user's LATEST message using the conversation CONTEXT, and extract entities.
+Users write in English or Hinglish (Hindi in Roman letters, e.g. "comedy shows dikhao", "kal koi concert hai kya",
+"is weekend kuch funny", "mujhe 2 ticket chahiye") and sometimes Hindi in Devanagari. Understand all of them.
 
 INTENTS
 - EVENT_SEARCH: find/browse events or movies, including follow-ups like "show me another", "more options", "something else", "show me science fiction".
@@ -91,6 +96,18 @@ RULES
 - When CONTEXT.refund.options lists ticket IDs and the user picks one (by ID or position), copy that ID into ticket_id.
 - Dates: resolve relative to TODAY. Times: 24h HH:mm; map to the OFFERED showtimes when the user is choosing one.
 - Do not invent values the user did not express.
+
+SEARCH MAPPING
+- Use CONTEXT.catalog_categories for search.category. Map synonyms: funny / hasi / stand-up / jokes / open mic → Comedy;
+  music / gaana / concert / gig / DJ / band → Concert; cricket / football / IPL / match / marathon / khel → Sports;
+  natak / theatre / drama / play → Plays; workshop / class / sikhna → Workshop; talk / seminar / conference → Seminar;
+  yoga / camping / trek / adventure → Activities; movie / film / picture / cinema → Movie.
+- "events", "shows", "kuch karne ko" with no type means live events: leave category and text empty.
+- A specific sport / artist / title goes in search.text (e.g. "cricket", "samay raina", "dark knight").
+- For movies, the style goes in genre (comedy, action, horror, romance...), category = Movie.
+- Hindi time words: aaj = today, kal = tomorrow (in a search), parso = day after tomorrow,
+  "is weekend" / "weekend pe" = the coming Saturday–Sunday. "500 se kam" / "under 500" → max_price 500.
+- A city ("in Pune", "Delhi me", "Bangalore mein") goes in search.city, never in venue.
 """
 
 
@@ -125,6 +142,8 @@ def build_context(state: Dict[str, Any], facets: Dict[str, Any]) -> Dict[str, An
     return {
         "today": _today(tz).strftime("%Y-%m-%d (%A)"),
         "catalog_categories": facets.get("categories") or [],
+        "catalog_cities": facets.get("cities") or [],
+        "selected_city": state.get("city"),
         "known_events": known[-40:],
         "focus_event_id": search.get("focus"),
         "last_search_filters": search.get("filters") or {},
@@ -184,7 +203,11 @@ def _validate(ex: Extraction, context: Dict[str, Any], query: str) -> Dict[str, 
 
 _BOOK_PHRASE = re.compile(r"^\s*(?:book|reserve)\s+(?:tickets?\s+(?:for|to)\s+)?(.+?)\s*[.!]?\s*$", re.I)
 _DETAILS_PHRASE = re.compile(r"^\s*(?:tell\s+me\s+(?:more\s+)?about|details\s+(?:of|for|about)|more\s+about)\s+(.+?)\s*[.?!]?\s*$", re.I)
-_SHOW_MORE = re.compile(r"^\s*(?:show\s+(?:me\s+)?)?more(?:\s+(?:results|options|events|movies))?\s*[.!]?\s*$", re.I)
+_SHOW_MORE = re.compile(
+    r"^\s*(?:(?:show\s+(?:me\s+)?)?more(?:\s+(?:results|options|events|movies|shows))?"
+    r"|(?:aur|or|more)\s+(?:dikhao|dikha\s*do|batao|chahiye|options)|aur\s+koi|next)\s*[.!]?\s*$",
+    re.I,
+)
 
 
 def _known_by_title(state: Dict[str, Any], title: str) -> Optional[str]:
@@ -250,6 +273,14 @@ def fast_classify(query: str, state: Dict[str, Any]) -> Optional[Dict[str, Any]]
 
 async def classify(query: str, state: Dict[str, Any], facets: Dict[str, Any]) -> Dict[str, Any]:
     """Returns {intent, confidence, entities, source}."""
+    result = await _classify(query, state, facets)
+    spec = result["entities"].get("search")
+    if result["intent"] == Intent.EVENT_SEARCH.value and spec and not spec.get("more_results"):
+        result["entities"]["search"] = normalize_search(spec, query, facets)
+    return result
+
+
+async def _classify(query: str, state: Dict[str, Any], facets: Dict[str, Any]) -> Dict[str, Any]:
     fast = fast_classify(query, state)
     if fast:
         return fast
@@ -269,19 +300,26 @@ async def classify(query: str, state: Dict[str, Any], facets: Dict[str, Any]) ->
 
 # ── Degraded mode (Model 1 unavailable) ───────────────────────────────────────
 
-_YES = re.compile(r"^\s*(yes|yeah|yep|yup|sure|ok|okay|confirm|confirmed|go ahead|proceed|do it|book it)\b", re.I)
-_NO = re.compile(r"^\s*(no|nope|nah|don't|do not|keep it|stop)\b", re.I)
-_POLICY = re.compile(r"\b(policy|policies|how\s+(do|does|can)\b.*\b(refund|cancel)|payment\s+methods?|parking|outside\s+food|id\s+proof|age\s+limit)", re.I)
-_MORE = re.compile(r"\b(another|more|different|something\s+else|other)\b", re.I)
-_SEARCH_WORDS = re.compile(r"\b(show|find|search|browse|list|upcoming|events?|what'?s\s+on|playing)\b", re.I)
-_GREETING = re.compile(r"^\s*(hi+|hello|hey|good\s+(morning|afternoon|evening)|thanks|thank you|how are you)\b", re.I)
+_YES = re.compile(r"^\s*(yes|yeah|yep|yup|sure|ok|okay|confirm|confirmed|go ahead|proceed|do it|book it|haan|haa|ha|ji|theek|thik|chalo|kar\s*do|book\s*karo)\b", re.I)
+_NO = re.compile(r"^\s*(no|nope|nah|don't|do not|keep it|stop|nahi|nhi|mat|rehne\s+do)\b", re.I)
+_POLICY = re.compile(
+    r"\b(policy|policies|rules?|niyam|how\s+(do|does|can)\b.*\b(refund|cancel)|(refund|cancel)\w*\s+(kaise|ka\s+rule|ki\s+policy)"
+    r"|payment\s+methods?|parking|outside\s+food|id\s+proof|age\s+limit)",
+    re.I,
+)
+_MORE = re.compile(r"\b(another|more|different|something\s+else|other|aur|dusra|doosra)\b", re.I)
+_SEARCH_WORDS = re.compile(r"\b(show|find|search|browse|list|upcoming|events?|what'?s\s+on|playing|dikhao|dikha|batao|chahiye|koi|kuch)\b", re.I)
+_GREETING = re.compile(
+    r"^\s*(hi+|hello|hey|good\s+(morning|afternoon|evening)|thanks|thank you|how are you|namaste|namaskar|kaise\s+ho|kya\s+haal|shukriya|dhanyavad)\b",
+    re.I,
+)
 _GENRES = (
     "action", "adventure", "animation", "animated", "comedy", "crime", "documentary", "drama", "family",
     "fantasy", "history", "horror", "music", "musical", "mystery", "romance", "romantic", "sci-fi",
     "science fiction", "thriller", "war", "western", "standup", "stand-up",
 )
 # Sentences that are conversation, not a name: never treated as a title search in degraded mode.
-_CHATTY = re.compile(r"\b(tell|story|joke|why|how|who|explain|write|meaning|weather|news|poem|recipe)\b", re.I)
+_CHATTY = re.compile(r"\b(tell|story|joke|why|how|who|explain|write|meaning|weather|news|poem|recipe|kahani|mausam|kyun|kyu)\b", re.I)
 _FILLER = {
     "a", "an", "the", "me", "my", "i", "want", "wanna", "to", "watch", "see", "go", "for", "of", "some", "any",
     "please", "pls", "plz", "can", "you", "could", "would", "like", "show", "shows", "find", "search", "browse",
@@ -289,7 +327,37 @@ _FILLER = {
     "are", "on", "playing", "in", "at", "near", "tonight", "today", "this", "weekend", "good", "best", "new",
     "latest", "all", "available", "tickets", "ticket", "book", "get", "with", "and", "or", "about", "info",
     "information", "details", "tell", "more", "there", "do", "have", "something", "let", "us", "lets",
+    # Hinglish
+    "dikhao", "dikha", "dikhado", "batao", "bata", "mujhe", "muje", "mjhe", "chahiye", "chaiye", "koi", "kuch",
+    "kuchh", "hai", "hain", "kya", "aaj", "kal", "parso", "is", "weekend", "pe", "par", "me", "mein", "mai", "ke",
+    "ka", "ki", "ko", "liye", "wala", "wali", "wale", "dekhna", "dekhni", "jaana", "jana", "hoga", "hogi", "abhi",
+    "ye", "yeh", "bhai", "yaar", "sab", "saare", "sare", "acha", "accha", "chal", "raha", "rahe", "rahi", "near",
+    "nearby", "paas", "show", "shows", "tomorrow", "week", "next", "this", "coming", "sunna", "sunne", "sunni",
+    "dekhne", "karna", "karne", "khelna", "jaate", "jayein", "chalein", "plan", "tonight",
 }
+
+
+_PRICE = re.compile(
+    r"(?:\b(?:under|below|less\s+than|within|upto|up\s+to)\s*(?:rs\.?|₹|inr)?\s*(?P<a>\d{2,6}))"
+    r"|(?:(?:rs\.?|₹)?\s*(?P<b>\d{2,6})\s*(?:rs|rupees?)?\s+(?:se\s+kam|tak|ke\s+andar|or\s+less))",
+    re.I,
+)
+
+
+def _date_window(ql: str) -> Dict[str, str]:
+    """date_from / date_to for "today / aaj", "tomorrow / kal", "this weekend / is weekend"."""
+    today = _today(ZoneInfo(settings.EVENT_TIMEZONE)).date()
+    if re.search(r"\b(this\s+weekend|is\s+weekend|weekend)\b", ql):
+        dow = today.weekday()  # Monday = 0
+        sat = today if dow == 6 else today + timedelta(days=(5 - dow) % 7)
+        sun = today if dow == 6 else sat + timedelta(days=1)
+        return {"date_from": sat.isoformat(), "date_to": sun.isoformat()}
+    if re.search(r"\b(tomorrow|kal)\b", ql):
+        d = (today + timedelta(days=1)).isoformat()
+        return {"date_from": d, "date_to": d}
+    if re.search(r"\b(today|tonight|aaj)\b", ql):
+        return {"date_from": today.isoformat(), "date_to": today.isoformat()}
+    return {}
 
 
 def degraded_classify(query: str, state: Dict[str, Any], facets: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -388,28 +456,31 @@ def degraded_classify(query: str, state: Dict[str, Any], facets: Optional[Dict[s
         return result(Intent.EVENT_DETAILS, event_title=m.group(1).strip())
 
     # Plain searches: map words onto the catalog's real categories (no hardcoded titles).
-    words = set(re.findall(r"[a-z]+", ql))
-    category = None
-    for cat in (facets or {}).get("categories") or []:
-        stem = cat.lower().rstrip("s")
-        if any(w == cat.lower() or w.rstrip("s") == stem or (len(stem) > 4 and w.startswith(stem[:5])) for w in words):
-            category = cat
-            break
+    price = _PRICE.search(ql)
+    if price:
+        ql = (ql[: price.start()] + " " + ql[price.end():]).strip()
+    categories = (facets or {}).get("categories") or []
+    topic = find_topic(ql, categories)  # "yoga classes" is about yoga, not the Workshop category
+    category = topic[0] if topic else find_category(ql, categories)
     genre = next((g for g in _GENRES if re.search(rf"\b{re.escape(g)}\b", ql)), None)
-    if genre and category and genre.rstrip("s") == category.lower().rstrip("s"):
+    if genre and category and find_category(genre, [category]) == category:
         genre = None  # "comedy events": Comedy is the category itself
     # Whatever is left after removing filler, category and genre words is a title / name / topic.
     used = set(re.findall(r"[a-z]+", (genre or "") + " " + (category or "").lower()))
     leftover = [w for w in re.findall(r"[a-z0-9']+", ql) if w not in _FILLER and w not in used
-                and not (category and w.rstrip("s") == category.lower().rstrip("s"))]
+                and not find_category(w, categories)]
     text = " ".join(leftover) if leftover else None
 
     wants_more = bool(_MORE.search(ql)) and bool((state.get("search") or {}).get("filters") or (state.get("search") or {}).get("seen"))
     if wants_more and not (category or genre or text):
         return result(Intent.EVENT_SEARCH, search={"more_results": True, "reject_event_ids": []})
     # Anything short that is not chit-chat is most likely an event, movie or artist name.
-    if category or genre or text or _SEARCH_WORDS.search(ql):
+    dates = _date_window(ql)
+    if category or genre or text or dates or _SEARCH_WORDS.search(ql):
         spec: Dict[str, Any] = {"more_results": False, "reject_event_ids": []}
+        spec.update(dates)
+        if price:
+            spec["max_price"] = float(price.group("a") or price.group("b"))
         if category:
             spec["category"] = category
         if genre:

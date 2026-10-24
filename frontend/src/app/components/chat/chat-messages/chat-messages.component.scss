@@ -247,6 +247,29 @@
   text-align: left;
 }
 
+// ── Link back to the app page an answer was shown on ────────────────────────
+.view-link {
+  margin: -2px 0 4px 36px;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid var(--c-brand, #f84464);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--c-brand, #f84464);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--c-brand, #f84464);
+    color: #fff;
+  }
+}
+
 // ── Sign-in call to action ──────────────────────────────────────────────────
 .login-cta {
   margin-left: 36px;

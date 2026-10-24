@@ -78,7 +78,7 @@
           <label class="sort">
             <span>Sort by</span>
             <select [value]="sort()" (change)="setSort($any($event.target).value)">
-              <option *ngIf="q()" value="relevance">Relevance</option>
+              <option *ngIf="q() || sort() === 'relevance'" value="relevance">Relevance</option>
               <option *ngFor="let s of sortOptions" [value]="s.key">{{ s.label }}</option>
             </select>
           </label>

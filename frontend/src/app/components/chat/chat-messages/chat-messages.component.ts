@@ -61,13 +61,20 @@ export class ChatMessagesComponent implements AfterViewChecked {
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef<HTMLDivElement>;
 
   readonly starters: StarterTile[] = [
-    { emoji: '🎬', label: 'Movies', prompt: 'Show me movies' },
-    { emoji: '😂', label: 'Comedy', prompt: 'Show me comedy events' },
+    { emoji: '😂', label: 'Comedy this weekend', prompt: 'Is weekend comedy shows dikhao' },
     { emoji: '🎵', label: 'Concerts', prompt: 'Show me concerts' },
-    { emoji: '🏟️', label: 'Sports', prompt: 'Show me sports events' },
-    { emoji: '🎟️', label: 'My bookings', prompt: 'Show my bookings' },
+    { emoji: '🏏', label: 'Sports', prompt: 'Koi sports event hai kya?' },
+    { emoji: '🎬', label: 'Movies', prompt: 'Show me movies' },
+    { emoji: '🎨', label: 'Workshops', prompt: 'Workshops near me' },
     { emoji: '↩️', label: 'Refund policy', prompt: 'What is the cancellation and refund policy?' },
   ];
+
+  viewLabel(msg: ChatMessage): string {
+    const v = msg.view;
+    if (!v) return '';
+    if (v.type === 'explore') return 'View results';
+    return v.action === 'book' ? 'Open booking' : 'Open event';
+  }
 
   readonly steps = STEPS.map((s) => s.label);
 

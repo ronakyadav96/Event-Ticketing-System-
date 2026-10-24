@@ -25,6 +25,9 @@ os.environ.update(
         "POSTGRES_URL": "",
         "REDIS_URL": "",
         "JWT_SECRET": "test-secret",
+        "LLM_PROVIDER": "anthropic",
+        "CHAT_BOOKING_MODE": "chat",  # the step-by-step flow; app hand-off has its own tests
+        "ANTHROPIC_API_KEY": "",
         "GEMINI_API_KEY": "",
         "GOOGLE_API_KEY": "",
         "USE_IN_MEMORY_FALLBACK": "true",
@@ -95,6 +98,8 @@ class FakeNode:
             if kw.get("text") and not all(t in (e["title"] + " " + e["venue"]).lower() for t in kw["text"].lower().split()):
                 continue
             if kw.get("exclude") and e["_id"] in kw["exclude"]:
+                continue
+            if kw.get("live") and e["category"] == "Movie":
                 continue
             out.append({**e, "isUpcoming": True})
         page, limit = kw.get("page") or 1, kw.get("limit") or 5
@@ -242,8 +247,9 @@ async def graph():
 
 
 class Chat:
-    def __init__(self, wf, user_id="u1", authenticated=True, conversation="conv-test-1"):
+    def __init__(self, wf, user_id="u1", authenticated=True, conversation="conv-test-1", city=None):
         self.wf = wf
+        self.city = city
         self.user_id = user_id
         self.token = make_token(user_id) if authenticated else None
         self.authenticated = authenticated
@@ -252,5 +258,5 @@ class Chat:
     async def say(self, text: str) -> Dict[str, Any]:
         return await self.wf.run_turn(
             query=text, conversation_id=self.conversation, user_id=self.user_id, user_name="Asha Rao",
-            is_authenticated=self.authenticated, auth_token=self.token,
+            is_authenticated=self.authenticated, auth_token=self.token, city=self.city,
         )

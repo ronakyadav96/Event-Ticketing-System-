@@ -8,6 +8,7 @@ export interface EventCard {
   title?: string | null;
   category?: string | null;
   venue?: string | null;
+  city?: string | null;
   price?: number | null;
   currency?: string;
   start_date?: string | null;
@@ -70,6 +71,14 @@ export interface SeatMap {
   show_at?: string | null;
 }
 
+/** Where the app shows an answer: the explore page (search results) or an event / its booking page. */
+export interface AppView {
+  type: 'explore' | 'event';
+  params?: Record<string, string | number>;
+  event_id?: string | null;
+  action?: 'details' | 'book' | null;
+}
+
 export interface ChatResponse {
   conversation_id: string;
   request_id: string;
@@ -81,6 +90,9 @@ export interface ChatResponse {
   booking: BookingView;
   seat_map?: SeatMap | null;
   faq_sources: { source: string; title?: string; section?: string; score?: number }[];
+  view?: AppView | null;
+  /** Reply language: 'en' or 'hi' (Hinglish). */
+  language?: string | null;
   error?: string | null;
 }
 
@@ -96,6 +108,8 @@ export interface ChatMessage {
   isError?: boolean;
   /** 'login': the assistant needs a signed-in user; the UI offers a sign-in button. */
   action?: 'login' | null;
+  /** The app page this answer was shown on (re-openable from the transcript). */
+  view?: AppView | null;
 }
 
 export interface ConversationSummary {

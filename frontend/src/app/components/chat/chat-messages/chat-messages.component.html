@@ -17,6 +17,11 @@
     <ng-container *ngFor="let msg of chat.messages()">
       <app-message-bubble [message]="msg"></app-message-bubble>
 
+      <!-- Answer shown on an app page: link back to it -->
+      <button *ngIf="msg.view && msg.role === 'assistant'" type="button" class="view-link" (click)="chat.openView(msg.view!)">
+        {{ viewLabel(msg) }} <span aria-hidden="true">›</span>
+      </button>
+
       <div *ngIf="msg.action === 'login' && !isSignedIn()" class="login-cta">
         <button type="button" (click)="chat.goToLogin()">Sign in to continue</button>
       </div>

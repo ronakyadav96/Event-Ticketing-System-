@@ -19,6 +19,7 @@ from app.agents import faq as faq_agent
 from app.agents import guardrail
 from app.agents import refund as refund_agent
 from app.agents import search as search_agent
+from app.agents import lang
 from app.agents.intent import classify
 from app.graph.state import (
     ACTIVE_BOOKING_STAGES,
@@ -74,6 +75,8 @@ async def hydrate_node(state: AgentState, config: RunnableConfig) -> Dict[str, A
         "user_id": cfg["user_id"],
         "user_name": cfg.get("user_name"),
         "is_authenticated": bool(cfg.get("is_authenticated")),
+        "city": cfg.get("city"),
+        "lang": state.get("lang") or lang.EN,
         "search": state.get("search") or empty_search(),
         "booking": state.get("booking") or empty_booking(),
         "refund": state.get("refund") or empty_refund(),
@@ -87,16 +90,18 @@ async def hydrate_node(state: AgentState, config: RunnableConfig) -> Dict[str, A
 
 async def classify_node(state: AgentState) -> Dict[str, Any]:
     query = _latest_user_text(state)
+    detected = lang.detect(query, state.get("lang"))
     violation = guardrail.check_input(query)
     if violation:
-        return {"intent": Intent.OUT_OF_DOMAIN.value, "confidence": 1.0, "entities": {"guard": violation}}
+        return {"intent": Intent.OUT_OF_DOMAIN.value, "confidence": 1.0, "entities": {"guard": violation}, "lang": detected}
 
     facets = await catalog_tools.get_facets()
     result = await classify(query, state, facets)
     entities = dict(result["entities"])
     entities["_source"] = result["source"]
-    logger.info("Intent %s (%.2f, %s)", result["intent"], result["confidence"], result["source"])
-    return {"intent": result["intent"], "confidence": result["confidence"], "entities": entities}
+    reply_lang = lang.normalize(entities.pop("language", None), detected) if result["source"] == "model" else detected
+    logger.info("Intent %s (%.2f, %s, lang=%s)", result["intent"], result["confidence"], result["source"], reply_lang)
+    return {"intent": result["intent"], "confidence": result["confidence"], "entities": entities, "lang": reply_lang}
 
 
 def route_node(state: AgentState) -> Dict[str, Any]:
@@ -128,14 +133,15 @@ def pick_route(state: AgentState) -> str:
 async def guardrail_node(state: AgentState) -> Dict[str, Any]:
     entities = state.get("entities") or {}
     intent = state.get("intent")
+    reply_lang = state.get("lang") or lang.EN
     if entities.get("guard"):
-        reply = guardrail.safety_reply(entities["guard"])
+        reply = guardrail.safety_reply(entities["guard"], reply_lang)
     elif intent == Intent.SMALL_TALK.value:
-        reply = await guardrail.small_talk_reply(_latest_user_text(state), state.get("user_name"), _recent_pairs(state))
+        reply = await guardrail.small_talk_reply(_latest_user_text(state), state.get("user_name"), _recent_pairs(state), reply_lang)
     elif intent == Intent.OUT_OF_DOMAIN.value:
-        reply = guardrail.out_of_domain_reply()
+        reply = guardrail.out_of_domain_reply(reply_lang)
     else:
-        reply = guardrail.unknown_reply(degraded=entities.get("_source") == "degraded")
+        reply = guardrail.unknown_reply(degraded=entities.get("_source") == "degraded", lang_code=reply_lang)
     return {"reply": reply}
 
 
@@ -169,7 +175,7 @@ async def refund_node(state: AgentState, config: RunnableConfig) -> Dict[str, An
 
 
 async def faq_node(state: AgentState) -> Dict[str, Any]:
-    return {"reply": await faq_agent.run_faq(_latest_user_text(state))}
+    return {"reply": await faq_agent.run_faq(_latest_user_text(state), state.get("lang") or lang.EN)}
 
 
 async def validate_node(state: AgentState) -> Dict[str, Any]:
@@ -179,7 +185,7 @@ async def validate_node(state: AgentState) -> Dict[str, Any]:
     catalog = (state.get("search") or {}).get("catalog") or {}
 
     if not str(reply.get("text") or "").strip():
-        reply = guardrail.unknown_reply(degraded=False)
+        reply = guardrail.unknown_reply(degraded=False, lang_code=state.get("lang") or lang.EN)
 
     # Event cards only from authoritative, already-recorded catalog entries, and never on
     # guardrail / FAQ / refund turns.
@@ -189,6 +195,8 @@ async def validate_node(state: AgentState) -> Dict[str, Any]:
         reply["events"] = []
     if route != "booking":
         reply["seat_map"] = None
+    if route not in ("search", "booking"):
+        reply["view"] = None
 
     update: Dict[str, Any] = {"reply": reply, "messages": [AIMessage(content=reply["text"])]}
 

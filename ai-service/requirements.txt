@@ -12,11 +12,12 @@ redis>=5.0.0
 # Node backend client
 httpx>=0.27.0
 
-# Orchestration & LLM (Gemini)
+# Orchestration & LLM (Claude by default; Gemini optional)
 langgraph>=0.2.0
 langgraph-checkpoint-postgres>=2.0.0
 langchain-core>=0.3.0
 langchain-google-genai>=2.0.0
+anthropic>=2.3.0
 
 # Optional: better FAQ embeddings (EMBEDDING_PROVIDER=auto picks them up when installed)
 # langchain-community>=0.3.0

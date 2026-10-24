@@ -5,6 +5,7 @@ No secrets have defaults: a missing JWT secret makes every token fail verificati
 (fail closed) instead of silently accepting tokens signed with a well-known value.
 """
 
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -46,16 +47,28 @@ class Settings(BaseSettings):
     RAG_MIN_SCORE: float = 0.15
     RAG_TOP_K: int = 3
 
-    # Gemini. Model 1 = fast structured understanding, Model 2 = response generation.
+    # LLM provider: "anthropic" (Claude, default) or "gemini".
+    # Model 1 = fast structured understanding, Model 2 = response generation.
+    LLM_PROVIDER: str = "anthropic"
+    ANTHROPIC_API_KEY: Optional[str] = None
+    CLAUDE_MODEL_INTENT: str = "claude-haiku-4-5"
+    CLAUDE_MODEL_GENERATION: str = "claude-haiku-4-5"
+
+    # Gemini (used when LLM_PROVIDER=gemini).
     GEMINI_API_KEY: Optional[str] = None
     GOOGLE_API_KEY: Optional[str] = None
     GEMINI_MODEL_INTENT: str = "gemini-flash-lite-latest"
     GEMINI_MODEL_GENERATION: str = "gemini-flash-latest"
-    GEMINI_TIMEOUT_SECONDS: float = 8.0          # Model 2 (wording has deterministic fallbacks)
-    GEMINI_INTENT_TIMEOUT_SECONDS: float = 15.0  # Model 1 (understanding is required to act)
+
+    LLM_TIMEOUT_SECONDS: float = 8.0          # Model 2 (wording has deterministic fallbacks)
+    LLM_INTENT_TIMEOUT_SECONDS: float = 15.0  # Model 1 (understanding is required to act)
 
     # Time zone the Node backend uses for show dates/times (must match Node's EVENT_TIMEZONE).
     EVENT_TIMEZONE: str = "Asia/Kolkata"
+
+    # "app": booking requests open the event's booking page in the web app (seat map, payment).
+    # "chat": the step-by-step booking flow runs inside the chat.
+    CHAT_BOOKING_MODE: str = "app"
 
     # Only checkout URLs on these prefixes are ever shown to the user.
     PAYMENT_URL_PREFIXES: str = "https://checkout.stripe.com/"
@@ -67,6 +80,24 @@ class Settings(BaseSettings):
     @property
     def allow_memory_fallback(self) -> bool:
         return self.USE_IN_MEMORY_FALLBACK and not self.is_production
+
+    @property
+    def llm_provider(self) -> str:
+        return "gemini" if self.LLM_PROVIDER.strip().lower() == "gemini" else "anthropic"
+
+    @property
+    def llm_configured(self) -> bool:
+        if self.llm_provider == "gemini":
+            return bool(self.gemini_api_key)
+        return bool(self.ANTHROPIC_API_KEY or os.environ.get("ANTHROPIC_API_KEY"))
+
+    @property
+    def model_intent(self) -> str:
+        return self.GEMINI_MODEL_INTENT if self.llm_provider == "gemini" else self.CLAUDE_MODEL_INTENT
+
+    @property
+    def model_generation(self) -> str:
+        return self.GEMINI_MODEL_GENERATION if self.llm_provider == "gemini" else self.CLAUDE_MODEL_GENERATION
 
     @property
     def gemini_api_key(self) -> Optional[str]:

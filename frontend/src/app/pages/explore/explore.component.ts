@@ -116,9 +116,12 @@ export class ExploreComponent implements OnInit {
   readonly sort = computed<SortKey>(() => (this.params()['sort'] as SortKey) || (this.q() ? 'relevance' : 'popular'));
   readonly fromChat = computed(() => this.params()['src'] === 'chat');
   readonly chatQuery = computed(() => String(this.params()['ai'] || '').trim());
-  readonly includesMovies = computed(
-    () => !!this.q() || this.selectedCategories().some((c) => /^movies?$/i.test(c)) || this.params()['live'] === 'false'
-  );
+  /** Movies are listed only for text searches, the Movie category, or an explicit live=false. */
+  readonly includesMovies = computed(() => {
+    const live = this.params()['live'];
+    if (live === 'true') return false;
+    return !!this.q() || this.selectedCategories().some((c) => /^movies?$/i.test(c)) || live === 'false';
+  });
 
   /** Category chips: live categories that have upcoming events, most populated first. */
   readonly categoryChips = computed(() => {

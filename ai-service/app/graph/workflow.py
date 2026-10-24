@@ -122,6 +122,7 @@ async def run_turn(
     user_name: Optional[str],
     is_authenticated: bool,
     auth_token: Optional[str],
+    city: Optional[str] = None,
 ) -> Dict[str, Any]:
     graph = await _get_graph()
     config = {
@@ -131,6 +132,7 @@ async def run_turn(
             "user_name": user_name,
             "is_authenticated": is_authenticated,
             "auth_token": auth_token,
+            "city": city,
         }
     }
     return await graph.ainvoke({"messages": [HumanMessage(content=query)]}, config=config)

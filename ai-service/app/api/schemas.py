@@ -15,6 +15,7 @@ class ChatRequest(BaseModel):
     message: str = Field(..., max_length=2000)
     conversation_id: str = Field(..., min_length=8, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
     display_name: Optional[str] = Field(default=None, max_length=80, description="Used only to personalise greetings.")
+    city: Optional[str] = Field(default=None, max_length=60, description="City selected in the app; searches default to it.")
 
 
 class EventCard(BaseModel):
@@ -22,6 +23,7 @@ class EventCard(BaseModel):
     title: Optional[str] = None
     category: Optional[str] = None
     venue: Optional[str] = None
+    city: Optional[str] = None
     price: Optional[float] = None
     currency: str = "inr"
     start_date: Optional[str] = None
@@ -63,6 +65,15 @@ class BookingView(BaseModel):
     ticket: Optional[TicketView] = None
 
 
+class AppView(BaseModel):
+    """Where the app should take the user to show this answer (results page, event, booking)."""
+
+    type: str = Field(..., description="explore | event")
+    params: Dict[str, Any] = Field(default_factory=dict, description="explore: query parameters for /explore")
+    event_id: Optional[str] = None
+    action: Optional[str] = Field(default=None, description="event: details | book")
+
+
 class ChatResponse(BaseModel):
     conversation_id: str
     request_id: str
@@ -74,6 +85,8 @@ class ChatResponse(BaseModel):
     booking: BookingView
     seat_map: Optional[Dict[str, Any]] = None
     faq_sources: List[Dict[str, Any]] = Field(default_factory=list)
+    view: Optional[AppView] = None
+    language: Optional[str] = None
     error: Optional[str] = None
 
 

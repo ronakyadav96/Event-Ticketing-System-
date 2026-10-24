@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from app.agents.booking import is_trusted_payment_url, refresh_payment
 from app.api.dependencies import Identity, get_identity
 from app.api.schemas import (
+    AppView,
     BookingView,
     ChatRequest,
     ChatResponse,
@@ -118,6 +119,7 @@ async def chat(body: ChatRequest, request: Request, identity: Identity = Depends
                     user_name=body.display_name if identity.is_authenticated else None,
                     is_authenticated=identity.is_authenticated,
                     auth_token=identity.token,
+                    city=(body.city or "").strip() or None,
                 )
             except Exception:
                 logger.exception("[%s] Agent turn failed", request_id)
@@ -137,6 +139,8 @@ async def chat(body: ChatRequest, request: Request, identity: Identity = Depends
                 booking=view,
                 seat_map=reply.get("seat_map"),
                 faq_sources=reply.get("faq_sources") or [],
+                view=AppView(**reply["view"]) if reply.get("view") else None,
+                language=final.get("lang"),
                 error=reply.get("error"),
             )
             await store.add_message(
@@ -151,6 +155,7 @@ async def chat(body: ChatRequest, request: Request, identity: Identity = Depends
                     "booking_stage": view.stage,
                     "ticket": view.ticket.model_dump() if view.ticket else None,
                     "faq_sources": response.faq_sources,
+                    "view": response.view.model_dump() if response.view else None,
                     "error": response.error,
                 },
             )
