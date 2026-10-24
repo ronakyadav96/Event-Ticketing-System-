@@ -37,6 +37,40 @@
   }
 }
 
+.mic {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--c-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    color: var(--c-brand);
+  }
+
+  &.on {
+    background: var(--c-brand-soft);
+    color: var(--c-brand);
+    animation: mic-pulse 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes mic-pulse {
+  50% {
+    box-shadow: 0 0 0 6px var(--c-brand-soft);
+  }
+}
+
 .send {
   display: grid;
   place-items: center;

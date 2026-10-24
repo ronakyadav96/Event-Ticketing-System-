@@ -8,6 +8,7 @@ the event page) that the frontend navigates to.
 
 import copy
 import logging
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.agents import lang
@@ -33,16 +34,29 @@ def _label(filters: Dict[str, Any]) -> str:
     return f"{genre} {base}" if genre and genre.lower() not in base else base
 
 
+def _short_date(iso: Optional[str]) -> str:
+    """"Sun, 25 Oct" (the year is implied for upcoming shows)."""
+    try:
+        return datetime.strptime(str(iso), "%Y-%m-%d").strftime("%a, %d %b").replace(" 0", " ")
+    except ValueError:
+        return fmt_date(iso)
+
+
 def _where(filters: Dict[str, Any], lang_code: str) -> Dict[str, str]:
     """Location / text / date phrases for the reply templates, in both languages."""
     city = filters.get("city")
     venue = filters.get("venue")
     place = venue or city
     text = filters.get("text")
-    when = ""
+    when = when_hi = ""
     if filters.get("date_from") or filters.get("date_to"):
         start, end = filters.get("date_from"), filters.get("date_to")
-        when = fmt_date(start) if start == end else f"{fmt_date(start)} – {fmt_date(end)}"
+        if start and end and start != end:
+            when = f"{_short_date(start)} – {_short_date(end)}"
+            when_hi = f"{when} ke beech"
+        else:
+            when = _short_date(start or end)
+            when_hi = f"{when} ko"
     price = f"under {rupees(filters['max_price'])}" if filters.get("max_price") else ""
     price_hi = f"{rupees(filters['max_price'])} se kam" if filters.get("max_price") else ""
 
@@ -56,7 +70,7 @@ def _where(filters: Dict[str, Any], lang_code: str) -> Dict[str, str]:
     if price:
         en += f" {price}"
 
-    hi_bits = [b for b in (f"“{text}” ke liye" if text else "", f"{place} me" if place else "", when, price_hi) if b]
+    hi_bits = [b for b in (f"“{text}” ke liye" if text else "", f"{place} me" if place else "", when_hi, price_hi) if b]
     hi = " ".join(hi_bits)
     return {
         "where": en,
