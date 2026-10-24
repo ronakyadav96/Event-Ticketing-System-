@@ -1,0 +1,67 @@
+    <div class="event-bg" [ngStyle]="bgStyle" [ngClass]="designTemplateClass">
+      <div class="overlay"></div>
+
+      <div class="content">
+        <div class="details-wrap">
+          <div *ngIf="loading" class="msg">Loading event...</div>
+
+          <div *ngIf="!loading && error" class="msg error">Error: {{ error }}</div>
+
+          <div *ngIf="!loading && event">
+            <!-- Category Templates from src/app/templates/ -->
+            <ng-container [ngSwitch]="eventCategoryKey">
+              <app-movie-template
+                *ngSwitchCase="'movie'"
+                [event]="event"
+                [eventImageUrl]="eventImageUrl"
+                [eventImgFailed]="eventImgFailed"
+                [isFreeEvent]="isFreeEvent"
+                [unitPriceRupees]="unitPriceRupees"
+                [movieRecommendations]="movieRecommendations"
+                (openBooking)="openBooking()"
+              ></app-movie-template>
+
+              <app-concert-template
+                *ngSwitchCase="'concert'"
+                [event]="event"
+                [eventImageUrl]="eventImageUrl"
+                [eventImgFailed]="eventImgFailed"
+                [isFreeEvent]="isFreeEvent"
+                [unitPriceRupees]="unitPriceRupees"
+                (openBooking)="openBooking()"
+              ></app-concert-template>
+
+              <app-comedy-template
+                *ngSwitchCase="'comedy'"
+                [event]="event"
+                [eventImageUrl]="eventImageUrl"
+                [eventImgFailed]="eventImgFailed"
+                [isFreeEvent]="isFreeEvent"
+                [unitPriceRupees]="unitPriceRupees"
+                (openBooking)="openBooking()"
+              ></app-comedy-template>
+
+              <app-sports-template
+                *ngSwitchCase="'sports'"
+                [event]="event"
+                [eventImageUrl]="eventImageUrl"
+                [eventImgFailed]="eventImgFailed"
+                [isFreeEvent]="isFreeEvent"
+                [unitPriceRupees]="unitPriceRupees"
+                (openBooking)="openBooking()"
+              ></app-sports-template>
+
+              <app-event-template
+                *ngSwitchDefault
+                [event]="event"
+                [eventImageUrl]="eventImageUrl"
+                [eventImgFailed]="eventImgFailed"
+                [isFreeEvent]="isFreeEvent"
+                [unitPriceRupees]="unitPriceRupees"
+                (openBooking)="openBooking()"
+              ></app-event-template>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+    </div>

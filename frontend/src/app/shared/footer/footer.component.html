@@ -1,0 +1,76 @@
+<footer class="footer-bms">
+  <!-- Customer Support Strip -->
+  <div class="support-strip">
+    <div class="footer-inner">
+      <div class="support-item">
+        <span class="support-icon">🎧</span>
+        <div class="support-text">
+          <strong>24/7 CUSTOMER CARE</strong>
+          <span>We're here to help you anytime</span>
+        </div>
+      </div>
+      <div class="support-item">
+        <span class="support-icon">🎟️</span>
+        <div class="support-text">
+          <strong>RESEND BOOKING CONFIRMATION</strong>
+          <span>Get e-tickets sent to your email or SMS</span>
+        </div>
+      </div>
+      <div class="support-item">
+        <span class="support-icon">✉️</span>
+        <div class="support-text">
+          <strong>SUBSCRIBE TO OFFERS</strong>
+          <span>Get latest movie premieres and promo codes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Links Grid -->
+  <div class="links-section">
+    <div class="footer-inner">
+      <div class="footer-col">
+        <h4>MOVIES NOW SHOWING</h4>
+        <div class="footer-links-list">
+          <a routerLink="/movies">Action Movies</a>
+          <a routerLink="/movies">Comedy Movies</a>
+          <a routerLink="/movies">Drama &amp; Romance</a>
+          <a routerLink="/movies">Sci-Fi &amp; Thrillers</a>
+        </div>
+      </div>
+
+      <div class="footer-col">
+        <h4>LIVE EVENTS &amp; SHOWS</h4>
+        <div class="footer-links-list">
+          <a routerLink="/events" [queryParams]="{ category: 'music' }">Music Concerts</a>
+          <a routerLink="/events" [queryParams]="{ category: 'comedy' }">Standup Comedy</a>
+          <a routerLink="/events" [queryParams]="{ category: 'sports' }">Sports &amp; Fitness</a>
+          <a routerLink="/events" [queryParams]="{ category: 'workshops' }">Workshops &amp; Talks</a>
+        </div>
+      </div>
+
+      <div class="footer-col">
+        <h4>HELP &amp; SETTINGS</h4>
+        <div class="footer-links-list">
+          <a routerLink="/history">Your Orders &amp; Bookings</a>
+          <a routerLink="/coupons">Offers &amp; Discounts</a>
+          <a routerLink="/gifts">Gift Cards</a>
+          <a routerLink="/create-event">List Your Show</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Copyright Bar -->
+  <div class="bottom-bar">
+    <div class="footer-inner bottom-inner">
+      <div class="brand-line">
+        <span class="brand-icon">🎟️</span>
+        <span class="brand-text">Ticket<span class="brand-red">Pulse</span></span>
+      </div>
+      <div class="copy-text">
+        Copyright &copy; {{ year }} TicketPulse Entertainment Pvt. Ltd. All Rights Reserved.
+      </div>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,28 @@
+<div class="ticket">
+  <div class="top">
+    <span class="ok">✓ Booking confirmed</span>
+    <h3 *ngIf="ticket.eventName">{{ ticket.eventName }}</h3>
+    <p *ngIf="ticket.venue">{{ ticket.venue }}</p>
+  </div>
+
+  <div class="tear" aria-hidden="true"></div>
+
+  <dl class="grid">
+    <div *ngIf="ticket.showAt">
+      <dt>When</dt>
+      <dd>{{ ticket.showAt | date: 'EEE d MMM, h:mm a' }}</dd>
+    </div>
+    <div *ngIf="ticket.seats?.length">
+      <dt>Seats</dt>
+      <dd>{{ ticket.seats!.join(', ') }}</dd>
+    </div>
+    <div *ngIf="ticket.amountPaise != null">
+      <dt>Paid</dt>
+      <dd>{{ ticket.amountPaise / 100 | currency: 'INR' : 'symbol' : '1.0-2' }}</dd>
+    </div>
+    <div>
+      <dt>Ticket ID</dt>
+      <dd class="mono">{{ ticket.ticketId }}</dd>
+    </div>
+  </dl>
+</div>

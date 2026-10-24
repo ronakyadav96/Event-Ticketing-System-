@@ -1,0 +1,116 @@
+.msg-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  animation: rise 0.18s ease-out;
+
+  &.user {
+    justify-content: flex-end;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: var(--c-brand);
+  color: #fff;
+  flex-shrink: 0;
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+.bubble {
+  position: relative;
+  max-width: 82%;
+  padding: 10px 14px 6px;
+  border-radius: 16px 16px 16px 4px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  color: var(--c-ink);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+
+  .user & {
+    border-radius: 16px 16px 4px 16px;
+    background: var(--c-brand);
+    border-color: var(--c-brand);
+    color: #fff;
+  }
+
+  &.error {
+    background: #fff4f4;
+    border-color: #fbd0d0;
+    color: #a12020;
+  }
+}
+
+.time {
+  display: block;
+  margin-top: 2px;
+  font-size: 10.5px;
+  text-align: right;
+  color: var(--c-muted);
+
+  .user & {
+    color: rgba(255, 255, 255, 0.75);
+  }
+}
+
+// Rendered markdown (innerHTML is outside view encapsulation).
+.content {
+  :host ::ng-deep & {
+    strong {
+      font-weight: 700;
+    }
+
+    ul,
+    ol {
+      margin: 6px 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    li {
+      margin: 3px 0;
+    }
+
+    .md-num {
+      color: var(--c-muted);
+      margin-right: 2px;
+    }
+
+    .md-p-gap {
+      height: 8px;
+    }
+
+    code {
+      padding: 1px 5px;
+      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.06);
+      font-size: 12.5px;
+    }
+
+    em {
+      color: inherit;
+      opacity: 0.85;
+    }
+  }
+}

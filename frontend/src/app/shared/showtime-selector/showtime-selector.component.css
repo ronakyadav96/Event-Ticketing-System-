@@ -1,0 +1,438 @@
+/* ================= SHOWTIME EXPERIENCE (BookMyShow Style) ================= */
+.showtime-experience-wrapper {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e5e5e8;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  margin-bottom: 32px;
+}
+
+/* 1. MOVIE METADATA BAR */
+.showtime-header-bar {
+  padding: 24px 24px 18px;
+  border-bottom: 1px solid #ececee;
+  background: #ffffff;
+}
+
+.header-movie-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #222222;
+  margin: 0 0 10px;
+  letter-spacing: -0.3px;
+}
+
+.header-lang-tag {
+  font-size: 20px;
+  font-weight: 600;
+  color: #666666;
+}
+
+.header-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.runtime-pill, .cert-pill, .genre-pill {
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid #e0e0e4;
+  background: #ffffff;
+  color: #555555;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cert-pill {
+  font-weight: 800;
+  color: #222222;
+}
+
+/* 2. DATE SELECTOR & FILTER BAR (Sticky) */
+.date-filter-sticky-bar {
+  position: sticky;
+  top: 106px;
+  z-index: 70;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e5e8;
+  padding: 10px 24px;
+}
+
+.date-filter-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.date-picker-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.date-picker-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.date-chip-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  height: 60px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.date-chip-btn:hover {
+  background: #f8f8fa;
+}
+
+.date-dow {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #777777;
+  text-transform: uppercase;
+}
+
+.date-num {
+  font-size: 18px;
+  font-weight: 800;
+  color: #222222;
+  margin: 1px 0;
+  line-height: 1.1;
+}
+
+.date-mon {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #777777;
+  text-transform: uppercase;
+}
+
+.date-chip-btn.active {
+  background: #f84464;
+  box-shadow: 0 4px 10px rgba(248, 68, 100, 0.35);
+}
+
+.date-chip-btn.active .date-dow,
+.date-chip-btn.active .date-num,
+.date-chip-btn.active .date-mon {
+  color: #ffffff;
+}
+
+/* Filter Dropdowns */
+.filter-buttons-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.filter-btn {
+  border: 1px solid #e0e0e4;
+  background: #ffffff;
+  color: #444444;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.filter-btn:hover {
+  border-color: #f84464;
+  color: #f84464;
+}
+
+.filter-btn.active {
+  border-color: #f84464;
+  color: #f84464;
+  background: rgba(248, 68, 100, 0.06);
+}
+
+.filter-search-icon {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e0e0e4;
+  background: #ffffff;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* 3. SUB-BAR: QUICK FILTERS & AVAILABILITY LEGEND */
+.sub-legend-bar {
+  background: #fbfbfc;
+  border-bottom: 1px solid #ececee;
+  padding: 8px 24px;
+}
+
+.sub-legend-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.quick-filters-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quick-filter-chip {
+  background: #ffffff;
+  border: 1px solid #e0e0e4;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: #555555;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.quick-filter-chip:hover {
+  border-color: #f84464;
+  color: #f84464;
+}
+
+.legend-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #666666;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-dot.available {
+  background: #10b981;
+}
+
+.legend-dot.fast-filling {
+  background: #f59e0b;
+}
+
+/* 4. THEATRE SHOWTIMES LISTINGS */
+.theatre-listings-container {
+  padding: 0 24px 24px;
+}
+
+.theatre-card {
+  padding: 24px 0;
+  border-bottom: 1px solid #f0f0f4;
+}
+
+.theatre-card:last-child {
+  border-bottom: none;
+}
+
+.theatre-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.theatre-info-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.theatre-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cinema-badge {
+  font-size: 13px;
+  font-weight: 800;
+  color: #d97706;
+  background: #fef3c7;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.theatre-name {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #222222;
+  margin: 0;
+}
+
+.info-glyph {
+  font-size: 13px;
+  color: #888888;
+  cursor: pointer;
+}
+
+.theatre-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.amenity-tag {
+  font-size: 12px;
+  color: #666666;
+}
+
+.favorite-heart-btn {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  color: #bbbbbb;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  line-height: 1;
+}
+
+.favorite-heart-btn:hover,
+.favorite-heart-btn.favorited {
+  color: #f84464;
+}
+
+/* Grid of Green-Bordered Showtime Pills */
+.showtime-pills-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 14px;
+}
+
+.showtime-slot-btn {
+  position: relative;
+  width: 104px;
+  height: 48px;
+  border: 1px solid #10b981;
+  border-radius: 6px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.showtime-slot-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+}
+
+.slot-time {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.slot-badge {
+  font-size: 9px;
+  font-weight: 800;
+  color: #888888;
+  letter-spacing: 0.5px;
+  margin-top: 1px;
+}
+
+/* Status variants */
+.showtime-slot-btn.fast-filling {
+  border-color: #f59e0b;
+}
+
+.showtime-slot-btn.fast-filling .slot-time {
+  color: #f59e0b;
+}
+
+.showtime-slot-btn.almost-full {
+  border-color: #ef4444;
+}
+
+.showtime-slot-btn.almost-full .slot-time {
+  color: #ef4444;
+}
+
+.showtime-slot-btn.active {
+  background: #10b981;
+  border-color: #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.showtime-slot-btn.active .slot-time,
+.showtime-slot-btn.active .slot-badge {
+  color: #ffffff;
+}
+
+/* Hover Tooltip */
+.slot-price-tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #222222;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.showtime-slot-btn:hover .slot-price-tooltip {
+  opacity: 1;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .filter-buttons-group {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .date-filter-sticky-bar {
+    top: 64px;
+    padding: 8px 14px;
+  }
+
+  .sub-legend-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

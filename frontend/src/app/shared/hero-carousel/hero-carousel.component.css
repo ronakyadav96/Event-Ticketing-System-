@@ -1,0 +1,104 @@
+.promo{
+  padding: 14px 0 6px;
+}
+
+.promo-inner{
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.promo-carousel{
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  background: rgba(17, 24, 39, 0.03);
+  box-shadow: var(--app-shadow, 0 18px 40px rgba(17, 24, 39, 0.12));
+  /* Fixed hero size like BookMyShow (doesn't change with images) */
+  height: clamp(180px, 26vw, 340px);
+}
+
+.promo-track{
+  height: 100%;
+  display: flex;
+  transition: transform 480ms ease;
+  will-change: transform;
+}
+
+.promo-slide{
+  position: relative;
+  min-width: 100%;
+  height: 100%;
+  background: radial-gradient(900px 360px at 20% 20%, rgba(248,68,100,0.14), transparent 60%),
+              radial-gradient(900px 360px at 80% 20%, rgba(249,115,22,0.12), transparent 60%),
+              #ffffff;
+}
+
+.promo-slide img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.promo-fade{
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.00), rgba(255,255,255,0.10));
+  pointer-events: none;
+}
+
+.promo-nav{
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  background: rgba(255,255,255,0.92);
+  color: rgba(17, 24, 39, 0.82);
+  font-size: 22px;
+  font-weight: 900;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 12px 26px rgba(17, 24, 39, 0.12);
+}
+
+.promo-nav:hover{
+  border-color: rgba(248, 68, 100, 0.30);
+  color: #f84464;
+}
+
+.promo-nav.prev{ left: 12px; }
+.promo-nav.next{ right: 12px; }
+
+.promo-dots{
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+}
+
+.promo-dots .dot{
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  background: rgba(255,255,255,0.85);
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease;
+}
+
+.promo-dots .dot.active{
+  background: var(--app-brand, #f84464);
+  border-color: rgba(248, 68, 100, 0.55);
+  transform: scale(1.15);
+}
+

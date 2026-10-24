@@ -1,0 +1,167 @@
+<div class="movie-detail-wrapper" *ngIf="!loading && movie">
+
+  <!-- 1. STICKY ACTION HEADER (Matching media_1789325586626.png) -->
+  <div class="movie-sticky-bar">
+    <div class="sticky-bar-inner">
+      <h2 class="sticky-title">{{ movie.title }}</h2>
+      <button class="book-tickets-btn" type="button" (click)="bookTickets()">
+        Book tickets
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. HERO CINEMATIC BACKDROP BANNER -->
+  <section class="cinematic-hero-section" [ngStyle]="posterStyle(movie)">
+    <div class="hero-overlay-tint"></div>
+    <div class="hero-content-container">
+      <div class="hero-poster-shell">
+        <img *ngIf="movie.posterUrl" [src]="movie.posterUrl" [alt]="movie.title" />
+        <div class="fallback-hero-poster" *ngIf="!movie.posterUrl">
+          <span>🎬</span>
+        </div>
+      </div>
+
+      <div class="hero-movie-meta">
+        <h1 class="hero-title">{{ movie.title }}</h1>
+
+        <!-- Rating Box -->
+        <div class="hero-rating-box">
+          <span class="star-icon">★</span>
+          <span class="rating-num">{{ movie.voteAverage ? movie.voteAverage : '9.1' }}/10</span>
+          <span class="rating-votes">(92.1K+ Votes)</span>
+        </div>
+
+        <div class="metadata-chips-row">
+          <span class="meta-cert-badge">UA16+</span>
+          <span class="meta-pill">2h 30m</span>
+          <span class="meta-pill">Action, Drama</span>
+          <span class="meta-pill">Hindi, Telugu, English</span>
+          <span class="meta-pill" *ngIf="movie.releaseDate">{{ movie.releaseDate | slice:0:4 }}</span>
+        </div>
+
+        <div class="hero-actions-row">
+          <button class="hero-book-btn" type="button" (click)="bookTickets()">
+            Book tickets
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN BODY CONTAINER -->
+  <div class="movie-body-container">
+
+    <!-- About The Movie -->
+    <section class="about-movie-section">
+      <h3 class="body-section-title">About the movie</h3>
+      <p class="movie-overview-text">
+        {{ movie.overview || 'An extraordinary cinematic spectacle that captivates with gripping storytelling, exceptional visual flair, and memorable performances that keep audiences on the edge of their seats throughout.' }}
+      </p>
+    </section>
+
+    <!-- Available Shows / Cinemas for this movie -->
+    <section class="matching-shows-section" *ngIf="relatedEvents.length">
+      <h3 class="body-section-title">Available Shows in Cinemas</h3>
+      <div class="shows-grid">
+        <div class="show-event-card" *ngFor="let ev of relatedEvents" (click)="openEvent(ev)">
+          <div class="show-card-left">
+            <h4 class="show-hall-name">{{ ev.title }}</h4>
+            <div class="show-venue">📍 {{ ev.venue || 'Cinema Arena' }}</div>
+            <div class="show-timing">📅 {{ ev.date | date:'EEE, dd MMM yyyy • h:mm a' }}</div>
+          </div>
+          <div class="show-card-right">
+            <span class="show-price">₹{{ ev.price ?? 0 }}</span>
+            <button class="select-show-btn" type="button">Select Show</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. TOP REVIEWS SECTION (Matching media_1789325586626.png) -->
+    <section class="top-reviews-section">
+      <div class="reviews-header-row">
+        <div class="title-sub-block">
+          <h2 class="reviews-main-title">Top reviews</h2>
+          <span class="reviews-sub-note">Summary of 94.7K reviews.</span>
+        </div>
+        <a class="all-reviews-link" (click)="$event.preventDefault()">94.7K reviews &rsaquo;</a>
+      </div>
+
+      <!-- Hashtag summary pills row -->
+      <div class="hashtags-scroll custom-horizontal-scroll">
+        <div class="hashtag-pill" *ngFor="let h of hashtags">
+          <span class="tag-name">{{ h.tag }}</span>
+          <span class="tag-counter">{{ h.count }}</span>
+        </div>
+      </div>
+
+      <!-- Horizontal review cards row -->
+      <div class="reviews-cards-scroll custom-horizontal-scroll">
+        <div class="review-bms-card" *ngFor="let r of reviews">
+          <div class="review-card-top">
+            <div class="user-meta">
+              <div class="user-avatar-circle">👤</div>
+              <div class="user-name-box">
+                <span class="user-name">{{ r.name }}</span>
+                <span class="verified-tag">Booked on <span class="brand-sub">TicketPulse</span></span>
+              </div>
+            </div>
+            <div class="review-rating-badge">
+              <span class="star">★</span> {{ r.rating }}
+            </div>
+          </div>
+
+          <div class="review-tags-line">{{ r.tags }}</div>
+          <p class="review-text-content">{{ r.text }}</p>
+
+          <div class="review-card-footer">
+            <div class="reactions-group">
+              <button class="thumb-btn" type="button" [class.active]="r.liked" (click)="toggleLike(r)">
+                👍 <span class="thumb-count">{{ r.likes }}</span>
+              </button>
+              <button class="thumb-btn" type="button">
+                👎
+              </button>
+            </div>
+            <div class="time-share-group">
+              <span class="review-time">{{ r.time }}</span>
+              <button class="share-btn" type="button" title="Share review">🔗</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. YOU MIGHT ALSO LIKE SECTION -->
+    <section class="you-might-like-section" *ngIf="recommendations.length">
+      <div class="section-head-bms">
+        <h2>You might also like</h2>
+        <a class="see-all" routerLink="/movies">View All &rsaquo;</a>
+      </div>
+
+      <div class="horizontal-reco-row custom-horizontal-scroll">
+        <div
+          class="reco-movie-card"
+          *ngFor="let m of recommendations; trackBy: trackMovie"
+          [routerLink]="['/movies', m.movieId]">
+          <div class="reco-poster-box">
+            <img *ngIf="m.posterUrl" [src]="m.posterUrl" [alt]="m.title" loading="lazy" />
+            <div class="reco-fallback" *ngIf="!m.posterUrl">🎬</div>
+          </div>
+          <h4 class="reco-title">{{ m.title }}</h4>
+          <span class="reco-year" *ngIf="m.releaseDate">{{ m.releaseDate | slice:0:4 }}</span>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+</div>
+
+<!-- Loading / Error States -->
+<div class="page-container" *ngIf="loading">
+  <div class="state-card">Loading movie details...</div>
+</div>
+<div class="page-container" *ngIf="!loading && error">
+  <div class="state-card error">{{ error }}</div>
+</div>

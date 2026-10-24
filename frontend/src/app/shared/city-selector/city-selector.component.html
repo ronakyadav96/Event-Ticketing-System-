@@ -1,0 +1,45 @@
+<div class="city-selector-wrap">
+  <!-- Header pill button -->
+  <button class="city-pill-btn" type="button" (click)="openModal()">
+    <span class="pin-icon">📍</span>
+    <span class="city-name">{{ currentCity }}</span>
+    <span class="arrow-icon">▼</span>
+  </button>
+
+  <!-- Modal backdrop -->
+  <div class="city-modal-backdrop" *ngIf="showModal" (click)="closeModal()">
+    <div class="city-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Select Your City</h3>
+        <button class="close-btn" type="button" (click)="closeModal()">&times;</button>
+      </div>
+
+      <div class="search-box">
+        <input
+          type="text"
+          class="city-search-input"
+          placeholder="Search for your city..."
+          [(ngModel)]="searchQuery"
+        />
+      </div>
+
+      <div class="popular-label">Popular Cities</div>
+
+      <div class="city-grid">
+        <button
+          type="button"
+          *ngFor="let c of filteredCities"
+          class="city-chip"
+          [class.active]="c === currentCity"
+          (click)="selectCity(c)"
+        >
+          {{ c }}
+        </button>
+      </div>
+
+      <div class="no-city" *ngIf="filteredCities.length === 0">
+        No city found matching "{{ searchQuery }}"
+      </div>
+    </div>
+  </div>
+</div>

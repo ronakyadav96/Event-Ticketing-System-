@@ -1,0 +1,27 @@
+# Web framework & config
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+pydantic>=2.6.0
+pydantic-settings>=2.2.0
+
+# Persistence: conversation store + LangGraph checkpointer (PostgreSQL), turn locks (Redis)
+psycopg[binary]>=3.1.18
+psycopg-pool>=3.2.0
+redis>=5.0.0
+
+# Node backend client
+httpx>=0.27.0
+
+# Orchestration & LLM (Gemini)
+langgraph>=0.2.0
+langgraph-checkpoint-postgres>=2.0.0
+langchain-core>=0.3.0
+langchain-google-genai>=2.0.0
+
+# Optional: better FAQ embeddings (EMBEDDING_PROVIDER=auto picks them up when installed)
+# langchain-community>=0.3.0
+# sentence-transformers>=2.3.0
+
+# Tests
+pytest>=8.0.0
+pytest-asyncio>=0.23.0

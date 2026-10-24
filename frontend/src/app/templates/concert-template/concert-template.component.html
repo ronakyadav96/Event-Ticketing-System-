@@ -1,0 +1,41 @@
+<div class="concert-tpl">
+  <!-- Concert stage hero -->
+  <div class="concert-hero" [style.background-image]="eventImageUrl ? 'url(' + eventImageUrl + ')' : ''">
+    <div class="concert-overlay"></div>
+    <div class="hero-inner">
+      <div class="kicker-pill">⚡ LIVE MUSIC EXPERIENCE</div>
+      <h1 class="concert-title">{{ event?.title }}</h1>
+      <p class="concert-subtitle">{{ event?.tagline || 'Get ready for an unforgettable high-energy performance live on stage!' }}</p>
+
+      <div class="concert-meta">
+        <div class="meta-pill">
+          <span class="icon">📅</span>
+          <span>{{ event?.date | date:'EEEE, d MMMM yyyy' }}</span>
+        </div>
+        <div class="meta-pill">
+          <span class="icon">🕒</span>
+          <span>{{ event?.date | date:'h:mm a' }}</span>
+        </div>
+        <div class="meta-pill">
+          <span class="icon">📍</span>
+          <span>{{ event?.venue || 'Live Arena Stadium' }}</span>
+        </div>
+      </div>
+
+      <div class="cta-box">
+        <div class="price-tag">
+          <span class="lbl">Passes From</span>
+          <span class="val">{{ isFreeEvent ? 'FREE ENTRY' : ('Rs ' + unitPriceRupees) }}</span>
+        </div>
+        <button class="concert-btn" (click)="openBooking.emit()">GET TICKETS NOW</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="concert-body">
+    <div class="section-card">
+      <h2>About The Performance</h2>
+      <div class="desc-text" [innerHTML]="event?.description || 'Get ready for live music, special lighting effects, and an electrifying audience vibe.'"></div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,11 @@
+<div class="container page">
+  <h2 class="fade-up">Book Your Ticket</h2>
+
+  <div class="booking-summary fade-up delay-1">Event: {{ event.title }}</div>
+  <input type="number" [(ngModel)]="seats" min="1" />
+  <button (click)="book()">Book Ticket</button>
+
+  <form class="fade-up delay-2">
+    <button class="btn-success motion-btn">Confirm Booking</button>
+  </form>
+</div>

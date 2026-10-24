@@ -1,0 +1,124 @@
+.seat-map {
+  margin-left: 36px;
+  padding: 14px 12px 12px;
+  border-radius: var(--c-radius);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+}
+
+.screen {
+  margin: 0 12% 14px;
+  padding-top: 6px;
+  border-top: 3px solid #c9c9d1;
+  border-radius: 50% 50% 0 0 / 12px 12px 0 0;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.seat-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: max-content;
+  margin: 0 auto;
+}
+
+.row-label {
+  width: 16px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c-muted);
+}
+
+.seat {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--c-success);
+  border-radius: 4px 4px 3px 3px;
+  background: var(--c-surface);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: rgba(18, 161, 80, 0.15);
+  }
+
+  &.picked {
+    background: var(--c-success);
+  }
+
+  &.taken {
+    border-color: #dcdce0;
+    background: #ececef;
+    cursor: not-allowed;
+  }
+}
+
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--c-muted);
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .seat {
+    width: 12px;
+    height: 12px;
+    cursor: default;
+  }
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.count {
+  min-width: 0;
+  font-size: 12px;
+  color: var(--c-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.confirm {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--c-brand);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:disabled {
+    background: var(--c-line);
+    color: var(--c-muted);
+    cursor: default;
+  }
+}

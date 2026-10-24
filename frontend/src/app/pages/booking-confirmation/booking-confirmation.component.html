@@ -1,0 +1,131 @@
+<div class="boarding-page">
+  <div class="boarding-shell" *ngIf="loading">
+    <div class="boarding-pass state-card">
+      <div class="state-badge">Loading</div>
+      <h1>Preparing Your Boarding Pass</h1>
+      <p>Your confirmed ticket details are being assembled.</p>
+    </div>
+  </div>
+
+  <div class="boarding-shell" *ngIf="!loading && error">
+    <div class="boarding-pass state-card error-card">
+      <div class="state-badge danger">Invalid Booking</div>
+      <h1>We Could Not Verify This Ticket</h1>
+      <p>{{ error }}</p>
+    </div>
+  </div>
+
+  <div class="boarding-shell" *ngIf="!loading && booking">
+    <section class="boarding-hero">
+      <div class="hero-copy">
+        <div class="hero-kicker">Confirmation Complete</div>
+        <h1>Your Entry Pass Is Ready</h1>
+        <p>Carry this digital boarding pass at the venue entrance. Your QR and attendee details are locked in.</p>
+      </div>
+      <div class="hero-status">
+        <div class="status-chip success">Booking Confirmed</div>
+        <div class="hero-ticket-id">Ticket ID: {{ booking?.ticketId || ticketId }}</div>
+      </div>
+    </section>
+
+    <section class="boarding-pass">
+      <div class="boarding-main">
+        <div class="boarding-strip">
+          <div class="strip-label">Event Boarding Pass</div>
+          <div class="strip-status">{{ paymentStatusLabel }}</div>
+        </div>
+
+        <div class="boarding-content">
+          <div class="boarding-left">
+            <div class="event-block">
+              <div class="event-code">EVT {{ (booking?.ticketId || ticketId) | slice:0:8 }}</div>
+              <h2>{{ eventTitle }}</h2>
+              <p>Admit one or more attendees using this verified pass and scan-ready QR code.</p>
+            </div>
+
+            <div class="flight-grid">
+              <div class="flight-cell">
+                <span>Date</span>
+                <strong>{{ eventDateTime | date:'fullDate' }}</strong>
+              </div>
+              <div class="flight-cell">
+                <span>Time</span>
+                <strong>{{ eventDateTime | date:'shortTime' }}</strong>
+              </div>
+              <div class="flight-cell">
+                <span>Venue</span>
+                <strong>{{ venueLabel }}</strong>
+              </div>
+              <div class="flight-cell">
+                <span>Seats</span>
+                <strong>{{ seatLabel }}</strong>
+              </div>
+              <div class="flight-cell">
+                <span>Booked By</span>
+                <strong>{{ attendeeName }}</strong>
+              </div>
+              <div class="flight-cell">
+                <span>Fare</span>
+                <strong>{{ finalAmountLabel }}</strong>
+              </div>
+            </div>
+
+            <div class="detail-panels">
+              <div class="detail-card">
+                <div class="detail-title">Passenger Details</div>
+                <div class="detail-row">
+                  <span>Name</span>
+                  <strong>{{ attendeeName }}</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Email</span>
+                  <strong>{{ attendeeEmail }}</strong>
+                </div>
+                <div class="detail-row">
+                </div>
+              </div>
+
+              <div class="detail-card" *ngIf="booking?.registrationTemplate || booking?.registrationData">
+                <div class="detail-title">Registration Snapshot</div>
+                <div class="detail-row" *ngFor="let item of getRegistrationItems(booking)">
+                  <span>{{ item.label }}</span>
+                  <strong>{{ item.value }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="boarding-divider">
+            <span class="divider-cut top"></span>
+            <span class="divider-cut bottom"></span>
+          </div>
+
+          <aside class="boarding-right">
+            <div class="scan-panel">
+              <div class="scan-title">Scan For Entry</div>
+              <div class="qr-frame" *ngIf="qrData">
+                <qrcode [qrdata]="qrData" [width]="190"></qrcode>
+              </div>
+              <div class="scan-copy">Present this code at the gate for a fast verified check-in.</div>
+            </div>
+
+            <div class="mini-card">
+              <div class="mini-title">Access Rules</div>
+              <ul class="rule-list">
+                <li>Carry a valid ID proof.</li>
+                <li>Reach at least 30 minutes early.</li>
+                <li>Keep this QR ready at the entry desk.</li>
+              </ul>
+            </div>
+
+            <div class="mini-card accent">
+              <div class="mini-title">Booking Snapshot</div>
+              <div class="mini-value">{{ paymentStatusLabel }}</div>
+              <div class="mini-sub">Confirmed and ready to scan</div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

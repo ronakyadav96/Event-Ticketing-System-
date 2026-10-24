@@ -1,0 +1,33 @@
+<div class="seat-map">
+  <div class="screen"><span>Screen this way</span></div>
+
+  <div class="rows">
+    <div class="seat-row" *ngFor="let r of map.rows">
+      <span class="row-label">{{ r.row }}</span>
+      <button
+        *ngFor="let s of r.seats"
+        type="button"
+        class="seat"
+        [class.taken]="isTaken(s)"
+        [class.picked]="selected.includes(s)"
+        [disabled]="isTaken(s)"
+        [title]="s"
+        [attr.aria-label]="'Seat ' + s + (isTaken(s) ? ' (taken)' : '')"
+        [attr.aria-pressed]="selected.includes(s)"
+        (click)="toggle(s)"></button>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><i class="seat"></i>Available</span>
+    <span><i class="seat picked"></i>Selected</span>
+    <span><i class="seat taken"></i>Taken</span>
+  </div>
+
+  <div class="foot">
+    <span class="count">
+      {{ selected.length }} / {{ required }} selected<span *ngIf="selected.length"> · {{ selected.join(', ') }}</span>
+    </span>
+    <button type="button" class="confirm" [disabled]="selected.length !== required" (click)="submit()">Confirm seats</button>
+  </div>
+</div>

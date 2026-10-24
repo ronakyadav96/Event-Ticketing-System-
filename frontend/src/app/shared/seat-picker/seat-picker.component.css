@@ -1,0 +1,212 @@
+/* ================= SEAT PICKER BMS ================= */
+.seat-picker-bms {
+  background: #ffffff;
+  border: 1px solid #e5e5e8;
+  border-radius: 12px;
+  padding: 30px 24px;
+  margin: 16px 0;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+/* Screen Arc */
+.cinema-screen-wrap {
+  margin-bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.screen-arc {
+  width: 70%;
+  height: 8px;
+  border-top: 4px solid #0ea5e9;
+  border-radius: 50% / 10px 10px 0 0;
+  box-shadow: 0 -4px 14px rgba(14, 165, 233, 0.35);
+  margin-bottom: 8px;
+}
+
+.screen-caption {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #888888;
+  text-transform: uppercase;
+}
+
+/* Legend */
+.seating-legend-bar {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #555555;
+  margin-bottom: 28px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f4;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.seat-glyph {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.seat-glyph.available {
+  background: #ffffff;
+  border: 1px solid #10b981;
+}
+
+.seat-glyph.selected {
+  background: #10b981;
+}
+
+.seat-glyph.booked {
+  background: #e5e7eb;
+  border: 1px solid #d1d5db;
+}
+
+/* Seats Layout */
+.seats-layout-area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  overflow-x: auto;
+  padding: 4px 0;
+}
+
+.row-tier-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.row-label {
+  width: 20px;
+  font-weight: 700;
+  font-size: 12px;
+  color: #888888;
+  text-align: center;
+}
+
+.seats-row-grid {
+  display: flex;
+  gap: 8px;
+}
+
+.seat-box {
+  width: 30px;
+  height: 30px;
+  border-radius: 5px;
+  border: 1px solid #10b981;
+  background: #ffffff;
+  color: #10b981;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.seat-box:hover:not(:disabled) {
+  background: #10b981;
+  color: #ffffff;
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.seat-box.vip {
+  border-color: #d97706;
+  color: #d97706;
+}
+
+.seat-box.vip:hover:not(:disabled) {
+  background: #d97706;
+  color: #ffffff;
+}
+
+.seat-box.selected {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+  transform: scale(1.06);
+}
+
+.seat-box:disabled {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.tier-pill-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #777777;
+  width: 70px;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+/* Selection Summary */
+.seat-selection-feedback {
+  margin-top: 24px;
+  padding: 14px 20px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.selected-pill-info {
+  font-size: 13.5px;
+  color: #333333;
+}
+
+.info-lead {
+  color: #666666;
+  margin-right: 6px;
+}
+
+.seats-chips {
+  color: #10b981;
+  font-weight: 800;
+}
+
+.calculated-price {
+  font-size: 14px;
+  color: #333333;
+}
+
+.calculated-price strong {
+  font-size: 18px;
+  color: #f84464;
+  margin-left: 4px;
+}
+
+@media (max-width: 640px) {
+  .seat-box {
+    width: 24px;
+    height: 24px;
+    font-size: 9.5px;
+  }
+
+  .seats-row-grid {
+    gap: 4px;
+  }
+}

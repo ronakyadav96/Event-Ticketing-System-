@@ -1,0 +1,56 @@
+<div class="promo-page">
+  <div class="promo-shell">
+    <div class="promo-hero">
+      <div class="promo-eyebrow">{{ pageKind === 'gift' ? 'Gift Center' : 'Coupon Center' }}</div>
+      <h1>{{ title }}</h1>
+      <p>{{ subtitle }}</p>
+    </div>
+
+    <div class="promo-feedback" *ngIf="feedbackMessage">{{ feedbackMessage }}</div>
+
+    <div class="promo-grid">
+      <section class="promo-panel">
+        <div class="panel-head">
+          <h2>Available to Claim</h2>
+          <span class="panel-count">{{ claimablePromotions.length }}</span>
+        </div>
+
+        <div class="promo-card" *ngFor="let item of claimablePromotions">
+          <div class="promo-card-top">
+            <span class="promo-chip">{{ item.kind === 'gift' ? 'Gift' : 'Coupon' }}</span>
+            <span class="promo-code">{{ item.code }}</span>
+          </div>
+          <div class="promo-title">{{ item.title }}</div>
+          <div class="promo-meta">{{ promotionCaption(item) }}</div>
+          <div class="promo-desc" *ngIf="item.description">{{ item.description }}</div>
+          <button class="promo-action" type="button" (click)="claimPromotion(item.id)">Claim Now</button>
+        </div>
+
+        <div class="promo-empty" *ngIf="claimablePromotions.length === 0">
+          No {{ pageKind === 'gift' ? 'gift' : 'coupon' }} offers are available right now.
+        </div>
+      </section>
+
+      <section class="promo-panel claimed-panel">
+        <div class="panel-head">
+          <h2>My Claimed {{ pageKind === 'gift' ? 'Gifts' : 'Coupons' }}</h2>
+          <span class="panel-count">{{ claimedPromotions.length }}</span>
+        </div>
+
+        <div class="promo-card claimed" *ngFor="let item of claimedPromotions">
+          <div class="promo-card-top">
+            <span class="promo-chip">{{ item.kind === 'gift' ? 'Gift' : 'Coupon' }}</span>
+            <span class="promo-code">{{ item.code }}</span>
+          </div>
+          <div class="promo-title">{{ item.title }}</div>
+          <div class="promo-meta">{{ promotionCaption(item) }}</div>
+          <div class="promo-desc" *ngIf="item.description">{{ item.description }}</div>
+        </div>
+
+        <div class="promo-empty" *ngIf="claimedPromotions.length === 0">
+          Claimed {{ pageKind === 'gift' ? 'gifts' : 'coupons' }} will appear here.
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,53 @@
+<div class="history-wrap">
+  <div class="history-head">
+    <div>
+      <h2>Booking History</h2>
+      <p class="sub">Your past ticket bookings with QR codes</p>
+    </div>
+    <a class="btn ghost" routerLink="/events">Browse Events</a>
+  </div>
+
+  <div class="card" *ngIf="loading">
+    Loading your bookings...
+  </div>
+
+  <div class="card error" *ngIf="!loading && error">
+    {{ error }}
+  </div>
+
+  <div class="grid" *ngIf="!loading && !error">
+    <div class="ticket-card" *ngFor="let b of bookings">
+      <div class="ticket-main">
+        <div class="title">{{ b?.event?.title || 'Unknown Event' }}</div>
+        <div class="meta">
+          <span>Date: {{ (b?.showAt || b?.event?.date || b?.createdAt) | date:'medium' }}</span>
+          <span>Venue: {{ b?.event?.venue || '-' }}</span>
+          <span>Seats: {{ b?.seats ?? '-' }}</span>
+        </div>
+        <div class="reg-block" *ngIf="b?.registrationTemplate || b?.registrationData">
+          <div class="reg-title">Registration: {{ getRegistrationTemplateLabel(b?.registrationTemplate) }}</div>
+          <div class="reg-item" *ngFor="let item of getRegistrationItems(b)">
+            <span class="reg-label">{{ item.label }}:</span>
+            <span>{{ item.value }}</span>
+          </div>
+        </div>
+        <div class="ticket-id">Ticket ID: <b>{{ b?.ticketId || '-' }}</b></div>
+      </div>
+
+      <div class="ticket-qr" *ngIf="b?.ticketId">
+        <qrcode [qrdata]="b.ticketId" [width]="120"></qrcode>
+        <a class="btn small ghost" [routerLink]="['/booking', b.ticketId]">View Ticket</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" *ngIf="!loading && !error && loadingMore">
+    Loading more bookings...
+  </div>
+
+  <div *ngIf="hasMore && !loading && !error" #sentinel class="infinite-sentinel"></div>
+
+  <div class="card empty" *ngIf="!loading && !error && bookings.length === 0">
+    No bookings yet.
+  </div>
+</div>

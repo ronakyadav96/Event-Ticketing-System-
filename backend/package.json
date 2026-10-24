@@ -1,0 +1,31 @@
+{
+  "name": "event-ticketing-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "import:movies": "node src/scripts/import_movies_as_events.js",
+    "refresh:movies": "node src/scripts/refresh_movie_catalog.js",
+    "preprocess:movies": "python src/scripts/preprocess_movie_recommender.py"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.1.5",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.10.1",
+    "stripe": "^20.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}

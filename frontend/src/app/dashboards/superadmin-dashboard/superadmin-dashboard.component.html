@@ -1,0 +1,538 @@
+<div class="dashboard">
+
+  <div class="dashboard-header">
+    <div>
+      <h2>Super Admin Dashboard</h2>
+      <p class="subtitle">Use the internal workspace menu to switch between overview, people, events, bookings, promotions, and hero media.</p>
+    </div>
+  </div>
+
+  <div class="error-box" *ngIf="errorMsg">{{ errorMsg }}</div>
+
+  <div class="admin-shell">
+    <aside class="admin-sidebar" *ngIf="!loading">
+      <button class="admin-nav-btn" [class.active]="activeSection==='overview'" type="button" (click)="setActiveSection('overview')">
+        <span class="admin-nav-label">Overview</span>
+        <span class="admin-nav-meta">KPIs and trends</span>
+      </button>
+      <button class="admin-nav-btn" [class.active]="activeSection==='users'" type="button" (click)="setActiveSection('users')">
+        <span class="admin-nav-label">Users</span>
+        <span class="admin-nav-meta">Users and creators</span>
+      </button>
+      <button class="admin-nav-btn" [class.active]="activeSection==='events'" type="button" (click)="setActiveSection('events')">
+        <span class="admin-nav-label">Events</span>
+        <span class="admin-nav-meta">Catalog and schedule</span>
+      </button>
+      <button class="admin-nav-btn" [class.active]="activeSection==='bookings'" type="button" (click)="setActiveSection('bookings')">
+        <span class="admin-nav-label">Bookings</span>
+        <span class="admin-nav-meta">Orders and tickets</span>
+      </button>
+      <button class="admin-nav-btn" [class.active]="activeSection==='promotions'" type="button" (click)="setActiveSection('promotions')">
+        <span class="admin-nav-label">Promotions</span>
+        <span class="admin-nav-meta">Coupons and gifts</span>
+      </button>
+      <button class="admin-nav-btn" [class.active]="activeSection==='media'" type="button" (click)="setActiveSection('media')">
+        <span class="admin-nav-label">Hero Images</span>
+        <span class="admin-nav-meta">Homepage media</span>
+      </button>
+    </aside>
+
+    <section class="admin-content">
+
+  <div class="promo-layout" *ngIf="!loading && activeSection==='promotions'">
+    <div class="table-card promo-builder">
+      <div class="table-title">Gift & Coupon Control</div>
+      <p class="promo-sub">Create platform-wide or event-specific offers that users can claim from the hamburger menu and use while booking.</p>
+
+      <div class="promo-msg" *ngIf="promoMsg">{{ promoMsg }}</div>
+
+      <div class="promo-form-grid">
+        <label class="promo-field">
+          <span>Offer Title</span>
+          <input [(ngModel)]="promotionForm.title" placeholder="Weekend Blast" />
+        </label>
+
+        <label class="promo-field">
+          <span>Code</span>
+          <input [(ngModel)]="promotionForm.code" placeholder="WEEKEND15" />
+        </label>
+
+        <label class="promo-field">
+          <span>Offer Type</span>
+          <select [(ngModel)]="promotionForm.kind">
+            <option value="coupon">Coupon</option>
+            <option value="gift">Gift Card</option>
+          </select>
+        </label>
+
+        <label class="promo-field">
+          <span>Scope</span>
+          <select [(ngModel)]="promotionForm.scope">
+            <option value="platform">All Events</option>
+            <option value="event">Single Event</option>
+          </select>
+        </label>
+
+        <label class="promo-field">
+          <span>Discount Mode</span>
+          <select [(ngModel)]="promotionForm.discountType">
+            <option value="percent">Percent</option>
+            <option value="flat">Flat Amount</option>
+          </select>
+        </label>
+
+        <label class="promo-field">
+          <span>Discount Value</span>
+          <input type="number" min="1" [(ngModel)]="promotionForm.discountValue" />
+        </label>
+
+        <label class="promo-field" *ngIf="promotionForm.scope === 'event'">
+          <span>Event</span>
+          <select [(ngModel)]="promotionForm.eventId">
+            <option value="">Select event</option>
+            <option *ngFor="let e of eventsAll" [value]="e?._id || e?.id">{{ e?.title }}</option>
+          </select>
+        </label>
+
+        <label class="promo-field">
+          <span>Expiry Date</span>
+          <input type="date" [(ngModel)]="promotionForm.expiryDate" />
+        </label>
+
+        <label class="promo-field">
+          <span>Max Claims</span>
+          <input type="number" min="1" [(ngModel)]="promotionForm.maxClaims" />
+        </label>
+      </div>
+
+      <label class="promo-field full">
+        <span>Description</span>
+        <textarea rows="3" [(ngModel)]="promotionForm.description" placeholder="Optional note for the users"></textarea>
+      </label>
+
+      <button class="btn small" type="button" (click)="createPromotion()">Create Offer</button>
+    </div>
+
+    <div class="table-card promo-list-card">
+      <div class="table-title">All Active Offers</div>
+      <div class="promo-list-item" *ngFor="let item of adminPromotions">
+        <div class="promo-list-top">
+          <span class="promo-tag">{{ item.kind }}</span>
+          <span class="promo-code">{{ item.code }}</span>
+        </div>
+        <div class="promo-name">{{ item.title }}</div>
+        <div class="promo-copy">{{ promotionSummary(item) }}</div>
+        <div class="promo-copy">Created by {{ item.createdByName }} • {{ item.claimedBy.length }}/{{ item.maxClaims }} claimed</div>
+        <div class="promo-actions">
+          <button class="btn small danger" type="button" (click)="deletePromotion(item)">Delete</button>
+        </div>
+      </div>
+      <div class="empty-mini" *ngIf="adminPromotions.length === 0">No offers created yet.</div>
+    </div>
+  </div>
+
+  <!-- ===== Must-have Admin Overview ===== -->
+  <div class="table-card hero-admin" *ngIf="!loading && activeSection==='media'">
+    <div class="table-title">Hero Images (max 6)</div>
+    <div class="hero-actions">
+      <input
+        class="hero-file"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        (change)="onHeroFilesSelected($event)"
+        [disabled]="heroUploading"
+      />
+      <div class="hero-hint">Recommended: 1920×1080 (JPG/PNG/WEBP). Carousel auto-slides every 2 seconds.</div>
+      <div class="hero-error" *ngIf="heroError">{{ heroError }}</div>
+    </div>
+
+    <div class="hero-grid">
+      <div class="hero-tile" *ngFor="let img of heroImages">
+        <img class="hero-img" [src]="heroUrl(img)" alt="Hero image" />
+        <button class="btn small danger hero-del" type="button" (click)="deleteHero(img)">Delete</button>
+      </div>
+      <div class="hero-empty" *ngIf="heroImages.length === 0">No hero images uploaded yet.</div>
+    </div>
+  </div>
+
+  <div class="kpi-grid" *ngIf="!loading && activeSection==='overview'">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Events</div>
+      <div class="kpi-value">{{ totalEventsCount }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Bookings</div>
+      <div class="kpi-value">{{ totalBookingsCount }}</div>
+      <div class="kpi-sub">Tickets: {{ totalTicketsSold }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value">Rs {{ totalRevenue }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Creators</div>
+      <div class="kpi-value">{{ totalCreators }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Users</div>
+      <div class="kpi-value">{{ totalUsersCount }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Sold Out Events</div>
+      <div class="kpi-value">{{ soldOutEventsCount }}</div>
+    </div>
+  </div>
+
+  <div class="admin-charts" *ngIf="!loading && activeSection==='overview'">
+    <div class="chart-card">
+      <div class="chart-head">
+        <div class="chart-title">Revenue Trend (last {{ rangeDays }} days)</div>
+        <div class="chart-toggle">
+          <button class="toggle-btn" [class.active]="rangeDays===7" type="button" (click)="setRange(7)">7d</button>
+          <button class="toggle-btn" [class.active]="rangeDays===30" type="button" (click)="setRange(30)">30d</button>
+        </div>
+      </div>
+      <svg class="line" viewBox="0 0 300 100" preserveAspectRatio="none" aria-label="Revenue trend line chart">
+        <polyline class="line-path" [attr.points]="revenueLinePoints"></polyline>
+      </svg>
+      <div class="chart-x">
+        <span *ngFor="let p of revenueSeries">{{ p.label }}</span>
+      </div>
+    </div>
+
+    <div class="bar-card">
+      <div class="bar-title">Category-wise revenue</div>
+      <div class="bar-row" *ngFor="let c of categoryBreakdown">
+        <div class="bar-name">{{ c.category }}</div>
+        <div class="bar-track">
+          <div class="bar-fill" [style.width.%]="(c.revenue / (categoryBreakdown[0]?.revenue || 1)) * 100"></div>
+        </div>
+        <div class="bar-num">Rs {{ c.revenue }}</div>
+      </div>
+    </div>
+
+    <div class="bar-card">
+      <div class="bar-title">Top events overall (by revenue)</div>
+      <div class="bar-row" *ngFor="let e of topEventsOverall">
+        <div class="bar-name">{{ e.title }}</div>
+        <div class="bar-track">
+          <div class="bar-fill" [style.width.%]="(e.revenue / (topEventsOverall[0]?.revenue || 1)) * 100"></div>
+        </div>
+        <div class="bar-num">Rs {{ e.revenue }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-tables" *ngIf="!loading && activeSection==='overview'">
+    <div class="table-card">
+      <div class="table-title">Recent bookings</div>
+      <div class="mini-table">
+        <div class="mini-row" *ngFor="let b of recentBookingsAdmin">
+          <div class="mini-main">
+            <div class="mini-title">{{ b?.event?.title || 'Event' }}</div>
+            <div class="mini-sub">{{ b?.user?.name || b?.name || 'User' }} · Seats {{ b?.seats ?? 1 }}</div>
+          </div>
+          <div class="mini-meta">{{ b?.createdAt ? (b.createdAt | date:'medium') : '-' }}</div>
+        </div>
+        <div class="empty-mini" *ngIf="recentBookingsAdmin.length === 0">No bookings found.</div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-title">Recent created events</div>
+      <div class="mini-table">
+        <div class="mini-row" *ngFor="let e of recentCreatedEventsAdmin">
+          <div class="mini-main">
+            <div class="mini-title">{{ e?.title || 'Event' }}</div>
+            <div class="mini-sub">{{ e?.category || '-' }} · {{ e?.venue || '-' }}</div>
+          </div>
+          <div class="mini-meta">{{ e?.createdAt ? (e.createdAt | date:'medium') : (e?.date | date:'mediumDate') }}</div>
+        </div>
+        <div class="empty-mini" *ngIf="recentCreatedEventsAdmin.length === 0">No events found.</div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-title">Top creators</div>
+      <div class="mini-table">
+        <div class="mini-row" *ngFor="let c of topCreatorsAdmin">
+          <div class="mini-main">
+            <div class="mini-title">{{ c.name }}</div>
+            <div class="mini-sub">Events {{ c.events }} · Tickets {{ c.tickets }}</div>
+          </div>
+          <div class="mini-meta">Rs {{ c.revenue }}</div>
+        </div>
+        <div class="empty-mini" *ngIf="topCreatorsAdmin.length === 0">No creators data.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Graph -->
+  <div class="graph-card" *ngIf="activeSection==='events' && data">
+    <div class="graph-title">Weekly Events Overview</div>
+    <div class="graph-controls">
+      <div class="control">
+        <label>Month</label>
+        <input type="month" [(ngModel)]="graphMonth" (change)="onGraphFilterChange()" />
+      </div>
+      <div class="control">
+        <label>From</label>
+        <input type="date" [(ngModel)]="graphFrom" (change)="onGraphFilterChange()" />
+      </div>
+      <div class="control">
+        <label>To</label>
+        <input type="date" [(ngModel)]="graphTo" (change)="onGraphFilterChange()" />
+      </div>
+      <button class="btn small ghost" (click)="onGraphFilterChange()">Load Graph</button>
+    </div>
+    <div class="graph-bars" *ngIf="graphBuckets.length; else noBars">
+      <div class="bar-wrap" *ngFor="let item of graphBuckets">
+        <div class="bar" [style.height.%]="item.height">
+          <div class="bar-value">{{ item.count }}</div>
+        </div>
+        <div class="bar-label">{{ item.label }}</div>
+      </div>
+    </div>
+    <ng-template #noBars>
+      <div class="empty-mini">No events in selected range.</div>
+    </ng-template>
+    <div class="graph-note">{{ graphNote }}</div>
+  </div>
+
+  <!-- Top Buttons -->
+  <div class="top-buttons" *ngIf="data && (activeSection==='users' || activeSection==='events' || activeSection==='bookings')">
+    <button class="stat-btn" *ngIf="activeSection==='users'" [class.active]="selectedTop==='creators'" type="button" (click)="showUserRole('creator')">
+      Total Creators
+      <span class="stat-value">{{ totalCreators }}</span>
+    </button>
+    <button class="stat-btn" *ngIf="activeSection==='users'" [class.active]="selectedTop==='users'" type="button" (click)="showUserRole('user')">
+      Total Users
+      <span class="stat-value">{{ totalUsersCount }}</span>
+    </button>
+    <button class="stat-btn" *ngIf="activeSection==='events'" [class.active]="selectedTop==='events'" type="button" (click)="setActiveSection('events')">
+      Total Events
+      <span class="stat-value">{{ totalEventsCount }}</span>
+    </button>
+    <button class="stat-btn" *ngIf="activeSection==='bookings'" [class.active]="selectedTop==='bookings'" type="button" (click)="setActiveSection('bookings')">
+      Total Bookings
+      <span class="stat-value">{{ totalBookingsCount }}</span>
+    </button>
+  </div>
+
+  <div class="detail-box" *ngIf="selectedTop && (activeSection==='users' || activeSection==='events' || activeSection==='bookings')">
+    <div class="list-title" *ngIf="selectedTop==='creators'">Creators List</div>
+    <div class="list-title" *ngIf="selectedTop==='users'">Users List</div>
+    <div class="list-title" *ngIf="selectedTop==='events'">Events List</div>
+    <div class="list-title" *ngIf="selectedTop==='bookings'">Bookings List</div>
+
+    <div *ngIf="selectedTop==='creators'">
+      <div class="loading-mini" *ngIf="loadingUsers">Loading users...</div>
+      <div class="list-row clickable" *ngFor="let u of pagedCreators" (click)="openDetails('creators', u)">
+        <div class="row-main">
+          <div class="row-title">{{ u?.name || '-' }}</div>
+          <div class="row-sub">{{ u?.email || '-' }} · {{ u?.role || '-' }}</div>
+        </div>
+        <div class="row-actions">
+          <button class="btn small ghost" type="button" (click)="$event.stopPropagation(); openDetails('creators', u)">Details</button>
+          <button class="btn small edit" (click)="$event.stopPropagation(); editUser(u)">Edit</button>
+          <button class="btn small danger" (click)="$event.stopPropagation(); deleteUser(u)">Delete</button>
+        </div>
+      </div>
+      <div class="empty-mini" *ngIf="!loadingUsers && creatorUsers.length === 0">No creators found.</div>
+      <div class="pagination" *ngIf="creatorPageCount > 1">
+        <button class="btn small ghost" (click)="goCreatorPage(creatorPageSafe - 1)" [disabled]="creatorPageSafe <= 1">Prev</button>
+        <div class="page-meta">Page {{ creatorPageSafe }} of {{ creatorPageCount }}</div>
+        <button class="btn small ghost" (click)="goCreatorPage(creatorPageSafe + 1)" [disabled]="creatorPageSafe >= creatorPageCount">Next</button>
+      </div>
+    </div>
+
+    <div *ngIf="selectedTop==='users'">
+      <div class="loading-mini" *ngIf="loadingUsers">Loading users...</div>
+      <div class="list-row clickable" *ngFor="let u of pagedUsers" (click)="openDetails('users', u)">
+        <div class="row-main">
+          <div class="row-title">{{ u?.name || '-' }}</div>
+          <div class="row-sub">{{ u?.email || '-' }} · {{ u?.role || '-' }}</div>
+        </div>
+        <div class="row-actions">
+          <button class="btn small ghost" type="button" (click)="$event.stopPropagation(); openDetails('users', u)">Details</button>
+          <button class="btn small edit" (click)="$event.stopPropagation(); editUser(u)">Edit</button>
+          <button class="btn small danger" (click)="$event.stopPropagation(); deleteUser(u)">Delete</button>
+        </div>
+      </div>
+      <div class="empty-mini" *ngIf="!loadingUsers && onlyUsers.length === 0">No users found.</div>
+      <div class="pagination" *ngIf="userPageCount > 1">
+        <button class="btn small ghost" (click)="goUserPage(userPageSafe - 1)" [disabled]="userPageSafe <= 1">Prev</button>
+        <div class="page-meta">Page {{ userPageSafe }} of {{ userPageCount }}</div>
+        <button class="btn small ghost" (click)="goUserPage(userPageSafe + 1)" [disabled]="userPageSafe >= userPageCount">Next</button>
+      </div>
+    </div>
+
+    <div *ngIf="selectedTop==='events'">
+      <div class="loading-mini" *ngIf="loadingEvents">Loading events...</div>
+      <div class="list-row clickable" *ngFor="let e of pagedEvents" (click)="openDetails('events', e)">
+        <div class="row-main">
+          <div class="row-title">{{ e?.title || '-' }}</div>
+          <div class="row-sub">{{ e?.venue || '-' }} · {{ e?.date | date:'medium' }}</div>
+        </div>
+        <div class="row-actions">
+          <button class="btn small ghost" type="button" (click)="$event.stopPropagation(); openDetails('events', e)">Details</button>
+          <button class="btn small edit" (click)="$event.stopPropagation(); editEvent(e)">Edit</button>
+          <button class="btn small danger" (click)="$event.stopPropagation(); deleteEvent(e)">Delete</button>
+        </div>
+      </div>
+      <div class="empty-mini" *ngIf="!loadingEvents && events.length === 0">No events found.</div>
+      <div class="pagination" *ngIf="eventPageCount > 1">
+        <button class="btn small ghost" (click)="goEventPage(eventPageSafe - 1)" [disabled]="eventPageSafe <= 1">Prev</button>
+        <div class="page-meta">Page {{ eventPageSafe }} of {{ eventPageCount }}</div>
+        <button class="btn small ghost" (click)="goEventPage(eventPageSafe + 1)" [disabled]="eventPageSafe >= eventPageCount">Next</button>
+      </div>
+    </div>
+
+    <div *ngIf="selectedTop==='bookings'">
+      <div class="loading-mini" *ngIf="loadingBookings">Loading bookings...</div>
+      <div class="list-row clickable" *ngFor="let b of pagedBookings" (click)="openDetails('bookings', b)">
+        <div class="row-main">
+          <div class="row-title">{{ b?.event?.title || 'Event' }}</div>
+          <div class="row-sub">
+            {{ b?.user?.name || b?.name || 'User' }} · Ticket: {{ b?.ticketId || '-' }}
+          </div>
+        </div>
+        <div class="row-actions">
+          <button class="btn small ghost" type="button" (click)="$event.stopPropagation(); openDetails('bookings', b)">Details</button>
+          <button class="btn small danger" (click)="$event.stopPropagation(); deleteBooking(b)">Delete</button>
+        </div>
+      </div>
+      <div class="empty-mini" *ngIf="!loadingBookings && bookings.length === 0">No bookings found.</div>
+      <div class="pagination" *ngIf="bookingPageCount > 1">
+        <button class="btn small ghost" (click)="goBookingPage(bookingPageSafe - 1)" [disabled]="bookingPageSafe <= 1">Prev</button>
+        <div class="page-meta">Page {{ bookingPageSafe }} of {{ bookingPageCount }}</div>
+        <button class="btn small ghost" (click)="goBookingPage(bookingPageSafe + 1)" [disabled]="bookingPageSafe >= bookingPageCount">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Secondary Buttons -->
+  <div class="secondary-buttons" *ngIf="activeSection==='events' && selectedTop==='events'">
+    <button class="stat-btn ghost" [class.active]="selectedSecondary==='upcoming'" (click)="selectSecondary('upcoming')">
+      Upcoming Events
+    </button>
+    <button class="stat-btn ghost" [class.active]="selectedSecondary==='creatorsWithEvents'" (click)="selectSecondary('creatorsWithEvents')">
+      Creators With Events
+    </button>
+    <button class="stat-btn ghost" [class.active]="selectedSecondary==='past'" (click)="selectSecondary('past')">
+      Past Events
+    </button>
+  </div>
+
+  <div class="detail-box" *ngIf="activeSection==='events' && selectedSecondary">
+  <div *ngIf="selectedSecondary==='upcoming'">Upcoming events: <b>{{ upcomingEventsCount }}</b></div>
+  <div *ngIf="selectedSecondary==='creatorsWithEvents'">Creators with events: <b>{{ creatorsWithEventsCount }}</b></div>
+  <div *ngIf="selectedSecondary==='past'">Past events: <b>{{ pastEventsCount }}</b></div>
+  </div>
+
+    </section>
+  </div>
+
+</div>
+
+<!-- LOADING STATE -->
+<ng-template #loadingBlock>
+  <div class="loading-box">
+    Loading dashboard...
+  </div>
+</ng-template>
+
+<!-- DETAILS MODAL -->
+<div class="dash-modal-backdrop" *ngIf="detailModalOpen" (click)="closeDetails()">
+  <div class="dash-modal" (click)="$event.stopPropagation()">
+    <div class="dash-modal-head">
+      <div class="dash-modal-title">
+        <ng-container [ngSwitch]="detailKind">
+          <span *ngSwitchCase="'creators'">Creator Details</span>
+          <span *ngSwitchCase="'users'">User Details</span>
+          <span *ngSwitchCase="'events'">Event Details</span>
+          <span *ngSwitchCase="'bookings'">Booking Details</span>
+          <span *ngSwitchDefault>Details</span>
+        </ng-container>
+      </div>
+      <button class="dash-modal-close" type="button" (click)="closeDetails()">&times;</button>
+    </div>
+
+    <div class="dash-modal-body" *ngIf="detailItem">
+      <ng-container [ngSwitch]="detailKind">
+        <ng-container *ngSwitchCase="'creators'">
+          <div class="hero">
+            <div class="hero-name">{{ detailItem?.name || '-' }}</div>
+            <div class="pill">{{ detailItem?.role || 'creator' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Email</div><div class="v">{{ detailItem?.email || '-' }}</div>
+            <div class="k">User ID</div><div class="v mono">{{ detailItem?._id || detailItem?.id || '-' }}</div>
+            <div class="k">Created</div><div class="v">{{ detailItem?.createdAt ? (detailItem.createdAt | date:'medium') : '-' }}</div>
+          </div>
+          <div class="dash-modal-actions">
+            <button class="btn edit" type="button" (click)="closeDetails(); editUser(detailItem)">Edit</button>
+            <button class="btn danger" type="button" (click)="deleteUser(detailItem)">Delete</button>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'users'">
+          <div class="hero">
+            <div class="hero-name">{{ detailItem?.name || '-' }}</div>
+            <div class="pill">{{ detailItem?.role || 'user' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Email</div><div class="v">{{ detailItem?.email || '-' }}</div>
+            <div class="k">User ID</div><div class="v mono">{{ detailItem?._id || detailItem?.id || '-' }}</div>
+            <div class="k">Created</div><div class="v">{{ detailItem?.createdAt ? (detailItem.createdAt | date:'medium') : '-' }}</div>
+          </div>
+          <div class="dash-modal-actions">
+            <button class="btn edit" type="button" (click)="closeDetails(); editUser(detailItem)">Edit</button>
+            <button class="btn danger" type="button" (click)="deleteUser(detailItem)">Delete</button>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'events'">
+          <div class="hero">
+            <div class="hero-name">{{ detailItem?.title || '-' }}</div>
+            <div class="pill">{{ detailItem?.category || 'Event' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Date</div><div class="v">{{ detailItem?.date ? (detailItem.date | date:'fullDate') : '-' }}</div>
+            <div class="k">Time</div><div class="v">{{ detailItem?.date ? (detailItem.date | date:'shortTime') : '-' }}</div>
+            <div class="k">Venue</div><div class="v">{{ detailItem?.venue || '-' }}</div>
+            <div class="k">Price</div><div class="v">Rs {{ detailItem?.price ?? 0 }}</div>
+            <div class="k">Seats</div><div class="v">{{ detailItem?.bookedSeats ?? 0 }}/{{ detailItem?.totalSeats ?? 0 }}</div>
+            <div class="k">Created By</div><div class="v">{{ getCreatorName(detailItem) }}</div>
+            <div class="k">Event ID</div><div class="v mono">{{ detailItem?._id || detailItem?.id || '-' }}</div>
+          </div>
+          <div class="dash-modal-actions">
+            <button class="btn ghost" type="button" (click)="viewEventFromModal()">View</button>
+            <button class="btn edit" type="button" (click)="closeDetails(); editEvent(detailItem)">Edit</button>
+            <button class="btn danger" type="button" (click)="deleteEvent(detailItem)">Delete</button>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'bookings'">
+          <div class="hero">
+            <div class="hero-name">{{ detailItem?.event?.title || 'Event' }}</div>
+            <div class="pill">Seats {{ detailItem?.seats ?? 1 }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Ticket</div><div class="v mono">{{ detailItem?.ticketId || '-' }}</div>
+            <div class="k">Booked By</div><div class="v">{{ detailItem?.user?.name || detailItem?.name || 'User' }}</div>
+            <div class="k">Email</div><div class="v">{{ detailItem?.user?.email || detailItem?.email || '-' }}</div>
+            <div class="k">Booked At</div><div class="v">{{ detailItem?.createdAt ? (detailItem.createdAt | date:'medium') : '-' }}</div>
+            <div class="k">Status</div><div class="v">{{ detailItem?.paymentStatus || '-' }}</div>
+            <div class="k">Booking ID</div><div class="v mono">{{ detailItem?._id || detailItem?.id || '-' }}</div>
+          </div>
+          <div class="dash-modal-actions">
+            <button class="btn ghost" type="button" (click)="viewTicketFromModal()" [disabled]="!detailItem?.ticketId">View Ticket</button>
+            <button class="btn danger" type="button" (click)="deleteBooking(detailItem)">Delete</button>
+          </div>
+        </ng-container>
+      </ng-container>
+    </div>
+  </div>
+</div>

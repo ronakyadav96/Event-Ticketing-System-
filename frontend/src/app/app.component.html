@@ -1,0 +1,223 @@
+<div class="app-shell">
+  <!-- DUAL-TIER GLOBAL NAVBAR -->
+  <header class="global-header" *ngIf="!isLoginPage && !isRegisterPage">
+    <!-- Tier 1: Main Search & Branding Bar -->
+    <div class="header-tier1">
+      <div class="header-tier1-inner">
+        <!-- Logo -->
+        <a class="brand-logo" routerLink="/events">
+          <div class="brand-icon">
+            <span class="icon-ticket">🎟️</span>
+          </div>
+          <span class="brand-name">EVENT TICKETING <span class="brand-accent"> SYSTEM</span></span>
+        </a>
+
+        <!-- Search Bar  -->
+        <div class="header-search">
+          <span class="search-glyph">🔍</span>
+          <input
+            type="text"
+            class="header-search-input"
+            [(ngModel)]="navbarQuery"
+            (ngModelChange)="onNavbarQueryChange($event)"
+            placeholder="Search for Movies, Events, Plays, Sports and Activities"
+          />
+          <button
+            *ngIf="navbarQuery"
+            class="search-clear-btn"
+            type="button"
+            (click)="clearNavbarSearch()"
+            aria-label="Clear search">
+            &times;
+          </button>
+        </div>
+
+        <!-- Right Section: City, Auth & Hamburger -->
+        <div class="header-tier1-right">
+          <!-- City Selector -->
+          <app-city-selector></app-city-selector>
+
+          <!-- Guest: Sign In Button -->
+          <button
+            *ngIf="!isLoggedIn"
+            class="signin-pill-btn"
+            type="button"
+            routerLink="/login">
+            Sign in
+          </button>
+
+          <!-- Logged In: User Profile Pill -->
+          <div
+            *ngIf="isLoggedIn"
+            class="user-profile-badge"
+            (click)="toggleDrawer()">
+            <div class="user-avatar-circle">
+              {{ userInitial }}
+            </div>
+            <span class="user-display-name">{{ userDisplayName }}</span>
+            <span class="user-role-badge" *ngIf="currentUser?.role && currentUser?.role !== 'user'">
+              {{ currentUser?.role }}
+            </span>
+          </div>
+
+          <!-- Hamburger Button -->
+          <button
+            class="hamburger-btn"
+            type="button"
+            (click)="toggleDrawer()"
+            aria-label="Toggle navigation menu">
+            <span class="hamburger-bars">☰</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tier 2: Category Navigation & Utilities Bar -->
+    <nav class="header-tier2">
+      <div class="header-tier2-inner">
+        <!-- Left: Category Links -->
+        <div class="tier2-left">
+          <a class="tier2-link" routerLink="/movies" routerLinkActive="active">Movies</a>
+          <a class="tier2-link" routerLink="/events" [queryParams]="{ category: 'stream' }" routerLinkActive="active">Stream</a>
+          <a class="tier2-link" routerLink="/events" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active">Events</a>
+          <a class="tier2-link" routerLink="/events" [queryParams]="{ category: 'plays' }" routerLinkActive="active">Plays</a>
+          <a class="tier2-link" routerLink="/events" [queryParams]="{ category: 'sports' }" routerLinkActive="active">Sports</a>
+          <a class="tier2-link" routerLink="/events" [queryParams]="{ category: 'activities' }" routerLinkActive="active">Activities</a>
+        </div>
+
+        <!-- Right: Utility Links -->
+        <div class="tier2-right">
+          <a class="tier2-util-link" [routerLink]="canManageEvents ? (isCreator ? '/creator-dashboard' : '/superadmin-dashboard') : '/create-event'">
+            ListYourShow
+          </a>
+          <a class="tier2-util-link" routerLink="/events">Corporates</a>
+          <a class="tier2-util-link" routerLink="/coupons" routerLinkActive="active">Offers</a>
+          <a class="tier2-util-link" routerLink="/gifts" routerLinkActive="active">Gift Cards</a>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- NAVIGATION DRAWER BACKDROP -->
+  <div
+    class="drawer-backdrop"
+    [class.show]="isDrawerOpen"
+    (click)="closeDrawer()"></div>
+
+  <!-- NAVIGATION DRAWER -->
+  <aside
+    class="drawer"
+    [class.open]="isDrawerOpen">
+    
+    <!-- Drawer Header -->
+    <div class="drawer-header">
+      <ng-container *ngIf="isLoggedIn; else guestDrawerHeader">
+        <div class="drawer-user-info">
+          <div class="drawer-avatar">
+            {{ userInitial }}
+          </div>
+          <div class="drawer-user-text">
+            <span class="drawer-greeting">Hi, {{ userDisplayName }}</span>
+            <span class="drawer-email">{{ currentUser?.email }}</span>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #guestDrawerHeader>
+        <div class="drawer-guest-box">
+          <div class="drawer-greeting">Hey!</div>
+          <p class="drawer-guest-sub">Unlock special offers, saved bookings and personalized recommendations</p>
+          <button class="drawer-login-btn" routerLink="/login" (click)="closeDrawer()">
+            Login / Register
+          </button>
+        </div>
+      </ng-template>
+      <button class="drawer-close" type="button" (click)="closeDrawer()">&times;</button>
+    </div>
+
+    <!-- Drawer Navigation Links -->
+    <div class="drawer-links">
+      <a
+        class="drawer-link"
+        routerLink="/events"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="closeDrawer()">
+        <span class="d-icon">🏠</span> Home
+      </a>
+
+      <a
+        class="drawer-link"
+        routerLink="/movies"
+        routerLinkActive="active"
+        (click)="closeDrawer()">
+        <span class="d-icon">🎬</span> Movies
+      </a>
+
+      <a
+        *ngIf="isLoggedIn"
+        class="drawer-link"
+        routerLink="/history"
+        routerLinkActive="active"
+        (click)="closeDrawer()">
+        <span class="d-icon">🎟️</span> Your Orders &amp; Bookings
+      </a>
+
+      <a
+        class="drawer-link"
+        routerLink="/coupons"
+        routerLinkActive="active"
+        (click)="closeDrawer()">
+        <span class="d-icon">🏷️</span> Offers &amp; Discounts
+      </a>
+
+      <a
+        class="drawer-link"
+        routerLink="/gifts"
+        routerLinkActive="active"
+        (click)="closeDrawer()">
+        <span class="d-icon">🎁</span> Gift Cards
+      </a>
+
+      <div class="drawer-divider" *ngIf="isCreator || isSuperAdmin"></div>
+
+      <a
+        *ngIf="isCreator || isSuperAdmin"
+        class="drawer-link"
+        [routerLink]="isCreator ? '/creator-dashboard' : '/superadmin-dashboard'"
+        routerLinkActive="active"
+        (click)="closeDrawer()">
+        <span class="d-icon">📊</span> {{ isSuperAdmin ? 'Superadmin Portal' : 'Creator Dashboard' }}
+      </a>
+
+      <a
+        *ngIf="canManageEvents"
+        class="drawer-link"
+        routerLink="/create-event"
+        routerLinkActive="active"
+        (click)="closeDrawer()">
+        <span class="d-icon">➕</span> Create Event
+      </a>
+    </div>
+
+    <!-- Drawer Footer -->
+    <div class="drawer-footer" *ngIf="isLoggedIn">
+      <button
+        class="drawer-logout-btn"
+        type="button"
+        (click)="logout()">
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN ROUTER OUTLET -->
+  <main class="app-main">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- FOOTER -->
+  <app-footer *ngIf="!isLoginPage && !isRegisterPage"></app-footer>
+
+  <!-- AI CHATBOT WIDGET -->
+  <app-chat-widget *ngIf="!isLoginPage && !isRegisterPage"></app-chat-widget>
+</div>

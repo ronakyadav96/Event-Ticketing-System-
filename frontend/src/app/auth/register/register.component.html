@@ -1,0 +1,55 @@
+<div class="login-box">
+  <h2>Register</h2>
+
+  <ng-container *ngIf="!otpStep">
+    <input placeholder="Name" [(ngModel)]="name" />
+    <small class="error" *ngIf="submitted && !name">
+      Name is required
+    </small>
+
+    <input type="email" placeholder="Email" [(ngModel)]="email" />
+    <small class="error" *ngIf="submitted && !validEmail()">
+      Valid email is required
+    </small>
+
+    <input type="password" placeholder="Password" [(ngModel)]="password" />
+    <small class="hint">
+      Password must include:
+      <span [class.ok]="hasUpper()">1 uppercase letter</span>,
+      <span [class.ok]="hasSymbol()">1 symbol</span>,
+      <span [class.ok]="hasTwoNumbers()">2 numbers</span>,
+      <span [class.ok]="password.length >= 6">min 6 characters</span>
+    </small>
+    <small class="error" *ngIf="submitted && !validPassword()">
+      Please create a stronger password.
+    </small>
+
+    <select [(ngModel)]="role">
+      <option value="">Select Role</option>
+      <option value="creator">Creator</option>
+      <option value="user">User</option>
+    </select>
+    <small class="error" *ngIf="submitted && !role">
+      Please select a role
+    </small>
+
+    <button (click)="register()" [disabled]="loading">
+      <span *ngIf="!loading">Register</span>
+      <span class="btn-loader" *ngIf="loading"></span>
+    </button>
+
+    <p class="success" *ngIf="success">{{ success }}</p>
+    <p class="error" *ngIf="error">{{ error }}</p>
+
+    <p class="link" (click)="goToLogin()">Already have an account?</p>
+  </ng-container>
+
+  <div class="verify" *ngIf="otpStep">
+    <p class="success" *ngIf="success">{{ success }}</p>
+    <p>OTP sent to your email. Enter it below:</p>
+    <input placeholder="Enter OTP" [(ngModel)]="otp" />
+    <button (click)="verifyOtp()">Verify OTP</button>
+    <button class="secondary" (click)="resendOtp()">Resend OTP</button>
+    <small class="error" *ngIf="otpError">{{ otpError }}</small>
+  </div>
+</div>

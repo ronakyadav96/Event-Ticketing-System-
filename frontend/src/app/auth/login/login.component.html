@@ -1,0 +1,27 @@
+<div class="login-box">
+  <h2>Login</h2>
+
+  <input
+    type="email"
+    placeholder="Email"
+    [(ngModel)]="email"
+  />
+
+  <input
+    type="password"
+    placeholder="Password"
+    [(ngModel)]="password"
+  />
+
+  <button (click)="login()" [disabled]="loading">
+    <span *ngIf="!loading">Login</span>
+    <span class="btn-loader" *ngIf="loading"></span>
+  </button>
+
+  <p class="error" *ngIf="error">{{ error }}</p>
+
+  <p class="register-text">
+    Don't have an account?
+    <span (click)="goToRegister()">Register</span>
+  </p>
+</div>

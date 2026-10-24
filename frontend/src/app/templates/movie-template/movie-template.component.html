@@ -1,0 +1,145 @@
+<div class="movie-tpl">
+
+  <!-- 1. STICKY SUBHEADER BAR (BookMyShow Style) -->
+  <div class="movie-sticky-bar">
+    <div class="sticky-bar-inner">
+      <h2 class="sticky-title">{{ event?.title }}</h2>
+      <button class="book-tickets-btn" type="button" (click)="openBooking.emit()">
+        Book tickets
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. CINEMATIC HERO BANNER -->
+  <div class="hero-banner" [style.background-image]="eventImageUrl ? 'url(' + eventImageUrl + ')' : ''">
+    <div class="hero-backdrop"></div>
+    <div class="hero-content">
+      <div class="poster-box">
+        <img *ngIf="eventImageUrl && !eventImgFailed; else noPoster" [src]="eventImageUrl" (error)="onImgError()" alt="poster" />
+        <ng-template #noPoster>
+          <div class="poster-fallback">🎬 Movie Poster</div>
+        </ng-template>
+      </div>
+
+      <div class="movie-info">
+        <div class="badges">
+          <span class="badge category">Movie</span>
+          <span class="badge rating">★ {{ event?.movieMeta?.voteAverage || '9.1' }}/10 (92K+ Votes)</span>
+          <span class="badge mode">{{ event?.locationType || 'In-Person' }}</span>
+        </div>
+
+        <h1 class="title">{{ event?.title }}</h1>
+        <p class="tagline">{{ event?.tagline || 'Experience the cinema magic on the big screen with Dolby Atmos sound.' }}</p>
+
+        <div class="meta-row">
+          <div class="meta-item">
+            <span class="label">Date & Time</span>
+            <span class="val">{{ event?.date | date:'EEE, dd MMM yyyy • h:mm a' }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">Venue</span>
+            <span class="val">{{ event?.venue || 'Cinema Hall' }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">Language</span>
+            <span class="val">{{ event?.language || 'Hindi, English, Telugu' }}</span>
+          </div>
+        </div>
+
+        <div class="cta-row">
+          <div class="price-block">
+            <span class="price-lbl">Ticket Price</span>
+            <span class="price-val">{{ isFreeEvent ? 'FREE' : ('₹' + unitPriceRupees) }}</span>
+          </div>
+          <button class="book-btn" (click)="openBooking.emit()">Book Tickets</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. CONTENT BODY -->
+  <div class="content-body">
+    <!-- Cinema Halls & Showtimes Selector (Phase 6 component) -->
+    <app-showtime-selector
+      [movieTitle]="event?.title || 'Movie Showtimes'"
+      [language]="event?.language || 'Hindi'"
+      [runtime]="event?.movieMeta?.runtime ? (event.movieMeta.runtime + ' min') : '2h 30m'"
+      [genres]="event?.movieMeta?.genres || event?.genres || ['Action', 'Drama']"
+      (selectShowtime)="openBooking.emit()">
+    </app-showtime-selector>
+
+    <div class="about-section">
+      <h3>About the Movie</h3>
+      <div class="description" [innerHTML]="event?.description || 'Experience an epic cinematic spectacle brought to life with thrilling drama, remarkable performances, and state-of-the-art cinematic visuals.'"></div>
+    </div>
+
+    <!-- 4. TOP REVIEWS SECTION (Matching media_1789325586626.png) -->
+    <section class="top-reviews-section">
+      <div class="reviews-header-row">
+        <div class="title-sub-block">
+          <h2 class="reviews-main-title">Top reviews</h2>
+          <span class="reviews-sub-note">Summary of 94.7K reviews.</span>
+        </div>
+        <a class="all-reviews-link" (click)="$event.preventDefault()">94.7K reviews &rsaquo;</a>
+      </div>
+
+      <!-- Hashtag summary pills row -->
+      <div class="hashtags-scroll custom-horizontal-scroll">
+        <div class="hashtag-pill" *ngFor="let h of hashtags">
+          <span class="tag-name">{{ h.tag }}</span>
+          <span class="tag-counter">{{ h.count }}</span>
+        </div>
+      </div>
+
+      <!-- Horizontal review cards row -->
+      <div class="reviews-cards-scroll custom-horizontal-scroll">
+        <div class="review-bms-card" *ngFor="let r of reviews">
+          <div class="review-card-top">
+            <div class="user-meta">
+              <div class="user-avatar-circle">👤</div>
+              <div class="user-name-box">
+                <span class="user-name">{{ r.name }}</span>
+                <span class="verified-tag">Booked on <span class="brand-sub">TicketPulse</span></span>
+              </div>
+            </div>
+            <div class="review-rating-badge">
+              <span class="star">★</span> {{ r.rating }}
+            </div>
+          </div>
+
+          <div class="review-tags-line">{{ r.tags }}</div>
+          <p class="review-text-content">{{ r.text }}</p>
+
+          <div class="review-card-footer">
+            <div class="reactions-group">
+              <button class="thumb-btn" type="button" [class.active]="r.liked" (click)="toggleLike(r)">
+                👍 <span class="thumb-count">{{ r.likes }}</span>
+              </button>
+              <button class="thumb-btn" type="button">
+                👎
+              </button>
+            </div>
+            <div class="time-share-group">
+              <span class="review-time">{{ r.time }}</span>
+              <button class="share-btn" type="button" title="Share review">🔗</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recommendations -->
+    <div class="reco-section" *ngIf="movieRecommendations.length">
+      <h3>Recommended Movies</h3>
+      <div class="reco-grid">
+        <div class="reco-card" *ngFor="let m of movieRecommendations" (click)="openMovie.emit(m)">
+          <div class="reco-poster">
+            <img *ngIf="m.posterUrl" [src]="m.posterUrl" alt="poster" />
+            <span *ngIf="!m.posterUrl">Movie</span>
+          </div>
+          <div class="reco-title">{{ m.title }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

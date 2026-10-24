@@ -1,0 +1,21 @@
+# Dependencies & builds
+node_modules/
+dist/
+.angular/
+coverage/
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+
+# Secrets — use the .env.example files
+.env
+.env.*
+!.env.example
+
+# Local data
+backend/backups/
+backend/src/uploads/
+.DS_Store
+Thumbs.db
+.npm/

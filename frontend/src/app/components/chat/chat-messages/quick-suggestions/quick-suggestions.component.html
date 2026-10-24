@@ -1,0 +1,3 @@
+<div class="chips" *ngIf="chips.length > 0">
+  <button type="button" *ngFor="let chip of chips" class="chip" (click)="onChipClick(chip)">{{ chip }}</button>
+</div>

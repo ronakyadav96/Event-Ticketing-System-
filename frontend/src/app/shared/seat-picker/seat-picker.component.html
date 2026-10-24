@@ -1,0 +1,61 @@
+<div class="seat-picker-bms">
+
+  <!-- Screen indicator bar (BookMyShow curved screen) -->
+  <div class="cinema-screen-wrap">
+    <div class="screen-arc"></div>
+    <span class="screen-caption">ALL EYES THIS WAY 🎬</span>
+  </div>
+
+  <!-- Availability Legend -->
+  <div class="seating-legend-bar">
+    <div class="legend-item">
+      <span class="seat-glyph available"></span>
+      <span class="legend-label">Available</span>
+    </div>
+    <div class="legend-item">
+      <span class="seat-glyph selected"></span>
+      <span class="legend-label">Selected</span>
+    </div>
+    <div class="legend-item">
+      <span class="seat-glyph booked"></span>
+      <span class="legend-label">Sold</span>
+    </div>
+  </div>
+
+  <!-- Interactive Seat Rows by Tier -->
+  <div class="seats-layout-area">
+    <div class="row-tier-group" *ngFor="let r of seatRows">
+      <div class="row-label">{{ r.rowLabel }}</div>
+      
+      <div class="seats-row-grid">
+        <button
+          type="button"
+          *ngFor="let s of r.seats"
+          class="seat-box"
+          [class.vip]="s.tier === 'VIP'"
+          [class.premium]="s.tier === 'Premium'"
+          [class.booked]="s.isBooked"
+          [class.selected]="isSelected(s.id)"
+          [disabled]="s.isBooked"
+          (click)="toggleSeat(s)"
+          [title]="s.id + ' (' + s.tier + ' - ₹' + Math.round(basePriceRupees * s.priceMultiplier) + ')'">
+          {{ s.number }}
+        </button>
+      </div>
+
+      <div class="tier-pill-label">{{ r.tier }}</div>
+    </div>
+  </div>
+
+  <!-- Bottom Selection Pill -->
+  <div class="seat-selection-feedback" *ngIf="selectedSeatIds.size > 0">
+    <div class="selected-pill-info">
+      <span class="info-lead">Selected Seats:</span>
+      <strong class="seats-chips">{{ selectedSeatsList.join(', ') }}</strong>
+    </div>
+    <div class="calculated-price">
+      Total: <strong>₹{{ calculateTotalPrice }}</strong>
+    </div>
+  </div>
+
+</div>

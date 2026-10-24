@@ -1,0 +1,63 @@
+<div class="comedy-tpl">
+  <div class="comedy-wrap">
+    <div class="comedy-card">
+      <div class="comedy-left">
+        <span class="comedy-kicker">🎤 STAND-UP COMEDY NIGHT</span>
+        <h1 class="comedy-title">{{ event?.title }}</h1>
+        <p class="comedy-subtitle">{{ event?.tagline || 'Get ready for an evening filled with laughter, satire, and unfiltered comedy!' }}</p>
+
+        <div class="info-chips">
+          <div class="chip">
+            <span class="lbl">DATE</span>
+            <span class="val">{{ event?.date | date:'EEE, dd MMM' }}</span>
+          </div>
+          <div class="chip">
+            <span class="lbl">TIME</span>
+            <span class="val">{{ event?.date | date:'h:mm a' }}</span>
+          </div>
+          <div class="chip">
+            <span class="lbl">AGE RATING</span>
+            <span class="val">{{ event?.ageRestriction || '16+' }}</span>
+          </div>
+          <div class="chip">
+            <span class="lbl">LANGUAGE</span>
+            <span class="val">{{ event?.language || 'Hinglish' }}</span>
+          </div>
+        </div>
+
+        <div class="venue-box">
+          <span class="icon">📍</span>
+          <div>
+            <div class="venue-name">{{ event?.venue || 'Comedy Club Arena' }}</div>
+            <div class="venue-sub">Seating is on first-come-first-served basis</div>
+          </div>
+        </div>
+
+        <div class="book-row">
+          <div class="price-info">
+            <span class="price-lbl">Tickets From</span>
+            <span class="price-val">{{ isFreeEvent ? 'FREE' : ('Rs ' + unitPriceRupees) }}</span>
+          </div>
+          <button class="comedy-btn" (click)="openBooking.emit()">BOOK SEATS</button>
+        </div>
+      </div>
+
+      <div class="comedy-right">
+        <div class="image-frame">
+          <img *ngIf="eventImageUrl && !eventImgFailed; else comedyNoImg" [src]="eventImageUrl" (error)="onImgError()" alt="artist" />
+          <ng-template #comedyNoImg>
+            <div class="frame-fallback">
+              <span class="icon">🎤</span>
+              <span>Comedy Spotlight</span>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+
+    <div class="details-section">
+      <h3>About The Show</h3>
+      <div class="about-content" [innerHTML]="event?.description || 'Prepare for non-stop laughs as the artist takes the stage with brand-new jokes and audience interactions.'"></div>
+    </div>
+  </div>
+</div>

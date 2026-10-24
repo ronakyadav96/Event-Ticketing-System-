@@ -1,0 +1,190 @@
+<div class="movie-listing-page">
+  <div class="listing-container">
+
+    <!-- 2-COLUMN BOOKMYSHOW CATALOG LAYOUT -->
+    <div class="listing-layout">
+
+      <!-- LEFT SIDEBAR: FILTERS -->
+      <aside class="filters-sidebar">
+        <h2 class="filters-main-title">Filters</h2>
+
+        <!-- Filter Card 1: Languages -->
+        <div class="filter-card">
+          <div class="filter-card-header" (click)="languagesOpen = !languagesOpen">
+            <div class="header-left">
+              <span class="filter-toggle-arrow" [class.open]="languagesOpen">▲</span>
+              <span class="filter-name" [class.highlighted]="selectedLanguage">Languages</span>
+            </div>
+            <button
+              *ngIf="selectedLanguage"
+              type="button"
+              class="filter-clear-link"
+              (click)="$event.stopPropagation(); clearLanguages()">
+              Clear
+            </button>
+          </div>
+
+          <div class="filter-card-body" *ngIf="languagesOpen">
+            <div class="filter-pills-wrap">
+              <button
+                type="button"
+                class="filter-pill-btn"
+                *ngFor="let lang of languages"
+                [class.active]="selectedLanguage === lang"
+                (click)="toggleLanguage(lang)">
+                {{ lang }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Card 2: Genres -->
+        <div class="filter-card">
+          <div class="filter-card-header" (click)="genresOpen = !genresOpen">
+            <div class="header-left">
+              <span class="filter-toggle-arrow" [class.open]="genresOpen">▲</span>
+              <span class="filter-name" [class.highlighted]="selectedGenre">Genres</span>
+            </div>
+            <button
+              *ngIf="selectedGenre"
+              type="button"
+              class="filter-clear-link"
+              (click)="$event.stopPropagation(); clearGenres()">
+              Clear
+            </button>
+          </div>
+
+          <div class="filter-card-body" *ngIf="genresOpen">
+            <div class="filter-pills-wrap">
+              <button
+                type="button"
+                class="filter-pill-btn"
+                *ngFor="let g of genres"
+                [class.active]="selectedGenre === g"
+                (click)="toggleGenre(g)">
+                {{ g }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Card 3: Format -->
+        <div class="filter-card">
+          <div class="filter-card-header" (click)="formatsOpen = !formatsOpen">
+            <div class="header-left">
+              <span class="filter-toggle-arrow" [class.open]="formatsOpen">▲</span>
+              <span class="filter-name" [class.highlighted]="selectedFormat">Format</span>
+            </div>
+            <button
+              *ngIf="selectedFormat"
+              type="button"
+              class="filter-clear-link"
+              (click)="$event.stopPropagation(); clearFormats()">
+              Clear
+            </button>
+          </div>
+
+          <div class="filter-card-body" *ngIf="formatsOpen">
+            <div class="filter-pills-wrap">
+              <button
+                type="button"
+                class="filter-pill-btn"
+                *ngFor="let f of formats"
+                [class.active]="selectedFormat === f"
+                (click)="toggleFormat(f)">
+                {{ f }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Browse by Cinemas Red Outlined Button -->
+        <button
+          type="button"
+          class="browse-cinemas-btn"
+          (click)="browseByCinemas()">
+          Browse by Cinemas
+        </button>
+      </aside>
+
+      <!-- RIGHT COLUMN: MOVIES CATALOG -->
+      <main class="catalog-main">
+
+        <!-- City Heading -->
+        <div class="catalog-heading-row">
+          <h1 class="catalog-title">Movies In {{ cityService.currentCity }}</h1>
+        </div>
+
+        <!-- Horizontal Language Pills Strip -->
+        <div class="lang-strip-scroll custom-horizontal-scroll">
+          <button
+            type="button"
+            class="lang-pill"
+            *ngFor="let lang of languages"
+            [class.active]="selectedLanguage === lang"
+            (click)="toggleLanguage(lang)">
+            {{ lang }}
+          </button>
+        </div>
+
+        <!-- Coming Soon Announcement Banner -->
+        <div class="coming-soon-banner" routerLink="/movies">
+          <div class="cs-left">
+            <span class="cs-bold">Coming Soon</span>
+          </div>
+          <div class="cs-right">
+            <span class="cs-link">Explore Upcoming Movies &rsaquo;</span>
+          </div>
+        </div>
+
+        <!-- Search Mode Feedback -->
+        <div *ngIf="query.trim()" class="search-indicator-pill">
+          Showing recommendations for: <strong>{{ query.trim() }}</strong>
+          <button type="button" class="clear-q" (click)="query=''; submitSearch()">&times;</button>
+        </div>
+
+        <!-- State Feedback -->
+        <div class="state-card" *ngIf="loading">Loading movie listings...</div>
+        <div class="state-card error" *ngIf="!loading && searchError">{{ searchError }}</div>
+        <div class="state-card" *ngIf="!loading && !searchError && emptyState">{{ emptyState }}</div>
+
+        <!-- 4-COLUMN RESPONSIVE MOVIE GRID (Matching media_1789325586807.png) -->
+        <div class="movies-catalog-grid" *ngIf="!loading && categoryMovies.length">
+          <article
+            class="catalog-movie-card"
+            *ngFor="let movie of categoryMovies; let i = index; trackBy: trackMovie"
+            (click)="openMovie(movie)">
+
+            <!-- Poster Box -->
+            <div class="movie-poster-shell">
+              <img *ngIf="movie.posterUrl" [src]="movie.posterUrl" [alt]="movie.title" loading="lazy" />
+              <div class="fallback-poster-shell" *ngIf="!movie.posterUrl">
+                <span>🎬</span>
+                <span class="title-fallback">{{ movie.title }}</span>
+              </div>
+
+              <!-- Promoted Badge -->
+              <span class="promoted-badge" *ngIf="i % 4 === 0">PROMOTED</span>
+
+              <!-- Bottom Overlay Rating Bar (BookMyShow) -->
+              <div class="poster-bottom-bar">
+                <span class="star-glyph">★</span>
+                <span class="rating-value">{{ movie.voteAverage ? movie.voteAverage : '9.1' }}/10</span>
+                <span class="votes-count">{{ (movie.popularity ? (movie.popularity * 10 | number:'1.0-0') : '92.1') }}K+ Votes</span>
+              </div>
+            </div>
+
+            <!-- Movie Metadata Below Poster -->
+            <div class="movie-card-info">
+              <h3 class="movie-title">{{ movie.title }}</h3>
+              <div class="movie-cert-badge">UA16+</div>
+              <div class="movie-languages-meta">Hindi, Telugu, English</div>
+            </div>
+          </article>
+        </div>
+
+      </main>
+
+    </div>
+  </div>
+</div>

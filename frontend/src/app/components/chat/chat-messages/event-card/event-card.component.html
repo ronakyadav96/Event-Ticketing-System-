@@ -1,0 +1,30 @@
+<article class="ev-card" [class.past]="event.upcoming === false">
+  <button type="button" class="poster" [ngClass]="tone" (click)="onDetailsClick()" [attr.aria-label]="'Details for ' + event.title">
+    <img *ngIf="event.image_url && !imageFailed" [src]="event.image_url" [alt]="''" loading="lazy" (error)="imageFailed = true" />
+    <span *ngIf="!event.image_url || imageFailed" class="poster-fallback">
+      <span class="fallback-emoji" aria-hidden="true">{{ emoji }}</span>
+      <span class="fallback-title">{{ event.title }}</span>
+    </span>
+
+    <span class="ev-badge" *ngIf="event.category">{{ event.category }}</span>
+    <span class="rating" *ngIf="event.rating">★ {{ event.rating | number: '1.1-1' }}</span>
+  </button>
+
+  <div class="body">
+    <h4 class="title" [title]="event.title">{{ event.title }}</h4>
+    <p class="meta" *ngIf="event.venue" [title]="event.venue">{{ event.venue }}</p>
+    <p class="meta" *ngIf="event.upcoming !== false && event.end_date">Till {{ event.end_date | date: 'd MMM' }}</p>
+    <p class="meta ended" *ngIf="event.upcoming === false">No upcoming shows</p>
+
+    <div class="foot">
+      <span class="price" *ngIf="event.price != null">{{ event.price | currency: 'INR' : 'symbol' : '1.0-0' }}</span>
+      <button
+        type="button"
+        class="book"
+        [disabled]="event.upcoming === false || chat.isSending()"
+        (click)="onBookClick()">
+        Book
+      </button>
+    </div>
+  </div>
+</article>

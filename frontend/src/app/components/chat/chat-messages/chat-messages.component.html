@@ -1,0 +1,82 @@
+<!-- Booking progress: visible for the whole booking, from choosing a date to payment -->
+<div class="stepper" *ngIf="stepIndex() >= 0 && chat.booking().event as ev">
+  <div class="stepper-top">
+    <span class="stepper-title">Booking <strong>{{ ev.title }}</strong></span>
+    <button type="button" class="stepper-cancel" [disabled]="chat.isSending()" (click)="cancelBooking()">Cancel</button>
+  </div>
+  <ol class="steps">
+    <li *ngFor="let s of steps; let i = index" [class.done]="i < stepIndex()" [class.current]="i === stepIndex()">
+      <span class="bar"></span>
+      <span class="label">{{ s }}</span>
+    </li>
+  </ol>
+</div>
+
+<div class="viewport" #scrollContainer (scroll)="onScroll()">
+  <div class="stream">
+    <ng-container *ngFor="let msg of chat.messages()">
+      <app-message-bubble [message]="msg"></app-message-bubble>
+
+      <div *ngIf="msg.action === 'login' && !isSignedIn()" class="login-cta">
+        <button type="button" (click)="chat.goToLogin()">Sign in to continue</button>
+      </div>
+
+      <!-- Event results -->
+      <div *ngIf="msg.events?.length" class="results">
+        <div class="results-row" #row>
+          <app-event-card *ngFor="let ev of msg.events" [event]="ev"></app-event-card>
+        </div>
+        <ng-container *ngIf="msg.events!.length > 2">
+          <button type="button" class="row-nav prev" (click)="scrollCards(row, -1)" aria-label="Previous results">‹</button>
+          <button type="button" class="row-nav next" (click)="scrollCards(row, 1)" aria-label="More results">›</button>
+        </ng-container>
+      </div>
+
+      <!-- Option picker for the current booking step -->
+      <div *ngIf="showPicker(msg)" class="picker">
+        <ng-container [ngSwitch]="chat.booking().stage">
+          <div *ngSwitchCase="'SELECT_VENUE'" class="venue-list">
+            <button type="button" *ngFor="let v of venueOptions()" class="venue" (click)="pick(v)">
+              <span class="pin" aria-hidden="true">📍</span>{{ v }}
+            </button>
+          </div>
+
+          <div *ngSwitchCase="'SELECT_DATE'" class="date-row">
+            <button type="button" *ngFor="let d of dateOptions()" class="date" (click)="pick(d.value)" [title]="d.value">
+              <span class="wd">{{ d.weekday }}</span>
+              <span class="dd">{{ d.day }}</span>
+              <span class="mm">{{ d.month }}</span>
+            </button>
+          </div>
+
+          <div *ngSwitchCase="'SELECT_SHOWTIME'" class="time-row">
+            <button type="button" *ngFor="let t of timeOptions()" class="time" (click)="pick(t.label)">{{ t.label }}</button>
+          </div>
+        </ng-container>
+      </div>
+
+      <app-seat-map *ngIf="showSeatMap(msg)" [map]="msg.seatMap!" [required]="seatsRequired()"></app-seat-map>
+
+      <app-booking-ticket *ngIf="ticketCard(msg) as t" [ticket]="t"></app-booking-ticket>
+    </ng-container>
+
+    <!-- First visit: what can I do? -->
+    <div *ngIf="isWelcome()" class="starters">
+      <p class="starters-title">What are you in the mood for?</p>
+      <div class="starter-grid">
+        <button type="button" *ngFor="let s of starters" class="starter" (click)="chat.sendMessage(s.prompt)">
+          <span class="emoji" aria-hidden="true">{{ s.emoji }}</span>
+          <span>{{ s.label }}</span>
+        </button>
+      </div>
+      <p class="starters-hint">Or just type a movie, artist or event name.</p>
+    </div>
+
+    <div *ngIf="chat.isTyping()" class="typing" aria-live="polite">
+      <span class="dots"><i></i><i></i><i></i></span>
+      <span class="sr-only">Event AI is typing</span>
+    </div>
+  </div>
+</div>
+
+<app-booking-panel></app-booking-panel>

@@ -1,0 +1,264 @@
+<div class="booking-page-wrap">
+
+  <!-- TOP FULL-WIDTH STEPPER HEADER (BookMyShow Style) -->
+  <div class="stepper-header">
+    <div class="stepper-inner">
+      <button class="back-link" routerLink="/events">
+        <span class="arrow">←</span> Back to Events
+      </button>
+
+      <div class="stepper-title-block" *ngIf="event">
+        <h2>{{ event.title }}</h2>
+        <span class="stepper-sub">📍 {{ selectedHallName || event.venue || 'Cinema Arena' }}</span>
+      </div>
+
+      <div class="stepper-steps">
+        <div class="step-item" [class.active]="currentStep === 1" [class.completed]="currentStep > 1" (click)="setStep(1)">
+          <span class="step-num">1</span>
+          <span class="step-label">Showtimes</span>
+        </div>
+        <div class="step-sep"></div>
+        <div class="step-item" [class.active]="currentStep === 2" [class.completed]="currentStep > 2" (click)="setStep(2)">
+          <span class="step-num">2</span>
+          <span class="step-label">Seats</span>
+        </div>
+        <div class="step-sep"></div>
+        <div class="step-item" [class.active]="currentStep === 3" [class.completed]="currentStep > 3" (click)="setStep(3)">
+          <span class="step-num">3</span>
+          <span class="step-label">Snacks 🍿</span>
+        </div>
+        <div class="step-sep"></div>
+        <div class="step-item" [class.active]="currentStep === 4" (click)="setStep(4)">
+          <span class="step-num">4</span>
+          <span class="step-label">Checkout</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading / Error -->
+  <div *ngIf="loading" class="state-box">Loading booking details...</div>
+  <div *ngIf="!loading && error" class="state-box error">Error: {{ error }}</div>
+
+  <!-- 2-COLUMN BOOKING BODY -->
+  <div class="booking-body" *ngIf="!loading && event">
+    <div class="booking-grid">
+
+      <!-- LEFT COLUMN: STEP CONTENT PANELS -->
+      <div class="step-content-area">
+
+        <!-- STEP 1: Date & Time / Cinema Showtimes -->
+        <div class="step-panel" *ngIf="currentStep === 1">
+          <div class="panel-head">
+            <h3>Select Date &amp; Showtime</h3>
+            <p>Choose your preferred date and cinema showtime to continue.</p>
+          </div>
+
+          <!-- Showtime Selector Component -->
+          <app-showtime-selector
+            [movieTitle]="event.title"
+            [language]="event.language || 'Hindi'"
+            [selectedTime]="selectedShowTime"
+            (selectShowtime)="onShowtimeSelect($event)">
+          </app-showtime-selector>
+
+          <div class="step-actions">
+            <button class="btn-primary-bms" type="button" (click)="nextStep()">
+              Continue to Seat Selection →
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 2: Interactive Seat Picker -->
+        <div class="step-panel" *ngIf="currentStep === 2">
+          <div class="panel-head">
+            <h3>Select Your Seats</h3>
+            <p>Choose your preferred seats on the cinema layout below.</p>
+          </div>
+
+          <app-seat-picker
+            [basePriceRupees]="unitPriceRupees || 250"
+            (selectedSeatsChange)="selectedSeatIds = $event"
+            (seatsCountChange)="seatsCount = $event">
+          </app-seat-picker>
+
+          <div class="step-actions">
+            <button class="btn-outline-bms" type="button" (click)="prevStep()">← Back</button>
+            <button
+              class="btn-primary-bms"
+              type="button"
+              (click)="nextStep()"
+              [disabled]="selectedSeatIds.length === 0">
+              Add Snacks &amp; Combos 🍿 →
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 3: Food & Beverage Add-ons -->
+        <div class="step-panel" *ngIf="currentStep === 3">
+          <div class="panel-head">
+            <h3>Grab a Bite 🍿🥤</h3>
+            <p>Pre-book cinema snacks at a discount for an uninterrupted movie experience!</p>
+          </div>
+
+          <div class="fnb-grid">
+            <div class="fnb-card" *ngFor="let item of fnbCatalog">
+              <div class="fnb-icon-box">{{ item.icon }}</div>
+              <div class="fnb-info">
+                <div class="fnb-name">{{ item.name }}</div>
+                <div class="fnb-price">₹{{ item.price }}</div>
+              </div>
+
+              <div class="fnb-qty-controls">
+                <button type="button" class="qty-btn" (click)="updateFnbQty(item.id, -1)">-</button>
+                <span class="qty-val">{{ fnbQuantities[item.id] || 0 }}</span>
+                <button type="button" class="qty-btn" (click)="updateFnbQty(item.id, 1)">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button class="btn-outline-bms" type="button" (click)="prevStep()">← Back to Seats</button>
+            <button class="btn-primary-bms" type="button" (click)="nextStep()">
+              Proceed to Review &amp; Pay →
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 4: Review & Attendee Details -->
+        <div class="step-panel" *ngIf="currentStep === 4">
+          <div class="panel-head">
+            <h3>Review &amp; Attendee Details</h3>
+            <p>Enter attendee contact details for e-ticket delivery.</p>
+          </div>
+
+          <form (ngSubmit)="proceedToPayment()" class="checkout-form">
+            <div class="form-group">
+              <label>Full Name *</label>
+              <input
+                type="text"
+                class="form-control-bms"
+                name="name"
+                [(ngModel)]="name"
+                required
+                placeholder="Enter attendee full name"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Email Address (For ticket delivery) *</label>
+              <input
+                type="email"
+                class="form-control-bms"
+                name="email"
+                [(ngModel)]="email"
+                required
+                placeholder="name@example.com"
+              />
+            </div>
+
+            <!-- Coupons & Gift Cards -->
+            <div class="offer-box" *ngIf="claimablePromotions.length || claimedPromotions.length">
+              <div class="offer-heading">Apply Coupons &amp; Gift Cards</div>
+              
+              <div class="offer-list" *ngIf="claimablePromotions.length">
+                <div class="offer-card-item" *ngFor="let p of claimablePromotions">
+                  <div class="offer-meta">
+                    <span class="offer-code-tag">{{ p.code }}</span>
+                    <span class="offer-title">{{ p.title }}</span>
+                  </div>
+                  <button type="button" class="claim-promo-btn" (click)="claimPromotion(p.id)">Apply</button>
+                </div>
+              </div>
+
+              <div class="offer-list" *ngIf="claimedPromotions.length">
+                <label
+                  class="offer-card-item selectable"
+                  *ngFor="let p of claimedPromotions"
+                  [class.selected]="selectedPromotionId === p.id">
+                  <input
+                    type="radio"
+                    name="promo"
+                    [value]="p.id"
+                    [checked]="selectedPromotionId === p.id"
+                    (change)="selectedPromotionId = p.id"
+                  />
+                  <div class="offer-meta">
+                    <span class="offer-code-tag">{{ p.code }}</span>
+                    <span class="offer-title">{{ p.title }}</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="msg-box" *ngIf="msg">{{ msg }}</div>
+
+            <div class="step-actions">
+              <button class="btn-outline-bms" type="button" (click)="prevStep()">← Back to Snacks</button>
+              <button class="btn-primary-bms pay-cta-btn" type="submit" [disabled]="submitting">
+                {{ submitting ? 'Initiating Stripe Payment...' : ('Pay ₹' + finalPayableRupees) }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: ORDER SUMMARY SIDEBAR -->
+      <div class="sidebar-summary-area">
+        <div class="summary-card-bms">
+          <h3 class="summary-heading">Booking Summary</h3>
+
+          <div class="summary-movie-info">
+            <h4 class="sm-title">{{ event.title }}</h4>
+            <div class="sm-venue">📍 {{ selectedHallName || event.venue || 'Cinema Arena' }}</div>
+            <div class="sm-date">📅 {{ selectedShowDate | date:'EEE, dd MMM yyyy' }} &nbsp; 🕒 {{ selectedShowTime }}</div>
+          </div>
+
+          <div class="summary-divider"></div>
+
+          <div class="summary-line">
+            <span>Seats ({{ selectedSeatIds.length || seatsCount }})</span>
+            <strong>{{ selectedSeatIds.length ? selectedSeatIds.join(', ') : (seatsCount + ' Seat(s)') }}</strong>
+          </div>
+
+          <div class="summary-line">
+            <span>Ticket Price</span>
+            <span>₹{{ seatsSubtotalRupees }}</span>
+          </div>
+
+          <div class="summary-line" *ngIf="fnbTotalRupees > 0">
+            <span>Snacks &amp; Drinks 🍿</span>
+            <span>₹{{ fnbTotalRupees }}</span>
+          </div>
+
+          <div class="summary-line discount" *ngIf="selectedPromotion">
+            <span>Discount ({{ selectedPromotion.code }})</span>
+            <span class="discount-num">- ₹{{ discountRupees }}</span>
+          </div>
+
+          <div class="summary-line">
+            <span>Convenience Fees</span>
+            <span class="free-tag">FREE</span>
+          </div>
+
+          <div class="summary-divider"></div>
+
+          <div class="summary-total-line">
+            <span>Total Payable</span>
+            <span class="total-price-val">₹{{ finalPayableRupees }}</span>
+          </div>
+
+          <button
+            class="summary-continue-btn"
+            type="button"
+            *ngIf="currentStep < 4"
+            (click)="nextStep()">
+            Proceed Step {{ currentStep + 1 }} →
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

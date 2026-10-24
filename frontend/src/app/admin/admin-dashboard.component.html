@@ -1,0 +1,239 @@
+<div class="dash">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">A</div>
+      <div>
+        <h1>Admin Dashboard</h1>
+        <p class="sub">Manage events, bookings & users</p>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button class="btn ghost" (click)="loadAll()">↻ Refresh</button>
+     
+    </div>
+  </div>
+
+  <!-- ✅ Debug strip so you can SEE data is coming -->
+  <div class="debug-strip">
+    <span><b>Loading:</b> {{ loading }}</span>
+    <span><b>Events:</b> {{ events.length }}</span>
+    <span><b>Bookings:</b> {{ bookings.length }}</span>
+    <span><b>Users:</b> {{ users.length }}</span>
+  </div>
+
+  <div *ngIf="errorMsg" class="error-box">⚠️ {{ errorMsg }}</div>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <span>Loading dashboard...</span>
+  </div>
+
+  <!-- STATS (no longer blocked by loading) -->
+  <div class="stats">
+    <div class="card stat">
+      <div class="label">Total Events</div>
+      <div class="value">{{ totalEvents }}</div>
+      <div class="hint">All created events</div>
+    </div>
+
+    <div class="card stat">
+      <div class="label">Total Bookings</div>
+      <div class="value">{{ totalBookings }}</div>
+      <div class="hint">All ticket bookings</div>
+    </div>
+
+    <div class="card stat">
+      <div class="label">Total Users</div>
+      <div class="value">{{ totalUsers }}</div>
+      <div class="hint">Registered users</div>
+    </div>
+
+    <div class="card stat">
+      <div class="label">Upcoming</div>
+      <div class="value">{{ upcomingCount }}</div>
+      <div class="hint">Events in future</div>
+    </div>
+
+    <div class="card stat">
+      <div class="label">Sold Out</div>
+      <div class="value">{{ soldOutCount }}</div>
+      <div class="hint">No seats left</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab" [class.active]="activeTab==='events'" (click)="activeTab='events'">Events</button>
+    <button class="tab" [class.active]="activeTab==='bookings'" (click)="activeTab='bookings'">Bookings</button>
+    <button class="tab" [class.active]="activeTab==='users'" (click)="activeTab='users'">Users</button>
+  </div>
+
+  <div class="grid">
+    <div class="card main">
+
+      <!-- EVENTS -->
+      <ng-container *ngIf="activeTab==='events'">
+        <div class="section-head">
+          <div>
+            <h2>Events Management</h2>
+            <p class="muted">Search, filter, edit or delete events</p>
+          </div>
+
+        </div>
+
+        <div class="filters">
+          <input class="input" placeholder="Search by title or venue..." [(ngModel)]="searchText" />
+
+          <select class="select" [(ngModel)]="statusFilter">
+            <option value="all">All</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="past">Past</option>
+            <option value="soldout">Sold Out</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Date</th>
+                <th>Venue</th>
+                <th>Seats Left</th>
+                <th>Status</th>
+                <th class="right">Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let e of filteredEvents">
+                <td class="title">{{ e.title }}</td>
+                <td>{{ e.date | date:'medium' }}</td>
+                <td>{{ e.venue || '-' }}</td>
+                <td>
+                  <span class="pill" [class.warn]="remainingSeats(e) <= 10" [class.bad]="remainingSeats(e) === 0">
+                    {{ remainingSeats(e) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="status"
+                        [class.up]="statusOfEvent(e)==='Upcoming'"
+                        [class.past]="statusOfEvent(e)==='Past'"
+                        [class.so]="statusOfEvent(e)==='Sold Out'">
+                    {{ statusOfEvent(e) }}
+                  </span>
+                </td>
+
+                <!-- ✅ FIXED: pass whole event object (TS expects object, not id) -->
+                <td class="right">
+                  <button class="btn small" (click)="editEvent(e)">Edit</button>
+                  <button class="btn small danger" (click)="deleteEvent(e)">Delete</button>
+                </td>
+              </tr>
+
+              <tr *ngIf="filteredEvents.length === 0">
+                <td colspan="6" class="empty">No events found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+
+      <!-- BOOKINGS -->
+      <ng-container *ngIf="activeTab==='bookings'">
+        <div class="section-head">
+          <div>
+            <h2>Bookings</h2>
+            <p class="muted">Recent bookings overview</p>
+          </div>
+        </div>
+
+        <div class="list">
+          <div class="list-item" *ngFor="let b of recentBookings">
+            <div class="li-main">
+              <div class="li-title">
+                {{ b?.event?.title || 'Unknown Event' }}
+                <span class="dot">•</span>
+                <span class="li-sub">{{ b?.user?.name || 'Unknown User' }}</span>
+              </div>
+              <div class="li-meta">
+                <span class="muted">{{ (b?.event?.date || b?.createdAt) | date:'medium' }}</span>
+                <span class="muted">Ticket: <b>{{ b?.ticketId || '-' }}</b></span>
+              </div>
+            </div>
+
+            <button class="btn small danger" (click)="deleteBooking(b._id)">Delete</button>
+          </div>
+
+          <div *ngIf="bookings.length === 0" class="empty-box">No bookings yet.</div>
+        </div>
+      </ng-container>
+
+      <!-- USERS -->
+      <ng-container *ngIf="activeTab==='users'">
+        <div class="section-head">
+          <div>
+            <h2>Users</h2>
+            <p class="muted">Registered users list</p>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let u of users">
+                <td class="title">{{ u.name }}</td>
+                <td>{{ u.email }}</td>
+                <td>
+                  <span class="pill role" [class.admin]="u.role==='admin'">{{ u.role }}</span>
+                </td>
+              </tr>
+
+              <tr *ngIf="users.length === 0">
+                <td colspan="3" class="empty">No users found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="card side">
+      <h3>Highlights</h3>
+      <p class="muted smallp">Quick insights for admin</p>
+
+      <div class="mini">
+        <div class="mini-row">
+          <span>Low seats (≤ 10)</span>
+          <b>{{ lowSeatsCount }}</b>
+        </div>
+
+        <div class="mini-row">
+          <span>Sold out</span>
+          <b>{{ soldOutCount }}</b>
+        </div>
+
+        <div class="mini-row">
+          <span>Upcoming</span>
+          <b>{{ upcomingCount }}</b>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h4>Quick Actions</h4>
+      <div class="qa">
+        <button class="btn ghost full" (click)="activeTab='bookings'">View Bookings</button>
+        <button class="btn ghost full" (click)="activeTab='users'">View Users</button>
+      </div>
+    </div>
+  </div>
+</div>

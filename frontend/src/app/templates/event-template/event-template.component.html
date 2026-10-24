@@ -1,0 +1,44 @@
+<div class="event-tpl">
+  <div class="hero-shell" [style.background-image]="eventImageUrl ? 'url(' + eventImageUrl + ')' : ''">
+    <div class="hero-mask"></div>
+    <div class="hero-wrap">
+      <div class="tag-row">
+        <span class="cat-tag">{{ event?.category || 'Event' }}</span>
+        <span class="type-tag">{{ event?.locationType || 'In-Person' }}</span>
+      </div>
+
+      <h1 class="event-title">{{ event?.title }}</h1>
+      <p class="event-subtitle">{{ event?.tagline || 'Join us for an engaging and informative session with industry leaders and experts.' }}</p>
+
+      <div class="meta-grid">
+        <div class="meta-card">
+          <span class="lbl">Date & Time</span>
+          <span class="val">{{ event?.date | date:'EEEE, d MMMM yyyy • h:mm a' }}</span>
+        </div>
+        <div class="meta-card">
+          <span class="lbl">Venue</span>
+          <span class="val">{{ event?.venue || 'Convention Center' }}</span>
+        </div>
+        <div class="meta-card">
+          <span class="lbl">Seats</span>
+          <span class="val">{{ event?.totalSeats ?? 0 }} Available</span>
+        </div>
+      </div>
+
+      <div class="cta-banner">
+        <div class="price-sec">
+          <span class="lbl">Registration Fee</span>
+          <span class="val">{{ isFreeEvent ? 'FREE REGISTRATION' : ('Rs ' + unitPriceRupees) }}</span>
+        </div>
+        <button class="register-btn" (click)="openBooking.emit()">REGISTER NOW</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="body-wrap">
+    <div class="main-card">
+      <h2>About This Event</h2>
+      <div class="body-text" [innerHTML]="event?.description || 'Full event details, schedule, and key highlights will be shared here.'"></div>
+    </div>
+  </div>
+</div>

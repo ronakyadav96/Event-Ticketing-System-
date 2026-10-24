@@ -1,0 +1,9 @@
+{
+  "movieCount": 4797,
+  "neighborCount": 50,
+  "generatedFrom": {
+    "movieDictPath": "C:\\Users\\hp\\Downloads\\movie_dict.pkl",
+    "similarityPath": "C:\\Users\\hp\\Downloads\\similarity.pkl",
+    "tmdbMoviesCsvPath": "C:\\Users\\hp\\Downloads\\tmdb_5000_movies.csv"
+  }
+}

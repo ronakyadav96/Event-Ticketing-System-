@@ -1,0 +1,430 @@
+/* ================= MOVIE LISTING PAGE (BookMyShow Style) ================= */
+.movie-listing-page {
+  min-height: calc(100vh - 108px);
+  background: var(--page-bg, #f5f5f7);
+  padding: 28px 0 60px;
+}
+
+.listing-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.listing-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ================= LEFT SIDEBAR: FILTERS ================= */
+.filters-sidebar {
+  position: sticky;
+  top: 124px;
+}
+
+.filters-main-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #222222;
+  margin: 0 0 18px;
+}
+
+.filter-card {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.filter-card-header {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.filter-card-header:hover {
+  background: #fafafa;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-toggle-arrow {
+  font-size: 9px;
+  color: #888888;
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.filter-toggle-arrow:not(.open) {
+  transform: rotate(180deg);
+}
+
+.filter-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333333;
+}
+
+.filter-name.highlighted {
+  color: #f84464;
+}
+
+.filter-clear-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888888;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.filter-clear-link:hover {
+  color: #f84464;
+}
+
+.filter-card-body {
+  padding: 4px 16px 16px;
+}
+
+.filter-pills-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-pill-btn {
+  border: 1px solid #e0e0e4;
+  background: #ffffff;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #444444;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-pill-btn:hover {
+  border-color: #f84464;
+  color: #f84464;
+}
+
+.filter-pill-btn.active {
+  background: rgba(248, 68, 100, 0.08);
+  border-color: #f84464;
+  color: #f84464;
+  font-weight: 600;
+}
+
+.browse-cinemas-btn {
+  width: 100%;
+  border: 1px solid #f84464;
+  color: #f84464;
+  background: #ffffff;
+  padding: 11px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  margin-top: 8px;
+  transition: all 0.2s ease;
+}
+
+.browse-cinemas-btn:hover {
+  background: #f84464;
+  color: #ffffff;
+}
+
+/* ================= RIGHT COLUMN: MOVIES CATALOG ================= */
+.catalog-main {
+  min-width: 0;
+}
+
+.catalog-heading-row {
+  margin-bottom: 16px;
+}
+
+.catalog-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #222222;
+  margin: 0;
+}
+
+/* Horizontal Language Pills */
+.lang-strip-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 18px;
+  scrollbar-width: none;
+}
+
+.lang-strip-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.lang-pill {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid #e0e0e4;
+  background: #ffffff;
+  color: #444444;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.lang-pill:hover {
+  border-color: #f84464;
+  color: #f84464;
+}
+
+.lang-pill.active {
+  background: #f84464;
+  border-color: #f84464;
+  color: #ffffff;
+}
+
+/* Coming Soon Announcement Banner */
+.coming-soon-banner {
+  background: #ffffff;
+  border: 1px solid #e5e5e8;
+  border-radius: 8px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.coming-soon-banner:hover {
+  border-color: #f84464;
+}
+
+.cs-bold {
+  font-size: 15px;
+  font-weight: 700;
+  color: #222222;
+}
+
+.cs-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f84464;
+}
+
+.search-indicator-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #333333;
+  margin-bottom: 20px;
+}
+
+.clear-q {
+  background: #e5e5e5;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+/* ================= RESPONSIVE COMPACT MOVIE GRID ================= */
+.movies-catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 20px 16px;
+}
+
+.catalog-movie-card {
+  max-width: 210px;
+  width: 100%;
+  cursor: pointer;
+  transition: transform 0.25s ease;
+}
+
+.catalog-movie-card:hover {
+  transform: translateY(-4px);
+}
+
+.movie-poster-shell {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  max-height: 275px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.movie-poster-shell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.fallback-poster-shell {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  color: #ffffff;
+  padding: 12px;
+  text-align: center;
+  font-size: 28px;
+}
+
+.title-fallback {
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.promoted-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #f84464;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+.poster-bottom-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #000000;
+  color: #ffffff;
+  padding: 7px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.poster-bottom-bar .star-glyph {
+  color: #f84464;
+  font-size: 13px;
+}
+
+.rating-value {
+  font-weight: 700;
+}
+
+.votes-count {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+  margin-left: auto;
+}
+
+.movie-card-info {
+  padding-top: 10px;
+}
+
+.movie-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #222222;
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.movie-cert-badge {
+  font-size: 12px;
+  color: #666666;
+  margin-bottom: 2px;
+}
+
+.movie-languages-meta {
+  font-size: 12px;
+  color: #888888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.state-card {
+  padding: 32px;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e5e5e5;
+  text-align: center;
+  color: #666666;
+  font-size: 14px;
+}
+
+.state-card.error {
+  color: #dc2626;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 1024px) {
+  .listing-layout {
+    grid-template-columns: 220px 1fr;
+    gap: 18px;
+  }
+
+  .movies-catalog-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .listing-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .filters-sidebar {
+    position: static;
+  }
+
+  .movies-catalog-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px 10px;
+  }
+
+  .catalog-movie-card {
+    max-width: 100%;
+  }
+}

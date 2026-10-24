@@ -1,0 +1,200 @@
+.comedy-tpl {
+  background: #121019;
+  color: #f8fafc;
+  min-height: 100vh;
+  padding: 40px 20px 60px;
+}
+
+.comedy-wrap {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.comedy-card {
+  background: linear-gradient(145deg, rgba(30, 27, 46, 0.9), rgba(18, 16, 25, 0.95));
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: 24px;
+  padding: 40px;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 40px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(251, 191, 36, 0.08);
+}
+
+@media (max-width: 840px) {
+  .comedy-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+.comedy-kicker {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fbbf24;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+
+.comedy-title {
+  font-size: 38px;
+  font-weight: 900;
+  margin: 0 0 10px;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+.comedy-subtitle {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 24px;
+}
+
+.info-chips {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.chip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 14px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chip .lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.chip .val {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+.venue-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(251, 191, 36, 0.06);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  padding: 14px 18px;
+  border-radius: 14px;
+  margin-bottom: 28px;
+}
+
+.venue-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: #fef3c7;
+}
+
+.venue-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.book-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.price-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.price-lbl {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+}
+
+.price-val {
+  font-size: 26px;
+  font-weight: 900;
+  color: #fbbf24;
+}
+
+.comedy-btn {
+  padding: 14px 36px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #121019;
+  font-size: 15px;
+  font-weight: 900;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.comedy-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(245, 158, 11, 0.5);
+}
+
+.comedy-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-frame {
+  width: 100%;
+  height: 320px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 2px solid rgba(251, 191, 36, 0.3);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  background: #1e1b2e;
+}
+
+.image-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.frame-fallback {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+}
+
+.frame-fallback .icon {
+  font-size: 36px;
+}
+
+.details-section {
+  margin-top: 36px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 32px;
+}
+
+.details-section h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.about-content {
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.7;
+}

@@ -1,0 +1,65 @@
+<div class="chat-root">
+  <!-- Launcher -->
+  <button
+    *ngIf="!chat.isOpen()"
+    type="button"
+    class="launcher"
+    (click)="chat.toggle()"
+    aria-label="Open Event AI assistant">
+    <span class="launcher-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9a2 2 0 0 0 2-2V6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v1a2 2 0 0 0 0 4v1a2 2 0 0 0 0 4v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-1a2 2 0 0 0-2-2"/>
+        <path d="M13 5v2M13 11v2M13 17v2"/>
+      </svg>
+    </span>
+    <span class="launcher-label">Ask Event AI</span>
+    <span *ngIf="chat.unreadCount() > 0" class="unread" aria-label="Unread messages">{{ chat.unreadCount() }}</span>
+  </button>
+
+  <!-- Panel -->
+  <section
+    *ngIf="chat.isOpen()"
+    class="panel"
+    [class.expanded]="chat.isExpanded()"
+    role="dialog"
+    aria-label="Event AI assistant">
+    <app-chat-header></app-chat-header>
+
+    <!-- Conversation history -->
+    <div class="history" *ngIf="chat.showHistory()">
+      <div class="history-head">
+        <h3>Your chats</h3>
+        <button type="button" class="history-new" (click)="onNewChatClick()">+ New chat</button>
+      </div>
+
+      <div class="history-list">
+        <button
+          type="button"
+          *ngFor="let c of chat.conversations()"
+          class="history-item"
+          [class.current]="c.id === chat.currentConversationId()"
+          (click)="onSelectConversation(c.id)">
+          <span class="history-title">{{ c.title || 'Conversation' }}</span>
+          <span class="history-time" *ngIf="c.updated_at">{{ c.updated_at | date: 'd MMM · h:mm a' }}</span>
+          <span
+            class="history-delete"
+            role="button"
+            tabindex="0"
+            aria-label="Delete chat"
+            (click)="onDeleteConversation(c.id, $event)"
+            (keydown.enter)="onDeleteConversation(c.id, $event)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+            </svg>
+          </span>
+        </button>
+
+        <p class="history-empty" *ngIf="chat.conversations().length === 0">No saved chats yet.</p>
+      </div>
+    </div>
+
+    <app-chat-messages></app-chat-messages>
+    <app-quick-suggestions [chips]="chat.currentQuickReplies()"></app-quick-suggestions>
+    <app-chat-input></app-chat-input>
+  </section>
+</div>

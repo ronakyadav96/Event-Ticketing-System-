@@ -1,0 +1,20 @@
+<form class="composer" (submit)="$event.preventDefault(); onSubmit()">
+  <textarea
+    #box
+    class="field"
+    [(ngModel)]="inputText"
+    name="message"
+    (keydown)="onKeyDown($event)"
+    (input)="autoGrow(box)"
+    rows="1"
+    maxlength="2000"
+    placeholder="Search a movie, event or artist…"
+    aria-label="Message Event AI"></textarea>
+
+  <button type="submit" class="send" [disabled]="!inputText.trim() || chat.isSending()" aria-label="Send">
+    <svg *ngIf="!chat.isSending()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14M13 6l6 6-6 6"/>
+    </svg>
+    <span *ngIf="chat.isSending()" class="spinner"></span>
+  </button>
+</form>

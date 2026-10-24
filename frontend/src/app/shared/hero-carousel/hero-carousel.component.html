@@ -1,0 +1,27 @@
+<section class="promo" *ngIf="images.length">
+  <div class="promo-inner">
+    <div class="promo-carousel" (mouseenter)="pause()" (mouseleave)="resume()">
+      <div class="promo-track" [style.transform]="'translateX(-' + (activeIndex * 100) + '%)'">
+        <div class="promo-slide" *ngFor="let img of images">
+          <img [src]="imgSrc(img)" alt="Hero slide" loading="lazy" />
+          <div class="promo-fade"></div>
+        </div>
+      </div>
+
+      <button class="promo-nav prev" type="button" (click)="prev()" aria-label="Previous slide">‹</button>
+      <button class="promo-nav next" type="button" (click)="next()" aria-label="Next slide">›</button>
+
+      <div class="promo-dots" role="tablist" aria-label="Carousel pagination">
+        <button
+          class="dot"
+          *ngFor="let _ of images; let i = index"
+          type="button"
+          [class.active]="i === activeIndex"
+          (click)="goTo(i)"
+          [attr.aria-label]="'Go to slide ' + (i + 1)"
+        ></button>
+      </div>
+    </div>
+  </div>
+</section>
+

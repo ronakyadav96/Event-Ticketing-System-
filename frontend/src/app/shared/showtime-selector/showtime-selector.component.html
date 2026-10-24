@@ -1,0 +1,107 @@
+<div class="showtime-experience-wrapper">
+
+  <!-- 1. MOVIE METADATA BAR (Matching media_1789325586499.png) -->
+  <div class="showtime-header-bar">
+    <h1 class="header-movie-title">{{ movieTitle ? movieTitle : 'Movie Showtimes' }} <span *ngIf="language" class="header-lang-tag">({{ language }})</span></h1>
+    <div class="header-tags-row">
+      <span class="runtime-pill" *ngIf="runtime">Movie runtime: {{ runtime }}</span>
+      <span class="cert-pill" *ngIf="certificate">{{ certificate }}</span>
+      <span class="genre-pill" *ngFor="let g of (genres && genres.length ? genres : ['Action', 'Drama'])">{{ g }}</span>
+    </div>
+  </div>
+
+  <!-- 2. DATE SELECTOR & FILTER BAR (Sticky) -->
+  <div class="date-filter-sticky-bar">
+    <div class="date-filter-inner">
+      <!-- Horizontal Date Picker Strip -->
+      <div class="date-picker-strip">
+        <button
+          type="button"
+          class="date-chip-btn"
+          *ngFor="let d of datesList; let i = index"
+          [class.active]="selectedDateIndex === i"
+          (click)="selectDate(i)">
+          <span class="date-dow">{{ d.dayName }}</span>
+          <span class="date-num">{{ d.dateNumber }}</span>
+          <span class="date-mon">{{ d.month }}</span>
+        </button>
+      </div>
+
+      <!-- Filter Dropdowns -->
+      <div class="filter-buttons-group">
+        <button type="button" class="filter-btn active">{{ selectedFormat }}</button>
+        <button type="button" class="filter-btn">Price Range ▾</button>
+        <button type="button" class="filter-btn">Special Formats ▾</button>
+        <button type="button" class="filter-btn">Preferred Time ▾</button>
+        <button type="button" class="filter-search-icon" title="Search showtimes">🔍</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. SUB-BAR: QUICK FILTERS & AVAILABILITY LEGEND -->
+  <div class="sub-legend-bar">
+    <div class="sub-legend-inner">
+      <!-- Quick Filter Chips -->
+      <div class="quick-filters-left">
+        <button type="button" class="quick-filter-chip">🌙 Late night shows</button>
+        <button type="button" class="quick-filter-chip">🌅 Early morning shows</button>
+      </div>
+
+      <!-- Availability Legend (BookMyShow) -->
+      <div class="legend-right">
+        <span class="legend-item">
+          <span class="legend-dot available"></span> AVAILABLE
+        </span>
+        <span class="legend-item">
+          <span class="legend-dot fast-filling"></span> FAST FILLING
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. THEATRE SHOWTIMES LISTINGS -->
+  <div class="theatre-listings-container">
+    <div class="theatre-card" *ngFor="let hall of cinemaHalls">
+      <div class="theatre-card-header">
+        <div class="theatre-info-left">
+          <div class="theatre-name-row">
+            <span class="cinema-badge">PVR</span>
+            <h3 class="theatre-name">{{ hall.hallName }}</h3>
+            <span class="info-glyph" title="{{ hall.location }}">ⓘ</span>
+          </div>
+          <div class="theatre-sub-row">
+            <span class="amenity-tag" *ngFor="let a of hall.amenities">
+              {{ a }}
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="favorite-heart-btn"
+          [class.favorited]="hall.isFavorite"
+          (click)="toggleFavorite(hall)"
+          aria-label="Mark as favorite cinema">
+          {{ hall.isFavorite ? '♥' : '♡' }}
+        </button>
+      </div>
+
+      <!-- Grid of Green-Bordered Showtime Pills -->
+      <div class="showtime-pills-grid">
+        <div
+          class="showtime-slot-btn"
+          *ngFor="let slot of hall.showtimes"
+          [class.active]="slot.time === selectedTime"
+          [class.fast-filling]="slot.status === 'filling-fast'"
+          [class.almost-full]="slot.status === 'almost-full'"
+          (click)="onTimeClick(hall, slot)">
+          <span class="slot-time">{{ slot.time }}</span>
+          <span class="slot-badge" *ngIf="slot.badge">{{ slot.badge }}</span>
+          <!-- Price hover tooltip -->
+          <span class="slot-price-tooltip">{{ slot.price }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

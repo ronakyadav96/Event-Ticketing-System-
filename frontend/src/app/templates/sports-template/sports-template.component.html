@@ -1,0 +1,36 @@
+<div class="sports-tpl">
+  <div class="match-banner" [style.background-image]="eventImageUrl ? 'url(' + eventImageUrl + ')' : ''">
+    <div class="banner-overlay"></div>
+    <div class="banner-content">
+      <span class="league-tag">⚽ SPORTS MATCH FIXTURE</span>
+      <h1 class="match-title">{{ event?.title }}</h1>
+      <p class="match-tagline">{{ event?.tagline || 'Cheer for your favorite team live from the stadium stands!' }}</p>
+
+      <div class="match-meta">
+        <div class="meta-box">
+          <span class="lbl">STADIUM / VENUE</span>
+          <span class="val">📍 {{ event?.venue || 'Central Stadium' }}</span>
+        </div>
+        <div class="meta-box">
+          <span class="lbl">KICK-OFF / START</span>
+          <span class="val">⏰ {{ event?.date | date:'EEE, dd MMM • h:mm a' }}</span>
+        </div>
+      </div>
+
+      <div class="action-box">
+        <div class="price-wrap">
+          <span class="p-lbl">Tickets Starting From</span>
+          <span class="p-val">{{ isFreeEvent ? 'FREE' : ('Rs ' + unitPriceRupees) }}</span>
+        </div>
+        <button class="sports-btn" (click)="openBooking.emit()">GET MATCH TICKETS</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sports-body">
+    <div class="info-card">
+      <h3>Match & Stadium Information</h3>
+      <div class="info-text" [innerHTML]="event?.description || 'Gates open 2 hours before start time. Carry a valid photo ID along with your ticket QR code.'"></div>
+    </div>
+  </div>
+</div>

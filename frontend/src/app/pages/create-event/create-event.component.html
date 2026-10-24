@@ -1,0 +1,552 @@
+<div class="create-wrapper">
+  <div class="create-card create-builder">
+    <div class="header builder-header">
+      <div>
+        <div class="badge">{{ isEdit ? 'Edit Event' : 'Event Builder' }}</div>
+        <h3 class="title">{{ isEdit ? 'Refine Your Event' : 'Build Your Event Experience' }}</h3>
+        <p class="subtitle">A step-based builder with live preview, richer controls, and room for a full publishing workflow.</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn ghost" type="button">Auto Saved Draft</button>
+        <button class="btn ghost" type="button">Duplicate Event</button>
+      </div>
+    </div>
+
+    <div *ngIf="successMessage" class="success-box">Success: {{ successMessage }}</div>
+    <div *ngIf="errorMessage" class="error-box">Error: {{ errorMessage }}</div>
+
+    <div class="builder-progress-nav">
+      <button
+        *ngFor="let step of createSteps; let i = index"
+        class="progress-step"
+        [class.active]="selectedCreateStep === step.key"
+        [class.done]="isStepComplete(step.key)"
+        [disabled]="!canOpenStep(step.key)"
+        type="button"
+        (click)="selectCreateStep(step.key)"
+      >
+        <span class="progress-index">{{ isStepComplete(step.key) ? '?' : (i + 1) }}</span>
+        <span class="progress-text">{{ step.title }}</span>
+      </button>
+    </div>
+
+    <div class="builder-layout">
+      <form class="builder-main" (ngSubmit)="submit()" #f="ngForm">
+        <div class="step-frame" *ngIf="selectedCreateStep === 'basic'">
+          <div class="step-header">
+            <div>
+              <div class="step-eyebrow">Step 1</div>
+              <h4>Basic Details</h4>
+              <p>Start with the identity users will notice first.</p>
+            </div>
+            <div class="step-chip">{{ title.length }}/90 title chars</div>
+          </div>
+
+          <div class="builder-grid two-up">
+            <label class="field-card span-2">
+              <span>Event Name</span>
+              <input class="form-control" [(ngModel)]="title" name="title" maxlength="90" placeholder="Friday Night Live" required />
+            </label>
+
+            <label class="field-card span-2">
+              <span>Tagline</span>
+              <input class="form-control" [(ngModel)]="tagline" name="tagline" maxlength="140" placeholder="An unforgettable live music evening with the city’s hottest lineup" />
+              <small>{{ tagline.length }}/140 characters</small>
+            </label>
+
+            <label class="field-card">
+              <span>Category</span>
+              <select class="form-control" [(ngModel)]="category" name="category" required>
+                <option value="">Select category</option>
+                <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+                <option [value]="customCategoryValue">Other (custom)</option>
+              </select>
+            </label>
+
+            <label class="field-card" *ngIf="category === customCategoryValue">
+              <span>Custom Category</span>
+              <input class="form-control" [(ngModel)]="customCategory" name="customCategory" placeholder="Indie showcase" />
+            </label>
+
+            <label class="field-card">
+              <span>Language</span>
+              <input class="form-control" [(ngModel)]="language" name="language" placeholder="English" />
+            </label>
+
+            <label class="field-card">
+              <span>Age Restriction</span>
+              <select class="form-control" [(ngModel)]="ageRestriction" name="ageRestriction">
+                <option>All Ages</option>
+                <option>13+</option>
+                <option>16+</option>
+                <option>18+</option>
+                <option>21+</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="editor-card">
+            <div class="editor-head">
+              <div>
+                <strong>Description</strong>
+                <p>Use formatting to shape the public event story.</p>
+              </div>
+              <button class="btn ghost small" type="button">AI Suggestion Later</button>
+            </div>
+            <div class="editor-toolbar">
+              <button type="button" class="editor-btn" (click)="format('bold')"><b>B</b></button>
+              <button type="button" class="editor-btn" (click)="format('italic')"><i>I</i></button>
+              <button type="button" class="editor-btn" (click)="format('underline')"><u>U</u></button>
+              <select class="editor-select" [ngModelOptions]="{standalone: true}" [(ngModel)]="selectedFont" (change)="setFont(selectedFont)">
+                <option *ngFor="let f of fontOptions" [value]="f">{{ f }}</option>
+              </select>
+              <select class="editor-select" [ngModelOptions]="{standalone: true}" [(ngModel)]="selectedFontSize" (change)="setFontSize(selectedFontSize)">
+                <option *ngFor="let s of fontSizes" [value]="s">{{ s }}px</option>
+              </select>
+              <input type="color" class="editor-color" [ngModelOptions]="{standalone: true}" [(ngModel)]="selectedColor" (change)="setColor(selectedColor)" />
+            </div>
+            <div
+              #descEditor
+              class="rich-editor"
+              contenteditable="true"
+              dir="ltr"
+              lang="en"
+              spellcheck="true"
+              autocapitalize="sentences"
+              autocorrect="on"
+              data-placeholder="Write the event story, highlights, lineup, mood, and what people should expect..."
+              (input)="onDescriptionInput($event)"
+            ></div>
+          </div>
+
+          <div class="panel-actions">
+            <button class="btn edit" type="button" [disabled]="!canProceedBasic" (click)="goNextStep()">Continue to Date & Location</button>
+          </div>
+        </div>
+
+        <div class="step-frame" *ngIf="selectedCreateStep === 'datetime'">
+          <div class="step-header">
+            <div>
+              <div class="step-eyebrow">Step 2</div>
+              <h4>Date, Time & Location</h4>
+              <p>Control the event window, times, timezone, and location mode.</p>
+            </div>
+            <label class="toggle-chip">
+              <input type="checkbox" [(ngModel)]="isMultiDate" name="isMultiDate" />
+              <span>Multiple dates</span>
+            </label>
+          </div>
+
+          <div class="builder-grid two-up">
+            <label class="field-card">
+              <span>Start Date</span>
+              <input type="date" class="form-control" [(ngModel)]="startDate" name="startDate" [min]="minDateLocal" required />
+            </label>
+            <label class="field-card">
+              <span>End Date</span>
+              <input type="date" class="form-control" [(ngModel)]="endDate" name="endDate" [min]="startDate || minDateLocal" required />
+            </label>
+            <label class="field-card span-2">
+              <span>Timezone</span>
+              <input class="form-control" [(ngModel)]="timezone" name="timezone" placeholder="Asia/Kolkata" />
+            </label>
+          </div>
+
+          <div class="times-box">
+            <div class="times-title">Show Times</div>
+            <div class="time-row" *ngFor="let t of showTimes; let i = index">
+              <input type="time" class="form-control time-control" [(ngModel)]="showTimes[i]" name="showTime{{i}}" required />
+              <button type="button" class="time-remove" (click)="removeShowTime(i)" [disabled]="showTimes.length <= 1">Remove</button>
+            </div>
+            <button type="button" class="time-add" (click)="addShowTime()">+ Add time</button>
+          </div>
+
+          <div class="builder-grid two-up">
+            <label class="field-card span-2">
+              <span>Location Type</span>
+              <select class="form-control" [(ngModel)]="locationType" name="locationType" required>
+                <option value="">Choose location type</option>
+                <option>Online</option>
+                <option>Offline</option>
+                <option>Hybrid</option>
+              </select>
+            </label>
+
+            <label class="field-card span-2" *ngIf="locationType === 'Online'">
+              <span>Meeting Link</span>
+              <input class="form-control" [(ngModel)]="meetingLink" name="meetingLink" placeholder="https://zoom.us/j/..." />
+            </label>
+
+            <label class="field-card" *ngIf="locationType !== 'Online'">
+              <span>Venue</span>
+              <input class="form-control" [(ngModel)]="venue" name="venue" placeholder="Delhi Exhibition Hall" />
+            </label>
+
+            <label class="field-card" *ngIf="locationType !== 'Online'">
+              <span>Google Maps / Pin Label</span>
+              <input class="form-control" [(ngModel)]="mapQuery" name="mapQuery" placeholder="Sector 18, Noida" />
+            </label>
+          </div>
+
+          <div class="map-mock" *ngIf="locationType !== 'Online'">
+            <div class="map-badge">Map Embed Placeholder</div>
+            <div class="map-copy">Google Maps picker and drag pin can plug in here next.</div>
+          </div>
+
+          <div class="panel-actions">
+            <button class="btn ghost" type="button" (click)="goPrevStep()">Back</button>
+            <button class="btn edit" type="button" [disabled]="!canProceedDateTime" (click)="goNextStep()">Continue to Design</button>
+          </div>
+        </div>
+
+        <div class="step-frame" *ngIf="selectedCreateStep === 'design'">
+          <div class="step-header">
+            <div>
+              <div class="step-eyebrow">Step 3</div>
+              <h4>Banner & Visual Design</h4>
+              <p>This is the hero builder. Make it feel like a polished landing page, not a plain form.</p>
+            </div>
+            <div class="device-toggle">
+              <button class="btn ghost small" type="button" [class.active-toggle]="previewMode==='desktop'" (click)="previewMode='desktop'">Desktop</button>
+              <button class="btn ghost small" type="button" [class.active-toggle]="previewMode==='mobile'" (click)="previewMode='mobile'">Mobile</button>
+            </div>
+          </div>
+
+          <div class="builder-grid three-up design-grid">
+            <label class="field-card">
+              <span>Banner Image</span>
+              <input type="file" class="form-control" accept="image/png,image/jpeg,image/webp" (change)="onFileSelected($event)" />
+            </label>
+            <label class="field-card">
+              <span>Cover Image</span>
+              <input type="file" class="form-control" disabled />
+              <small>Secondary asset slot</small>
+            </label>
+            <label class="field-card">
+              <span>Thumbnail</span>
+              <input type="file" class="form-control" disabled />
+              <small>List view asset slot</small>
+            </label>
+
+            <label class="field-card">
+              <span>Overlay Color</span>
+              <input type="color" class="form-control" [(ngModel)]="designConfig.overlayColor" name="overlayColor" />
+            </label>
+            <label class="field-card">
+              <span>Overlay Opacity</span>
+              <input type="range" min="0" max="100" class="form-control range-control" [(ngModel)]="designConfig.overlayOpacity" name="overlayOpacity" />
+            </label>
+            <label class="field-card">
+              <span>Theme Color</span>
+              <input type="color" class="form-control" [(ngModel)]="designConfig.themeColor" name="themeColor" />
+            </label>
+
+            <label class="field-card">
+              <span>Text Alignment</span>
+              <select class="form-control" [(ngModel)]="designConfig.textAlign" name="textAlign">
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+              </select>
+            </label>
+            <label class="field-card">
+              <span>Button Style</span>
+              <select class="form-control" [(ngModel)]="designConfig.buttonStyle" name="buttonStyle">
+                <option value="solid">Solid</option>
+                <option value="outline">Outline</option>
+                <option value="rounded">Rounded</option>
+              </select>
+            </label>
+            <label class="field-card">
+              <span>Visual Template</span>
+              <select class="form-control" [(ngModel)]="designTemplate" name="designTemplate">
+                <option value="clean-hero">Clean Hero</option>
+                <option value="bold-split">Bold Split</option>
+                <option value="editorial">Editorial</option>
+                <option value="movie">Movie</option>
+                <option value="concert">Concert</option>
+                <option value="comedy">Comedy</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="toggle-grid">
+            <label class="toggle-card"><input type="checkbox" [(ngModel)]="designConfig.gradientOverlay" name="gradientOverlay" /> <span>Gradient Overlay</span></label>
+            <label class="toggle-card"><input type="checkbox" [(ngModel)]="designConfig.showLogo" name="showLogo" /> <span>Add Logo</span></label>
+            <label class="toggle-card"><input type="checkbox" [(ngModel)]="designConfig.showWatermark" name="showWatermark" /> <span>Add Watermark</span></label>
+            <label class="toggle-card"><input type="checkbox" [(ngModel)]="designConfig.darkMode" name="darkMode" /> <span>Dark Preview</span></label>
+          </div>
+
+          <div class="panel-actions">
+            <button class="btn ghost" type="button" (click)="goPrevStep()">Back</button>
+            <button class="btn edit" type="button" [disabled]="!canProceedDesign" (click)="goNextStep()">Continue to Tickets</button>
+          </div>
+        </div>
+
+        <div class="step-frame" *ngIf="selectedCreateStep === 'tickets'">
+          <div class="step-header">
+            <div>
+              <div class="step-eyebrow">Step 4</div>
+              <h4>Ticketing System</h4>
+              <p>Build free, paid, or donation flows with future-ready pricing controls.</p>
+            </div>
+          </div>
+
+          <div class="template-grid ticket-mode-grid">
+            <button type="button" class="template-card" [class.selected]="ticketMode==='free'" (click)="ticketMode='free'; price=0">
+              <div class="template-title">Free</div>
+              <div class="template-meta">Open registration</div>
+            </button>
+            <button type="button" class="template-card" [class.selected]="ticketMode==='paid'" (click)="ticketMode='paid'">
+              <div class="template-title">Paid</div>
+              <div class="template-meta">Standard ticket sales</div>
+            </button>
+            <button type="button" class="template-card" [class.selected]="ticketMode==='donation'" (click)="ticketMode='donation'">
+              <div class="template-title">Donation</div>
+              <div class="template-meta">Pay what you want</div>
+            </button>
+          </div>
+
+          <div class="builder-grid two-up">
+            <label class="field-card">
+              <span>Ticket Name</span>
+              <input class="form-control" [ngModelOptions]="{standalone: true}" ngModel placeholder="General Admission" />
+            </label>
+            <label class="field-card">
+              <span>Price</span>
+              <input type="number" class="form-control" [(ngModel)]="price" name="price" min="0" />
+            </label>
+            <label class="field-card">
+              <span>Quantity</span>
+              <input type="number" class="form-control" [(ngModel)]="totalSeats" name="totalSeats" min="1" />
+            </label>
+            <label class="field-card">
+              <span>Per User Limit</span>
+              <input type="number" class="form-control" [ngModelOptions]="{standalone: true}" ngModel min="1" placeholder="4" />
+            </label>
+            <label class="field-card">
+              <span>Sale Start</span>
+              <input type="datetime-local" class="form-control" [ngModelOptions]="{standalone: true}" ngModel />
+            </label>
+            <label class="field-card">
+              <span>Sale End</span>
+              <input type="datetime-local" class="form-control" [ngModelOptions]="{standalone: true}" ngModel />
+            </label>
+          </div>
+
+          <div class="toggle-grid">
+            <label class="toggle-card"><input type="checkbox" [(ngModel)]="earlyBirdEnabled" name="earlyBirdEnabled" /> <span>Early bird pricing</span></label>
+            <label class="toggle-card"><input type="checkbox" [(ngModel)]="discountCodesEnabled" name="discountCodesEnabled" /> <span>Discount codes</span></label>
+            <label class="toggle-card"><input type="checkbox" [(ngModel)]="tieredPricingEnabled" name="tieredPricingEnabled" /> <span>Tiered pricing</span></label>
+          </div>
+
+          <div class="panel-actions">
+            <button class="btn ghost" type="button" (click)="goPrevStep()">Back</button>
+            <button class="btn edit" type="button" [disabled]="!canProceedTickets" (click)="goNextStep()">Continue to Customize</button>
+          </div>
+        </div>
+
+        <div class="step-frame" *ngIf="selectedCreateStep === 'customize'">
+          <div class="step-header">
+            <div>
+              <div class="step-eyebrow">Step 5</div>
+              <h4>Event Customization</h4>
+              <p>Show, hide, and shape the public sections creators want on the page.</p>
+            </div>
+          </div>
+
+          <div class="toggle-grid toggle-grid-wide">
+            <label class="toggle-card"><input type="checkbox" [(ngModel)]="speakersEnabled" name="speakersEnabled" /> <span>Speakers</span></label>
+            <label class="toggle-card"><input type="checkbox" [(ngModel)]="agendaEnabled" name="agendaEnabled" /> <span>Agenda</span></label>
+            <label class="toggle-card"><input type="checkbox" [(ngModel)]="faqsEnabled" name="faqsEnabled" /> <span>FAQs</span></label>
+            <label class="toggle-card"><input type="checkbox" [(ngModel)]="sponsorsEnabled" name="sponsorsEnabled" /> <span>Sponsors</span></label>
+          </div>
+
+          <div class="custom-section-builder">
+            <div class="editor-head">
+              <div>
+                <strong>Custom Sections</strong>
+                <p>Add rich text blocks like About, Highlights, Rules, or Gallery intros.</p>
+              </div>
+              <button class="btn ghost small" type="button">Drag & Drop Later</button>
+            </div>
+            <div class="builder-grid two-up">
+              <label class="field-card">
+                <span>Section Title</span>
+                <input class="form-control" [(ngModel)]="customSectionDraft.title" name="customSectionTitle" placeholder="Speaker Spotlight" />
+              </label>
+              <label class="field-card span-2">
+                <span>Section Content</span>
+                <textarea class="form-control textarea-control" [(ngModel)]="customSectionDraft.body" name="customSectionBody" placeholder="Add section content..."></textarea>
+              </label>
+            </div>
+            <button class="btn edit" type="button" (click)="addCustomSection()">Add Section</button>
+
+            <div class="custom-list" *ngIf="customSections.length">
+              <div class="custom-item" *ngFor="let section of customSections; let i = index">
+                <div class="custom-item-title">{{ section.title }}</div>
+                <div class="custom-item-meta">{{ section.body }}</div>
+                <button class="btn ghost small" type="button" (click)="removeCustomSection(i)">Remove</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-actions">
+            <button class="btn ghost" type="button" (click)="goPrevStep()">Back</button>
+            <button class="btn edit" type="button" (click)="goNextStep()">Continue to SEO</button>
+          </div>
+        </div>
+
+        <div class="step-frame" *ngIf="selectedCreateStep === 'seo'">
+          <div class="step-header">
+            <div>
+              <div class="step-eyebrow">Step 6</div>
+              <h4>SEO & Sharing</h4>
+              <p>Control how the event appears in links, previews, and shared social cards.</p>
+            </div>
+          </div>
+
+          <div class="builder-grid two-up">
+            <label class="field-card span-2">
+              <span>Custom URL Slug</span>
+              <input class="form-control" [(ngModel)]="slug" name="slug" placeholder="friday-night-live-delhi" />
+              <small>Preview: `/events/{{ resolvedSlug || 'your-event-slug' }}`</small>
+            </label>
+            <label class="field-card span-2">
+              <span>Meta Title</span>
+              <input class="form-control" [(ngModel)]="metaTitle" name="metaTitle" placeholder="Friday Night Live | Delhi Music Event" />
+            </label>
+            <label class="field-card span-2">
+              <span>Meta Description</span>
+              <textarea class="form-control textarea-control" [(ngModel)]="metaDescription" name="metaDescription" placeholder="Tell search engines and share previews what makes this event worth opening."></textarea>
+            </label>
+            <label class="field-card span-2">
+              <span>Social Preview Image URL</span>
+              <input class="form-control" [(ngModel)]="socialPreviewImage" name="socialPreviewImage" placeholder="https://..." />
+            </label>
+          </div>
+
+          <div class="social-mock-grid">
+            <div class="social-mock">
+              <div class="social-title">WhatsApp Preview</div>
+              <div class="social-card">
+                <strong>{{ metaTitle || title || 'Event title preview' }}</strong>
+                <p>{{ metaDescription || tagline || 'Meta description preview will appear here.' }}</p>
+              </div>
+            </div>
+            <div class="social-mock">
+              <div class="social-title">Twitter Preview</div>
+              <div class="social-card">
+                <strong>{{ metaTitle || title || 'Event title preview' }}</strong>
+                <p>{{ metaDescription || tagline || 'Meta description preview will appear here.' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-actions">
+            <button class="btn ghost" type="button" (click)="goPrevStep()">Back</button>
+            <button class="btn edit" type="button" [disabled]="!canProceedSeo" (click)="goNextStep()">Continue to Settings</button>
+          </div>
+        </div>
+
+        <div class="step-frame" *ngIf="selectedCreateStep === 'settings'">
+          <div class="step-header">
+            <div>
+              <div class="step-eyebrow">Step 7</div>
+              <h4>Settings</h4>
+              <p>Lock in visibility, approval, refund, and policy rules before publishing.</p>
+            </div>
+          </div>
+
+          <div class="builder-grid two-up">
+            <label class="field-card">
+              <span>Visibility</span>
+              <select class="form-control" [(ngModel)]="visibility" name="visibility">
+                <option>Public</option>
+                <option>Private</option>
+                <option>Unlisted</option>
+              </select>
+            </label>
+            <label class="toggle-card field-card align-center">
+              <input type="checkbox" [(ngModel)]="approvalRequired" name="approvalRequired" />
+              <span>Approval Required</span>
+            </label>
+            <label class="field-card span-2">
+              <span>Refund Policy</span>
+              <textarea class="form-control textarea-control" [(ngModel)]="refundPolicy" name="refundPolicy" placeholder="Add refund policy..."></textarea>
+            </label>
+            <label class="field-card span-2">
+              <span>Terms & Conditions</span>
+              <textarea class="form-control textarea-control" [(ngModel)]="termsText" name="termsText" placeholder="Add terms and conditions..."></textarea>
+            </label>
+          </div>
+
+          <div class="panel-actions">
+            <button class="btn ghost" type="button" (click)="goPrevStep()">Back</button>
+            <button type="submit" class="btn create-btn" [disabled]="!canPublish || loading">{{ loading ? 'Please wait...' : (isEdit ? 'Update Event' : 'Publish Event') }}</button>
+          </div>
+        </div>
+      </form>
+
+      <aside class="builder-preview-pane">
+        <div class="preview-shell" [class.mobile-preview]="previewMode==='mobile'" [class.dark-preview]="designConfig.darkMode">
+          <div class="preview-toolbar">
+            <div>
+              <div class="preview-kicker-text">Live Preview</div>
+              <div class="preview-main-title">{{ title || 'Event preview updates here' }}</div>
+            </div>
+            <div class="preview-toolbar-actions">
+              <button class="btn ghost small" type="button" [class.active-toggle]="previewMode==='desktop'" (click)="previewMode='desktop'">Desktop</button>
+              <button class="btn ghost small" type="button" [class.active-toggle]="previewMode==='mobile'" (click)="previewMode='mobile'">Mobile</button>
+            </div>
+          </div>
+
+          <div class="hero-preview" [style.text-align]="designConfig.textAlign">
+            <img *ngIf="previewImageUrl || existingImageUrl" [src]="previewImageUrl || getImageUrl(existingImageUrl)" alt="event banner" />
+            <div class="hero-fallback" *ngIf="!(previewImageUrl || existingImageUrl)"></div>
+            <div class="hero-overlay" [style.background]="designConfig.gradientOverlay ? 'linear-gradient(135deg,' + designConfig.overlayColor + 'cc,' + designConfig.themeColor + 'aa)' : designConfig.overlayColor" [style.opacity]="designConfig.overlayOpacity / 100"></div>
+            <div class="hero-content">
+              <div class="hero-topline">
+                <span class="hero-chip">{{ resolvedCategory || 'Category' }}</span>
+                <span class="hero-chip" *ngIf="designConfig.showLogo">Logo</span>
+                <span class="hero-chip" *ngIf="designConfig.showWatermark">Watermark</span>
+              </div>
+              <div class="hero-kicker">{{ designConfig.heroKicker || 'Live Event' }}</div>
+              <h3>{{ title || 'Your event title' }}</h3>
+              <p>{{ tagline || 'Your short event tagline will appear here.' }}</p>
+              <div class="hero-meta">{{ schedulePreview?.rangeText || 'Date' }} · {{ schedulePreview?.timesText || 'Time' }} · {{ previewVenue }}</div>
+              <button class="preview-cta" type="button" [class.outline]="designConfig.buttonStyle==='outline'" [class.rounded]="designConfig.buttonStyle==='rounded'" [style.--cta-color]="designConfig.themeColor">{{ designConfig.ctaText || 'Book Tickets' }}</button>
+            </div>
+          </div>
+
+          <div class="preview-body-grid">
+            <div class="preview-section-card">
+              <div class="summary-label">Ticket Card</div>
+              <div class="ticket-card-preview">
+                <strong>{{ ticketMode | titlecase }}</strong>
+                <span>{{ ticketSummary }}</span>
+                <small>{{ totalSeats }} seats · {{ approvalRequired ? 'Approval required' : 'Instant booking' }}</small>
+              </div>
+            </div>
+
+            <div class="preview-section-card">
+              <div class="summary-label">Sections Layout</div>
+              <div class="section-pill-row">
+                <span class="section-pill" *ngIf="speakersEnabled">Speakers</span>
+                <span class="section-pill" *ngIf="agendaEnabled">Agenda</span>
+                <span class="section-pill" *ngIf="faqsEnabled">FAQs</span>
+                <span class="section-pill" *ngIf="sponsorsEnabled">Sponsors</span>
+                <span class="section-pill" *ngFor="let section of customSections">{{ section.title }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="preview-copy-card">
+            <div class="summary-label">Description</div>
+            <div class="summary-copy" [innerHTML]="description || 'Event description preview will render here as you write.'"></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>

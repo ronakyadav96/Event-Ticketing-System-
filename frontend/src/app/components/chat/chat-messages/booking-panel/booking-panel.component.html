@@ -1,0 +1,34 @@
+<div class="panel" *ngIf="visible()">
+  <div class="head">
+    <span class="pill" [class.pending]="booking().stage === 'PAYMENT_PENDING'">
+      {{ booking().stage === 'PAYMENT_PENDING' ? 'Awaiting payment' : 'Review your booking' }}
+    </span>
+    <span class="total" *ngIf="booking().stage === 'PAYMENT_PENDING' && booking().payment?.amount_total != null; else estTotal">
+      {{ booking().payment!.amount_total! / 100 | currency: 'INR' : 'symbol' : '1.0-2' }}
+    </span>
+    <ng-template #estTotal>
+      <span class="total" *ngIf="booking().total_price != null">{{ booking().total_price | currency: 'INR' : 'symbol' : '1.0-2' }}</span>
+    </ng-template>
+  </div>
+
+  <p class="line">
+    <strong>{{ booking().event?.title }}</strong>
+    <span *ngIf="booking().show_at"> · {{ booking().show_at | date: 'EEE d MMM, h:mm a' }}</span>
+  </p>
+  <p class="line muted">
+    {{ booking().event?.venue }}<span *ngIf="booking().seats.length"> · Seats {{ booking().seats.join(', ') }}</span>
+  </p>
+
+  <p class="hold" *ngIf="booking().stage === 'PAYMENT_PENDING' && booking().payment?.expires_at">
+    ⏳ Seats held until {{ booking().payment!.expires_at | date: 'h:mm a' }}. Ticket is issued once Stripe confirms payment.
+  </p>
+
+  <div class="actions">
+    <button type="button" class="ghost" [disabled]="chat.isSending()" (click)="cancel()">Cancel</button>
+    <button *ngIf="chat.paymentUrl()" type="button" class="primary" (click)="pay()">Pay securely →</button>
+    <button *ngIf="booking().stage === 'PAYMENT_PENDING'" type="button" class="ghost" [disabled]="chat.isSending()" (click)="checkPaid()">I've paid</button>
+    <button *ngIf="booking().stage === 'REVIEW'" type="button" class="primary" [disabled]="chat.isSending()" (click)="confirm()">
+      Confirm &amp; pay
+    </button>
+  </div>
+</div>

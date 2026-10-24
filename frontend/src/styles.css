@@ -1,0 +1,500 @@
+:root {
+  /* BookMyShow / Premium Ticketing Brand Palette */
+  --brand-primary: #f84464;
+  --brand-primary-hover: #e11d48;
+  --brand-primary-light: rgba(248, 68, 100, 0.1);
+  --brand-primary-glow: rgba(248, 68, 100, 0.25);
+
+  /* Page Canvas & Surfaces */
+  --app-bg: #f5f5f7;
+  --page-bg: #f5f5f7;
+  --card-bg: #ffffff;
+  --surface-white: #ffffff;
+  --surface-alt: #f9fafb;
+
+  /* Premiere / Streaming Section (Dark Theme) */
+  --stream-dark: #2b3148;
+  --stream-dark-deep: #1e2334;
+  --stream-card-bg: #1a2238;
+  --stream-text-muted: rgba(255, 255, 255, 0.72);
+
+  /* Typography */
+  --text-primary: #222222;
+  --text-secondary: #555555;
+  --text-muted: #888888;
+  --text-inverse: #ffffff;
+
+  /* Borders & Dividers */
+  --border-subtle: #e5e5e5;
+  --border-light: #f0f0f0;
+  --border-focus: #f84464;
+
+  /* Status Colors */
+  --showtime-available: #10b981;
+  --showtime-available-bg: rgba(16, 185, 129, 0.08);
+  --showtime-fast-filling: #f59e0b;
+  --showtime-fast-filling-bg: rgba(245, 158, 11, 0.08);
+  --showtime-almost-full: #ef4444;
+  --showtime-almost-full-bg: rgba(239, 68, 68, 0.08);
+
+  /* Header & Navigation Heights */
+  --app-nav-height: 64px;
+  --app-subnav-height: 44px;
+
+  /* Elevations */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.12);
+  --shadow-card-hover: 0 12px 28px rgba(0, 0, 0, 0.12);
+
+  /* Border Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Container */
+.page {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+
+.page-full {
+  width: 100%;
+  padding: 0;
+}
+
+/* Links & Buttons Reset */
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Primary CTA Button (BookMyShow Crimson) */
+.btn-primary-bms {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand-primary);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 24px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(248, 68, 100, 0.3);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn-primary-bms:hover {
+  background: var(--brand-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(248, 68, 100, 0.4);
+  color: #ffffff;
+}
+
+.btn-primary-bms:active {
+  transform: translateY(0);
+}
+
+/* Secondary Outlined Button */
+.btn-outline-bms {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--brand-primary);
+  color: var(--brand-primary);
+  background: transparent;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 9px 20px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-outline-bms:hover {
+  background: var(--brand-primary);
+  color: #ffffff;
+}
+
+/* Pill Filter Button */
+.pill-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.pill-filter:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+
+.pill-filter.active {
+  background: var(--brand-primary-light);
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+  font-weight: 600;
+}
+
+/* Badge System */
+.bms-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.bms-badge.promoted {
+  background: var(--brand-primary);
+  color: #ffffff;
+}
+
+.bms-badge.premiere {
+  background: var(--brand-primary);
+  color: #ffffff;
+  border-radius: 4px;
+  font-size: 10px;
+  padding: 2px 6px;
+}
+
+.bms-badge.cert {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Universal Section Headers */
+.section-head-bms {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-head-bms h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+.section-head-bms .see-all {
+  color: var(--brand-primary);
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.section-head-bms .see-all:hover {
+  text-decoration: underline;
+}
+
+/* Shimmer Loading Skeleton */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #f0f0f2 25%, #e6e6ea 37%, #f0f0f2 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* Custom Scrollbar for horizontal card rows */
+.custom-horizontal-scroll {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.custom-horizontal-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.custom-horizontal-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.custom-horizontal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Create Event Preview Styles (Preserved) */
+.design-preview {
+  margin-top: 12px;
+  border: 1px solid #1f2937;
+  border-radius: 16px;
+  padding: 12px;
+  background: #0b1324;
+  display: grid;
+  gap: 10px;
+}
+
+.preview-head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.preview-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #cbd5e1;
+}
+
+.preview-card {
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,23,42,0.6);
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.preview-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.preview-meta {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.preview-desc {
+  font-size: 13px;
+  color: #e2e8f0;
+}
+
+.preview-btn {
+  width: fit-content;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: linear-gradient(135deg, var(--theme-color, #ef4444), #f59e0b);
+  color: #0b0f1a;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.preview-poster {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.35);
+  aspect-ratio: 16 / 9;
+}
+
+.preview-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.preview-fallback {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.preview-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.preview-kicker {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #fbbf24;
+}
+
+.movie-preview {
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+}
+
+.movie-preview .preview-left {
+  display: grid;
+  gap: 8px;
+}
+
+.movie-preview .preview-right {
+  display: grid;
+  gap: 8px;
+}
+
+.concert-preview .concert-hero {
+  position: relative;
+  min-height: 180px;
+  border-radius: 12px;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+
+.concert-preview .concert-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(0,0,0,0.85), rgba(0,0,0,0.2));
+}
+
+.concert-preview .concert-text {
+  position: relative;
+  z-index: 1;
+  padding: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.comedy-preview {
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 12px;
+}
+
+.comedy-left {
+  display: grid;
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .movie-preview,
+  .comedy-preview {
+    grid-template-columns: 1fr;
+  }
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.preview-item {
+  background: #0b1324;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.preview-label {
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.preview-value {
+  font-size: 14px;
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.preview-image {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.preview-image img {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+}
+
+.date-preview {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.dp-item {
+  padding: 12px;
+  border-radius: 14px;
+  background: #0f172a;
+  border: 1px solid #1f2937;
+  color: #e5e7eb;
+  font-weight: 600;
+}
+
+.dp-label {
+  font-size: 11px;
+  display: block;
+  color: #94a3b8;
+}
+
+.dp-value {
+  font-size: 15px;
+  font-weight: 900;
+  color: #f8fafc;
+}
