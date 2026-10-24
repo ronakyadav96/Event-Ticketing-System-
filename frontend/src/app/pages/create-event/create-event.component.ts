@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EventService } from '../../services/event.service';
 import { AuthService } from '../../auth/auth.service';
+import { CityService } from '../../services/city.service';
 import { environment } from '../../../environments/environment';
 
 type CustomFieldType = 'text' | 'email' | 'phone' | 'number' | 'textarea' | 'select' | 'checkbox';
@@ -38,6 +39,9 @@ export class CreateEventComponent implements OnInit, AfterViewInit {
   endDate = '';
   showTimes: string[] = ['19:00'];
   venue = '';
+  /** City used by the city selector and the chatbot; empty = shown in every city. */
+  city = inject(CityService).currentCity;
+  readonly cities = inject(CityService).popularCities;
   meetingLink = '';
   price = 0;
   totalSeats = 1;
@@ -456,6 +460,7 @@ export class CreateEventComponent implements OnInit, AfterViewInit {
         // Keep legacy date field (not shown in UI)
         this.date = legacyIso ? legacyIso.slice(0, 16) : '';
         this.venue = ev.venue || '';
+        this.city = ev.city || '';
         this.meetingLink = ev.meetingLink || '';
         this.price = ev.price || 0;
         this.totalSeats = ev.totalSeats || 1;
@@ -556,6 +561,7 @@ export class CreateEventComponent implements OnInit, AfterViewInit {
     fd.append('totalSeats', String(this.totalSeats));
     fd.append('category', this.resolvedCategory);
     fd.append('locationType', this.locationType);
+    fd.append('city', this.locationType === 'Online' ? '' : this.city);
     fd.append('meetingLink', this.meetingLink.trim());
     fd.append('language', this.language);
     fd.append('ageRestriction', this.ageRestriction);

@@ -183,6 +183,14 @@
             </label>
 
             <label class="field-card" *ngIf="locationType !== 'Online'">
+              <span>City</span>
+              <select class="form-control" [(ngModel)]="city" name="city">
+                <option value="">All cities (shown everywhere)</option>
+                <option *ngFor="let c of cities" [value]="c">{{ c }}</option>
+              </select>
+            </label>
+
+            <label class="field-card" *ngIf="locationType !== 'Online'">
               <span>Google Maps / Pin Label</span>
               <input class="form-control" [(ngModel)]="mapQuery" name="mapQuery" placeholder="Sector 18, Noida" />
             </label>
