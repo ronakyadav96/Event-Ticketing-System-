@@ -1,0 +1,89 @@
+<div class="search" [class.open]="open()">
+  <span class="glyph" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+  </span>
+  <input
+    #box
+    type="search"
+    class="input"
+    [value]="query()"
+    (input)="onInput(box.value)"
+    (focus)="onFocus()"
+    (keydown)="onKeydown($event)"
+    placeholder="Search for Movies, Events, Plays, Sports and Activities"
+    aria-label="Search events and movies"
+    autocomplete="off"
+    role="combobox"
+    [attr.aria-expanded]="open()"
+  />
+  <button *ngIf="query()" type="button" class="clear" (click)="clear(box)" aria-label="Clear search">&times;</button>
+
+  <div class="dropdown" *ngIf="open()" role="listbox">
+    <!-- Empty query: recent + trending -->
+    <ng-container *ngIf="!showSuggestions()">
+      <div class="group" *ngIf="recent().length">
+        <div class="group-title">Recent searches</div>
+        <button type="button" class="recent" *ngFor="let r of recent()" (click)="searchAll(r)">
+          <span class="recent-icon" aria-hidden="true">↺</span>
+          <span class="recent-text">{{ r }}</span>
+          <span class="recent-x" (click)="removeRecent(r, $event)" aria-label="Remove">&times;</span>
+        </button>
+      </div>
+      <div class="group">
+        <div class="group-title">Trending</div>
+        <div class="trend-row">
+          <button type="button" class="trend" *ngFor="let t of trending" (click)="openTrending(t.params)">{{ t.label }}</button>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Live suggestions -->
+    <ng-container *ngIf="showSuggestions()">
+      <div class="status" *ngIf="loading() && !results()">Searching…</div>
+
+      <ng-container *ngIf="results() as r">
+        <div class="group" *ngIf="r.events.length">
+          <div class="group-title">Events</div>
+          <button
+            type="button"
+            class="item"
+            *ngFor="let s of r.events"
+            [class.active]="indexOf(s) === active()"
+            (mouseenter)="active.set(indexOf(s))"
+            (click)="openItem(s)">
+            <img *ngIf="s.imageUrl; else thumbFallback" class="thumb" [src]="s.imageUrl" alt="" loading="lazy" />
+            <ng-template #thumbFallback><span class="thumb thumb-fallback">🎟️</span></ng-template>
+            <span class="item-body">
+              <span class="item-title">{{ s.title }}</span>
+              <span class="item-meta">{{ s.category }} · {{ dateLabel(s) }}<ng-container *ngIf="s.city"> · {{ s.city }}</ng-container></span>
+            </span>
+          </button>
+        </div>
+
+        <div class="group" *ngIf="r.movies.length">
+          <div class="group-title">Movies</div>
+          <button
+            type="button"
+            class="item"
+            *ngFor="let s of r.movies"
+            [class.active]="indexOf(s) === active()"
+            (mouseenter)="active.set(indexOf(s))"
+            (click)="openItem(s)">
+            <img *ngIf="s.imageUrl; else movieFallback" class="thumb" [src]="s.imageUrl" alt="" loading="lazy" />
+            <ng-template #movieFallback><span class="thumb thumb-fallback">🎬</span></ng-template>
+            <span class="item-body">
+              <span class="item-title">{{ s.title }}</span>
+              <span class="item-meta">Movie<ng-container *ngIf="s.rating"> · ★ {{ s.rating | number: '1.1-1' }}</ng-container></span>
+            </span>
+          </button>
+        </div>
+
+        <div class="status" *ngIf="!r.events.length && !r.movies.length">No matches for “{{ query().trim() }}”</div>
+      </ng-container>
+
+      <button type="button" class="see-all" (click)="searchAll(query())">
+        See all results for “{{ query().trim() }}” <span aria-hidden="true">›</span>
+      </button>
+    </ng-container>
+  </div>
+</div>

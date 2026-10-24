@@ -1,0 +1,133 @@
+<div class="explore">
+  <!-- Results requested from the AI chat -->
+  <div class="ai-banner" *ngIf="fromChat()">
+    <div class="ai-banner-inner">
+      <span class="ai-spark" aria-hidden="true">✨</span>
+      <div class="ai-text">
+        <strong>Event AI</strong>
+        <span *ngIf="chatQuery(); else genericAi">found these for “{{ chatQuery() }}”</span>
+        <ng-template #genericAi><span>found these for you</span></ng-template>
+      </div>
+      <button type="button" class="ai-btn" (click)="refineInChat()">Refine in chat</button>
+      <button type="button" class="ai-close" (click)="clearChatResults()" aria-label="Dismiss">&times;</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- FILTER SIDEBAR -->
+    <aside class="filters" [class.open]="filtersOpen()">
+      <div class="filters-head">
+        <h2>Filters</h2>
+        <button type="button" class="link" *ngIf="activeFilterCount()" (click)="clearAll()">Clear all</button>
+        <button type="button" class="filters-close" (click)="filtersOpen.set(false)" aria-label="Close filters">&times;</button>
+      </div>
+
+      <section class="filter-block">
+        <div class="filter-title">
+          <span [class.active]="dateKey()">Date</span>
+          <button type="button" class="link" *ngIf="dateKey()" (click)="clearSection('date')">Clear</button>
+        </div>
+        <div class="chips">
+          <button type="button" class="chip" *ngFor="let d of dateOptions" [class.on]="dateKey() === d.key" (click)="setDate(d.key)">
+            {{ d.label }}
+          </button>
+        </div>
+      </section>
+
+      <section class="filter-block">
+        <div class="filter-title">
+          <span [class.active]="selectedCategories().length">Categories</span>
+          <button type="button" class="link" *ngIf="selectedCategories().length" (click)="clearSection('category')">Clear</button>
+        </div>
+        <div class="chips">
+          <button
+            type="button"
+            class="chip"
+            *ngFor="let c of categoryChips()"
+            [class.on]="isCategorySelected(c.key)"
+            (click)="toggleCategory(c.key)">
+            {{ c.label }}
+          </button>
+        </div>
+      </section>
+
+      <section class="filter-block">
+        <div class="filter-title">
+          <span [class.active]="priceKey()">Price</span>
+          <button type="button" class="link" *ngIf="priceKey()" (click)="clearSection('price')">Clear</button>
+        </div>
+        <div class="chips">
+          <button type="button" class="chip" *ngFor="let p of priceOptions" [class.on]="priceKey() === p.key" (click)="setPrice(p.key)">
+            {{ p.label }}
+          </button>
+        </div>
+      </section>
+
+      <button type="button" class="browse-venues" routerLink="/movies">Browse Movies</button>
+    </aside>
+    <div class="filters-backdrop" *ngIf="filtersOpen()" (click)="filtersOpen.set(false)"></div>
+
+    <!-- RESULTS -->
+    <main class="results">
+      <div class="results-head">
+        <h1>{{ heading() }}</h1>
+        <div class="results-tools">
+          <button type="button" class="filters-toggle" (click)="filtersOpen.set(true)">
+            Filters <span class="badge" *ngIf="activeFilterCount()">{{ activeFilterCount() }}</span>
+          </button>
+          <label class="sort">
+            <span>Sort by</span>
+            <select [value]="sort()" (change)="setSort($any($event.target).value)">
+              <option *ngIf="q()" value="relevance">Relevance</option>
+              <option *ngFor="let s of sortOptions" [value]="s.key">{{ s.label }}</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <!-- Quick category chips (BookMyShow's top row) -->
+      <div class="top-chips">
+        <button
+          type="button"
+          class="top-chip"
+          *ngFor="let c of categoryChips()"
+          [class.on]="isCategorySelected(c.key)"
+          (click)="toggleCategory(c.key)">
+          {{ c.label }}
+        </button>
+      </div>
+
+      <p class="count" *ngIf="!loading() && !error()">
+        {{ total() }} {{ total() === 1 ? 'result' : 'results' }}<span *ngIf="dateKey()"> · {{ dateKey() === 'weekend' ? 'this weekend' : dateKey() }}</span>
+      </p>
+
+      <div class="results-grid" *ngIf="loading()">
+        <div class="skeleton" *ngFor="let _ of [1, 2, 3, 4, 5, 6, 7, 8]"></div>
+      </div>
+
+      <div class="state error" *ngIf="!loading() && error()">
+        <p>{{ error() }}</p>
+      </div>
+
+      <div class="results-grid" *ngIf="!loading() && events().length">
+        <app-poster-card *ngFor="let e of events(); trackBy: trackEvent" [event]="e"></app-poster-card>
+      </div>
+
+      <div class="state empty" *ngIf="!loading() && !error() && !events().length">
+        <div class="empty-icon" aria-hidden="true">🎟️</div>
+        <h3>No events match these filters</h3>
+        <p>Try another date, category or price range — or ask Event AI to find something for you.</p>
+        <div class="empty-actions">
+          <button type="button" class="btn-primary" *ngIf="activeFilterCount() || q()" (click)="clearAll()">Clear filters</button>
+          <button type="button" class="btn-ghost" (click)="refineInChat()">Ask Event AI</button>
+        </div>
+      </div>
+
+      <div class="more" *ngIf="!loading() && hasMore()">
+        <button type="button" class="btn-ghost" [disabled]="loadingMore()" (click)="loadMore()">
+          {{ loadingMore() ? 'Loading…' : 'Load more' }}
+        </button>
+      </div>
+    </main>
+  </div>
+</div>

@@ -7,25 +7,25 @@ import {
   RouterLinkActive,
   NavigationEnd
 } from '@angular/router';
-import { filter, Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { filter, Subject, takeUntil } from 'rxjs';
 import { AuthService } from './auth/auth.service';
 import { FooterComponent } from './shared/footer/footer.component';
 import { CitySelectorComponent } from './shared/city-selector/city-selector.component';
-import { FormsModule } from '@angular/forms';
 import { ChatWidgetComponent } from './components/chat/chat-widget.component';
+import { SearchBoxComponent } from './shared/search-box/search-box.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
     FooterComponent,
     CitySelectorComponent,
     ChatWidgetComponent,
+    SearchBoxComponent,
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
@@ -39,11 +39,9 @@ export class AppComponent implements OnDestroy {
 
   isLoginPage = false;
   isRegisterPage = false;
-  isEventsPage = false;
   isDrawerOpen = false;
-  navbarQuery = '';
-
-  private search$ = new Subject<string>();
+  /** Which second-tier nav link is highlighted: 'movies', 'events' or an explore category. */
+  activeNav = '';
 
   constructor() {
     this.router.events
@@ -57,25 +55,15 @@ export class AppComponent implements OnDestroy {
 
         this.isLoginPage = url.includes('/login');
         this.isRegisterPage = url.includes('/register');
-        this.isEventsPage = urlTree.root.children['primary']?.segments?.[0]?.path === 'events';
-
-        if (this.isEventsPage) {
-          const q = urlTree.queryParams?.['q'];
-          this.navbarQuery = typeof q === 'string' ? q : '';
-        } else {
-          this.navbarQuery = '';
-        }
+        const first = urlTree.root.children['primary']?.segments?.[0]?.path || '';
+        const category = String(urlTree.queryParams?.['category'] || '');
+        this.activeNav =
+          first === 'movies' ? 'movies'
+          : first === 'explore' ? (category && !category.includes(',') ? category : 'events')
+          : '';
         this.isDrawerOpen = false;
       });
 
-    this.search$
-      .pipe(debounceTime(250), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe((q) => {
-        this.router.navigate(['/events'], {
-          queryParams: { q: q ? q : null },
-          queryParamsHandling: 'merge',
-        });
-      });
   }
 
   // =====================
@@ -140,19 +128,6 @@ export class AppComponent implements OnDestroy {
 
   closeDrawer(): void {
     this.isDrawerOpen = false;
-  }
-
-  onNavbarQueryChange(value: string): void {
-    this.search$.next(value ?? '');
-  }
-
-  clearNavbarSearch(): void {
-    this.navbarQuery = '';
-    this.search$.next('');
-    this.router.navigate(['/events'], {
-      queryParams: { q: null },
-      queryParamsHandling: 'merge',
-    });
   }
 
   ngOnDestroy(): void {

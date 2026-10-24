@@ -8,6 +8,7 @@ const Event = require('../models/Event');
 const User = require('../models/User');
 const movieRecommendationService = require('../services/movie-recommendation.service');
 const { getPosterUrl } = require('../services/poster.service');
+const showtime = require('../utils/showtime.util');
 
 // =======================
 // GridFS Helper
@@ -126,31 +127,16 @@ function parseShowTimes(input) {
   return out;
 }
 
+// Show times are wall-clock times in the event time zone (EVENT_TIMEZONE), not UTC.
 function toHHmmFromDateUTC(d) {
   if (!d) return '';
-  const hh = String(d.getUTCHours()).padStart(2, '0');
-  const mm = String(d.getUTCMinutes()).padStart(2, '0');
-  return `${hh}:${mm}`;
+  return showtime.hhmmInTz(d, showtime.getEventTimeZone());
 }
 
 function combineUtcDateAndTime(dateOnly, hhmm) {
-  if (!dateOnly || !hhmm) return null;
-  const [hRaw, mRaw] = String(hhmm).split(':');
-  const h = Number(hRaw);
-  const m = Number(mRaw);
-  if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
-  const d = new Date(
-    Date.UTC(
-      dateOnly.getUTCFullYear(),
-      dateOnly.getUTCMonth(),
-      dateOnly.getUTCDate(),
-      h,
-      m,
-      0,
-      0
-    )
-  );
-  return Number.isNaN(d.getTime()) ? null : d;
+  if (!dateOnly || !hhmm || !/^\d{1,2}:\d{2}$/.test(String(hhmm))) return null;
+  const d = showtime.zonedDateTimeToUtc(dateOnly.toISOString().slice(0, 10), String(hhmm));
+  return d && !Number.isNaN(d.getTime()) ? d : null;
 }
 
 // Optional listing fields (city, language, age rating, tagline, duration, featured) from a create/update body.

@@ -14,6 +14,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const Event = require('../models/Event');
 const User = require('../models/User');
+const { zonedDateTimeToUtc } = require('../utils/showtime.util');
 
 const APPLY = process.argv.includes('--apply');
 const REMOVE = process.argv.includes('--remove');
@@ -100,7 +101,6 @@ function demoDoc(row, ownerId) {
   const [title, category, city, venue, price, startIn, runDays, showTimes, imageUrl, language, age, minutes, tagline, description, featured] = row;
   const startDate = addDays(today, startIn);
   const endDate = addDays(startDate, Math.max(0, runDays - 1));
-  const [h, m] = showTimes[0].split(':').map(Number);
   return {
     title,
     category,
@@ -110,7 +110,7 @@ function demoDoc(row, ownerId) {
     startDate,
     endDate,
     showTimes,
-    date: new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate(), h, m)),
+    date: zonedDateTimeToUtc(startDate.toISOString().slice(0, 10), showTimes[0]),
     imageUrl,
     language,
     ageRestriction: age,

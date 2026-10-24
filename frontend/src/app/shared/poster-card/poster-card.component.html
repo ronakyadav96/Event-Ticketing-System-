@@ -1,0 +1,26 @@
+<a class="pc" [routerLink]="['/events', id]" [class.past]="isPast" [attr.aria-label]="event?.title">
+  <div class="poster">
+    <img *ngIf="image && !imageFailed; else fallback" [src]="image" [alt]="event?.title" loading="lazy" (error)="imageFailed = true" />
+    <ng-template #fallback>
+      <div class="poster-fallback">
+        <span class="fallback-cat">{{ event?.category || 'Event' }}</span>
+        <span class="fallback-title">{{ event?.title }}</span>
+      </div>
+    </ng-template>
+
+    <span class="promoted" *ngIf="event?.featured && !isPast">PROMOTED</span>
+
+    <div class="strip" *ngIf="isMovie && rating; else dateStrip">
+      <span class="star">★</span> {{ rating | number: '1.1-1' }}/10
+    </div>
+    <ng-template #dateStrip>
+      <div class="strip" *ngIf="!isMovie">{{ dateLabel }}</div>
+    </ng-template>
+  </div>
+
+  <h3 class="title" [title]="event?.title">{{ event?.title }}</h3>
+  <p class="meta" *ngIf="!isMovie && place" [title]="place">{{ place }}</p>
+  <p class="meta" *ngIf="isMovie">{{ event?.language || 'Movie' }}</p>
+  <p class="meta" *ngIf="!isMovie && event?.category">{{ event?.category }}</p>
+  <p class="meta price" *ngIf="!isMovie && priceLabel">{{ priceLabel }}</p>
+</a>

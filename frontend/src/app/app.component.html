@@ -12,25 +12,8 @@
           <span class="brand-name">EVENT TICKETING <span class="brand-accent"> SYSTEM</span></span>
         </a>
 
-        <!-- Search Bar  -->
-        <div class="header-search">
-          <span class="search-glyph">🔍</span>
-          <input
-            type="text"
-            class="header-search-input"
-            [(ngModel)]="navbarQuery"
-            (ngModelChange)="onNavbarQueryChange($event)"
-            placeholder="Search for Movies, Events, Plays, Sports and Activities"
-          />
-          <button
-            *ngIf="navbarQuery"
-            class="search-clear-btn"
-            type="button"
-            (click)="clearNavbarSearch()"
-            aria-label="Clear search">
-            &times;
-          </button>
-        </div>
+        <!-- Search Bar with live suggestions -->
+        <app-search-box class="header-search-box"></app-search-box>
 
         <!-- Right Section: City, Auth & Hamburger -->
         <div class="header-tier1-right">
@@ -77,12 +60,13 @@
       <div class="header-tier2-inner">
         <!-- Left: Category Links -->
         <div class="tier2-left">
-          <a class="tier2-link" routerLink="/movies" routerLinkActive="active">Movies</a>
-          <a class="tier2-link" routerLink="/events" [queryParams]="{ category: 'stream' }" routerLinkActive="active">Stream</a>
-          <a class="tier2-link" routerLink="/events" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active">Events</a>
-          <a class="tier2-link" routerLink="/events" [queryParams]="{ category: 'plays' }" routerLinkActive="active">Plays</a>
-          <a class="tier2-link" routerLink="/events" [queryParams]="{ category: 'sports' }" routerLinkActive="active">Sports</a>
-          <a class="tier2-link" routerLink="/events" [queryParams]="{ category: 'activities' }" routerLinkActive="active">Activities</a>
+          <a class="tier2-link" routerLink="/movies" [class.active]="activeNav === 'movies'">Movies</a>
+          <a class="tier2-link" routerLink="/explore" [class.active]="activeNav === 'events'">Events</a>
+          <a class="tier2-link" routerLink="/explore" [queryParams]="{ category: 'Comedy' }" [class.active]="activeNav === 'Comedy'">Comedy</a>
+          <a class="tier2-link" routerLink="/explore" [queryParams]="{ category: 'Concert' }" [class.active]="activeNav === 'Concert'">Music</a>
+          <a class="tier2-link" routerLink="/explore" [queryParams]="{ category: 'Plays' }" [class.active]="activeNav === 'Plays'">Plays</a>
+          <a class="tier2-link" routerLink="/explore" [queryParams]="{ category: 'Sports' }" [class.active]="activeNav === 'Sports'">Sports</a>
+          <a class="tier2-link" routerLink="/explore" [queryParams]="{ category: 'Activities' }" [class.active]="activeNav === 'Activities'">Activities</a>
         </div>
 
         <!-- Right: Utility Links -->
@@ -151,6 +135,14 @@
         routerLinkActive="active"
         (click)="closeDrawer()">
         <span class="d-icon">🎬</span> Movies
+      </a>
+
+      <a
+        class="drawer-link"
+        routerLink="/explore"
+        routerLinkActive="active"
+        (click)="closeDrawer()">
+        <span class="d-icon">🎤</span> Events
       </a>
 
       <a

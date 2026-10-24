@@ -5,7 +5,8 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './auth/login/login.component';
 import { RegisterComponent } from './auth/register/register.component';
 
-import { EventsComponent } from './pages/events/events.component';
+import { HomeComponent } from './pages/home/home.component';
+import { ExploreComponent } from './pages/explore/explore.component';
 import { EventDetailsComponent } from './pages/event-details/event-details.component';
 import { CreateEventComponent } from './pages/create-event/create-event.component';
 import { BookingConfirmationComponent } from './pages/booking-confirmation/booking-confirmation.component';
@@ -29,7 +30,8 @@ export const routes: Routes = [
   { path: 'register', component: RegisterComponent, canActivate: [guestGuard] },
 
   // ---------- USER ----------
-  { path: 'events', component: EventsComponent },
+  { path: 'events', component: HomeComponent },
+  { path: 'explore', component: ExploreComponent },
   { path: 'book/:eventId', component: BookingPageComponent, canActivate: [authGuard] },
   { path: 'movies', component: MovieRecommendationsComponent },
   { path: 'movies/search', component: MovieRecommendationsComponent },

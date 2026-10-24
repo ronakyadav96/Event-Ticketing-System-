@@ -1,0 +1,112 @@
+<div class="home">
+  <app-hero-carousel></app-hero-carousel>
+
+  <div class="container">
+    <!-- Recommended movies -->
+    <section class="row-section" *ngIf="movies().length">
+      <div class="row-head">
+        <h2>Recommended Movies</h2>
+        <a class="see-all" routerLink="/movies">See All ›</a>
+      </div>
+      <div class="row-wrap">
+        <button type="button" class="arrow left" (click)="scrollRow(movieTrack, -1)" aria-label="Previous">‹</button>
+        <div class="track" #movieTrack>
+          <button type="button" class="movie" *ngFor="let m of movies(); trackBy: trackMovie" (click)="openMovie(m)">
+            <span class="movie-poster">
+              <img *ngIf="m.posterUrl; else noPoster" [src]="m.posterUrl" [alt]="m.title" loading="lazy" />
+              <ng-template #noPoster><span class="movie-fallback">{{ m.title }}</span></ng-template>
+              <span class="movie-strip" *ngIf="m.voteAverage">
+                <span class="star">★</span> {{ m.voteAverage | number: '1.1-1' }}/10
+              </span>
+            </span>
+            <span class="movie-title">{{ m.title }}</span>
+            <span class="movie-meta">{{ m.discoveryCategory || 'Movie' }}</span>
+          </button>
+        </div>
+        <button type="button" class="arrow right" (click)="scrollRow(movieTrack, 1)" aria-label="Next">›</button>
+      </div>
+    </section>
+
+    <!-- Category tiles -->
+    <section class="row-section">
+      <div class="row-head">
+        <h2>The Best of Live Events</h2>
+      </div>
+      <div class="tiles">
+        <a
+          class="tile"
+          *ngFor="let t of tiles"
+          [ngClass]="t.tone"
+          routerLink="/explore"
+          [queryParams]="{ category: t.key }">
+          <span class="tile-icon" aria-hidden="true">{{ t.icon }}</span>
+          <span class="tile-label">{{ t.label }}</span>
+          <span class="tile-count">{{ tileCount(t.key) }}</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Event rows for the selected city -->
+    <ng-container *ngIf="rowsLoading()">
+      <section class="row-section">
+        <div class="row-head"><h2>Popular Events in {{ city() }}</h2></div>
+        <div class="track">
+          <div class="skeleton" *ngFor="let _ of [1, 2, 3, 4, 5]"></div>
+        </div>
+      </section>
+    </ng-container>
+
+    <ng-container *ngIf="!rowsLoading()">
+      <section class="row-section" *ngFor="let row of rows(); trackBy: trackRow">
+        <div class="row-head">
+          <div>
+            <h2>{{ row.title }}<span *ngIf="row.id === 'popular'"> in {{ city() }}</span></h2>
+            <p class="row-sub">{{ row.subtitle }}</p>
+          </div>
+          <a class="see-all" routerLink="/explore" [queryParams]="row.seeAll">See All ›</a>
+        </div>
+        <div class="row-wrap">
+          <button *ngIf="row.events.length > 5" type="button" class="arrow left" (click)="scrollRow(track, -1)" aria-label="Previous">‹</button>
+          <div class="track" #track>
+            <app-poster-card class="track-card" *ngFor="let e of row.events; trackBy: trackEvent" [event]="e"></app-poster-card>
+          </div>
+          <button *ngIf="row.events.length > 5" type="button" class="arrow right" (click)="scrollRow(track, 1)" aria-label="Next">›</button>
+        </div>
+      </section>
+
+      <section class="row-section empty-city" *ngIf="!rows().length">
+        <h2>No live events in {{ city() }} yet</h2>
+        <p>Try another city from the top bar, or <a routerLink="/explore">browse all events</a>.</p>
+      </section>
+    </ng-container>
+  </div>
+
+  <!-- Premiere band (BookMyShow's dark section) -->
+  <section class="premiere" *ngIf="movies().length > 6">
+    <div class="container">
+      <div class="premiere-brand">
+        <span class="premiere-play" aria-hidden="true">▶</span>
+        <div>
+          <strong>PREMIERE</strong>
+          <span>Watch new movies at home, every Friday</span>
+        </div>
+      </div>
+      <h2>Premieres</h2>
+      <p class="row-sub light">Brand new releases every Friday</p>
+      <div class="row-wrap">
+        <button type="button" class="arrow left dark" (click)="scrollRow(premiereTrack, -1)" aria-label="Previous">‹</button>
+        <div class="track" #premiereTrack>
+          <button type="button" class="movie dark" *ngFor="let m of movies().slice(6); trackBy: trackMovie" (click)="openMovie(m)">
+            <span class="movie-poster">
+              <img *ngIf="m.posterUrl; else noPoster2" [src]="m.posterUrl" [alt]="m.title" loading="lazy" />
+              <ng-template #noPoster2><span class="movie-fallback">{{ m.title }}</span></ng-template>
+              <span class="premiere-tag">PREMIERE</span>
+            </span>
+            <span class="movie-title">{{ m.title }}</span>
+          </button>
+        </div>
+        <button type="button" class="arrow right dark" (click)="scrollRow(premiereTrack, 1)" aria-label="Next">›</button>
+      </div>
+    </div>
+  </section>
+</div>

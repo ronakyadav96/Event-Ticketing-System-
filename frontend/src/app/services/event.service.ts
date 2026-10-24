@@ -9,6 +9,59 @@ import { map } from 'rxjs/operators';
 import { Event } from '../models/event.model';
 import { environment } from '../../environments/environment';
 
+/** Query parameters understood by GET /api/events (all optional). */
+export interface ExploreQuery {
+  q?: string;
+  category?: string; // comma-separated
+  live?: 'true';
+  city?: string;
+  genre?: string;
+  venue?: string;
+  from?: string; // YYYY-MM-DD
+  to?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  upcoming?: 'true';
+  sort?: 'relevance' | 'date' | 'priceAsc' | 'priceDesc' | 'popular';
+}
+
+export interface ExplorePage {
+  data: Event[];
+  page: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface SearchSuggestion {
+  id: string;
+  title: string;
+  category: string;
+  venue: string;
+  city: string;
+  price: number;
+  startDate: string;
+  endDate: string;
+  imageUrl: string;
+  rating: number | null;
+  isUpcoming: boolean;
+}
+
+export interface SearchSuggestions {
+  query: string;
+  events: SearchSuggestion[];
+  movies: SearchSuggestion[];
+  totalEvents: number;
+  totalMovies: number;
+}
+
+export interface CatalogFacets {
+  categories: string[];
+  venues: string[];
+  cities: string[];
+  categoryCounts: Record<string, number>;
+  priceRange: { min: number; max: number };
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -117,6 +170,40 @@ export class EventService {
       // NOTE: No OMDB/TMDB enrichment on the list — backend enriches only getEventById.
       // This keeps the events list fast (1 request, no external calls).
     );
+  }
+
+  /** Filtered, ranked listing used by the explore page and the home rows. */
+  explore(filters: ExploreQuery, page = 1, limit = 20): Observable<ExplorePage> {
+    let params = new HttpParams().set('page', String(page)).set('limit', String(limit));
+    for (const [key, value] of Object.entries(filters)) {
+      if (value !== undefined && value !== null && String(value).trim() !== '') {
+        params = params.set(key, String(value));
+      }
+    }
+    return this.http.get<any>(this.API, { params }).pipe(
+      map((res) => ({
+        data: (Array.isArray(res?.data) ? res.data : []).map((e: any) => this.normalizeEvent(e)),
+        page: Number(res?.page) || page,
+        total: Number(res?.total) || 0,
+        totalPages: Number(res?.totalPages) || 1,
+      }))
+    );
+  }
+
+  suggest(q: string, city?: string): Observable<SearchSuggestions> {
+    let params = new HttpParams().set('q', q);
+    if (city) params = params.set('city', city);
+    return this.http.get<SearchSuggestions>(`${this.API}/suggest`, { params }).pipe(
+      map((res) => ({
+        ...res,
+        events: (res?.events || []).map((e) => ({ ...e, imageUrl: this.normalizeImageUrl(e.imageUrl) })),
+        movies: (res?.movies || []).map((e) => ({ ...e, imageUrl: this.normalizeImageUrl(e.imageUrl) })),
+      }))
+    );
+  }
+
+  getFacets(): Observable<CatalogFacets> {
+    return this.http.get<CatalogFacets>(`${this.API}/facets`);
   }
 
   getMovieEvent(sourceMovieId: string): Observable<Event | null> {
