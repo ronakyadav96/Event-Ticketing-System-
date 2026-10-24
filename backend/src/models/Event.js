@@ -65,6 +65,43 @@ const eventSchema = new mongoose.Schema(
       maxlength: 40,
     },
 
+    // City the event takes place in. Empty = shown in every city (e.g. nationwide movie releases).
+    city: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 60,
+    },
+
+    // Listing details shown on cards and the details page (BookMyShow-style).
+    language: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 80,
+    },
+    ageRestriction: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 20,
+    },
+    tagline: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 160,
+    },
+    durationMinutes: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
+    featured: {
+      type: Boolean,
+      default: false,
+    },
+
     totalSeats: {
       type: Number,
       required: true,
@@ -134,9 +171,10 @@ const eventSchema = new mongoose.Schema(
       maxlength: 40,
     },
 
+    // Unique (sparse) in MongoDB: leave unset for events that are not movie imports — an empty
+    // string would collide with every other hand-created event.
     sourceMovieId: {
       type: String,
-      default: '',
       trim: true,
       maxlength: 40,
     },
@@ -183,6 +221,7 @@ eventSchema.index({ date: 1 });
 eventSchema.index({ category: 1, date: 1 });
 eventSchema.index({ startDate: 1, endDate: 1 });
 eventSchema.index({ sourceMovieId: 1 });
+eventSchema.index({ city: 1, category: 1 });
 
 
 // =====================================================

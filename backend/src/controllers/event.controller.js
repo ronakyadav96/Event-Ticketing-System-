@@ -153,6 +153,21 @@ function combineUtcDateAndTime(dateOnly, hhmm) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+// Optional listing fields (city, language, age rating, tagline, duration, featured) from a create/update body.
+function listingFieldsFrom(body, { partial }) {
+  const out = {};
+  for (const key of ['city', 'language', 'ageRestriction', 'tagline']) {
+    if (body[key] != null) out[key] = String(body[key]).trim();
+    else if (!partial) out[key] = '';
+  }
+  if (body.durationMinutes != null && body.durationMinutes !== '') {
+    const n = Number(body.durationMinutes);
+    out.durationMinutes = Number.isFinite(n) && n >= 0 ? n : null;
+  }
+  if (body.featured != null) out.featured = String(body.featured) === 'true' || body.featured === true;
+  return out;
+}
+
 // =======================
 // Upload Buffer to GridFS
 // =======================
@@ -257,6 +272,7 @@ exports.createEvent = async (req, res) => {
       totalSeats: Number(totalSeats),
       category: String(category).trim(),
       locationType: locationType ? String(locationType).trim() : '',
+      ...listingFieldsFrom(req.body, { partial: false }),
       bookedSeats: 0,
       createdBy: req.user.id, // ownership
       imageFileId,
@@ -316,11 +332,26 @@ function searchTerms(raw) {
   return unique.length ? unique : [String(raw).trim()];
 }
 
-// Ranked, stably ordered search. Score: exact title > title prefix > title contains;
-// events with upcoming shows rank above past runs; then popularity, date and _id so that
-// page N+1 never repeats page N.
-async function relevanceSearch(filter, rawQuery, page, limit) {
-  const today = new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);
+function startOfTodayUtc() {
+  return new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);
+}
+
+const MOVIE_CATEGORY = /^movies?$/i;
+
+const SORTS = {
+  relevance: { _score: -1, 'movieMeta.popularity': -1, startDate: 1, _id: 1 },
+  date: { isUpcoming: -1, startDate: 1, _id: 1 },
+  dateDesc: { startDate: -1, _id: 1 },
+  priceAsc: { isUpcoming: -1, price: 1, _id: 1 },
+  priceDesc: { isUpcoming: -1, price: -1, _id: 1 },
+  popular: { isUpcoming: -1, featured: -1, 'movieMeta.popularity': -1, bookedSeats: -1, _id: 1 },
+};
+
+// Ranked, stably ordered search. Score: exact title > title prefix > title contains > each query
+// word found in the title; events with upcoming shows and featured events rank higher; ties break
+// on popularity, date and _id so that page N+1 never repeats page N.
+async function rankedSearch(filter, rawQuery, page, limit, sortKey = 'relevance') {
+  const today = startOfTodayUtc();
   const q = String(rawQuery || '').trim().toLowerCase();
   const titleLower = { $toLower: '$title' };
   const isUpcoming = { $gte: [{ $ifNull: ['$endDate', '$date'] }, today] };
@@ -330,14 +361,22 @@ async function relevanceSearch(filter, rawQuery, page, limit) {
           { $cond: [{ $eq: [titleLower, q] }, 100, 0] },
           { $cond: [{ $eq: [{ $indexOfCP: [titleLower, q] }, 0] }, 40, 0] },
           { $cond: [{ $gte: [{ $indexOfCP: [titleLower, q] }, 0] }, 20, 0] },
+          ...searchTerms(q).map((t) => ({ $cond: [{ $gte: [{ $indexOfCP: [titleLower, t] }, 0] }, 15, 0] })),
         ],
       }
     : 0;
 
   const [result] = await Event.aggregate([
     { $match: filter },
-    { $addFields: { isUpcoming, _score: { $add: [titleScore, { $cond: [isUpcoming, 30, 0] }] } } },
-    { $sort: { _score: -1, 'movieMeta.popularity': -1, date: 1, _id: 1 } },
+    {
+      $addFields: {
+        isUpcoming,
+        _score: {
+          $add: [titleScore, { $cond: [isUpcoming, 30, 0] }, { $cond: [{ $eq: ['$featured', true] }, 10, 0] }],
+        },
+      },
+    },
+    { $sort: SORTS[sortKey] || SORTS.relevance },
     {
       $facet: {
         data: [{ $skip: (page - 1) * limit }, { $limit: limit }, { $project: { _score: 0, __v: 0 } }],
@@ -347,7 +386,98 @@ async function relevanceSearch(filter, rawQuery, page, limit) {
   ]);
 
   const total = result?.total?.[0]?.n || 0;
-  return { data: result?.data || [], page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) };
+  const data = (result?.data || []).map((e) => ({ ...e, id: e._id }));
+  return { data, page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) };
+}
+
+// Builds the Mongo filter for every public listing/search option (all optional, all combinable):
+// q, category (comma list), live, city, genre, venue, title, minPrice, maxPrice, from, to,
+// upcoming, exclude, sourceMovieId, sourceType.
+function buildEventFilter(query) {
+  const filter = {};
+  const and = [];
+
+  const categories = String(query.category || '')
+    .split(',')
+    .map((c) => c.trim())
+    .filter((c) => c && c.toLowerCase() !== 'all');
+  if (categories.length === 1) {
+    filter.category = new RegExp(`^${escapeRegex(categories[0])}$`, 'i');
+  } else if (categories.length > 1) {
+    filter.category = { $in: categories.map((c) => new RegExp(`^${escapeRegex(c)}$`, 'i')) };
+  }
+
+  // live=true: everything except movies (BookMyShow's "Events" section).
+  if (String(query.live || '').toLowerCase() === 'true') {
+    and.push({ category: { $not: MOVIE_CATEGORY } });
+  }
+
+  const sourceMovieId = normalizeMovieId(query.sourceMovieId);
+  if (sourceMovieId) filter.sourceMovieId = sourceMovieId;
+  const sourceType = String(query.sourceType || '').trim();
+  if (sourceType) filter.sourceType = new RegExp(`^${escapeRegex(sourceType)}$`, 'i');
+
+  // Every query word must match some field.
+  const rawQuery = String(query.q || query.query || '').trim();
+  if (rawQuery) {
+    for (const term of searchTerms(rawQuery)) {
+      const termRegex = new RegExp(escapeRegex(term), 'i');
+      and.push({
+        $or: [
+          { title: termRegex },
+          { venue: termRegex },
+          { city: termRegex },
+          { category: termRegex },
+          { description: termRegex },
+          { sourceMovieId: termRegex },
+          { 'movieMeta.tags': termRegex },
+        ],
+      });
+    }
+  }
+
+  // An event without a city is shown everywhere.
+  const city = String(query.city || '').trim();
+  if (city && city.toLowerCase() !== 'all') {
+    and.push({ $or: [{ city: new RegExp(`^${escapeRegex(city)}$`, 'i') }, { city: { $in: ['', null] } }] });
+  }
+
+  const genre = String(query.genre || '').trim();
+  if (genre) and.push(buildGenreFilter(genre));
+
+  const venue = String(query.venue || '').trim();
+  if (venue) filter.venue = new RegExp(escapeRegex(venue), 'i');
+
+  const title = String(query.title || '').trim();
+  if (title) filter.title = new RegExp(`^${escapeRegex(title)}$`, 'i');
+
+  const maxPrice = query.maxPrice === undefined || query.maxPrice === '' ? NaN : Number(query.maxPrice);
+  const minPrice = query.minPrice === undefined || query.minPrice === '' ? NaN : Number(query.minPrice);
+  if (Number.isFinite(maxPrice) || Number.isFinite(minPrice)) {
+    filter.price = {};
+    if (Number.isFinite(maxPrice)) filter.price.$lte = maxPrice;
+    if (Number.isFinite(minPrice)) filter.price.$gte = minPrice;
+  }
+
+  // Date window: event runs on at least one day inside [from, to].
+  const from = parseDateOnly(query.from);
+  const to = parseDateOnly(query.to);
+  if (from) and.push({ $or: [{ endDate: { $gte: from } }, { endDate: null, date: { $gte: from } }] });
+  if (to) and.push({ $or: [{ startDate: { $lte: to } }, { startDate: null, date: { $lte: to } }] });
+
+  if (String(query.upcoming || '').toLowerCase() === 'true') {
+    and.push({ $or: [{ endDate: { $gte: startOfTodayUtc() } }, { endDate: null, date: { $gte: new Date() } }] });
+  }
+
+  const exclude = String(query.exclude || '')
+    .split(',')
+    .map((id) => id.trim())
+    .filter((id) => isValidObjectId(id))
+    .map((id) => new mongoose.Types.ObjectId(id)); // aggregate() does not cast strings
+  if (exclude.length) filter._id = { $nin: exclude };
+
+  if (and.length) filter.$and = and;
+  return { filter, rawQuery };
 }
 
 // =======================
@@ -355,116 +485,69 @@ async function relevanceSearch(filter, rawQuery, page, limit) {
 // =======================
 exports.getAllEvents = async (req, res) => {
   try {
-    const rawCategory = String(req.query.category || '').trim();
-    const rawQuery = String(req.query.q || req.query.query || '').trim();
-    const rawSourceMovieId = normalizeMovieId(req.query.sourceMovieId);
-    const rawSourceType = String(req.query.sourceType || '').trim();
-    const category =
-      rawCategory && rawCategory.toLowerCase() !== 'all' ? rawCategory : '';
-
-    const filter = {};
-    const and = [];
-    if (category) {
-      filter.category = new RegExp(`^${escapeRegex(category)}$`, 'i');
-    }
-    if (rawSourceMovieId) {
-      filter.sourceMovieId = rawSourceMovieId;
-    }
-    if (rawSourceType) {
-      filter.sourceType = new RegExp(`^${escapeRegex(rawSourceType)}$`, 'i');
-    }
-    // sort=relevance (used by the AI assistant): every query word must match some field, results
-    // are ranked by title match and bookability. Default: the whole query as one phrase, by date.
-    const relevance = String(req.query.sort || '').toLowerCase() === 'relevance';
-    if (rawQuery) {
-      const terms = relevance ? searchTerms(rawQuery) : [rawQuery];
-      for (const term of terms) {
-        const termRegex = new RegExp(escapeRegex(term), 'i');
-        and.push({
-          $or: [
-            { title: termRegex },
-            { venue: termRegex },
-            { category: termRegex },
-            { description: termRegex },
-            { sourceMovieId: termRegex },
-            { 'movieMeta.tags': termRegex },
-          ],
-        });
-      }
-    }
-
-    // Structured filters used by the AI assistant (all optional, all combinable).
-    const rawGenre = String(req.query.genre || '').trim();
-    if (rawGenre) and.push(buildGenreFilter(rawGenre));
-
-    const rawVenue = String(req.query.venue || '').trim();
-    if (rawVenue) filter.venue = new RegExp(escapeRegex(rawVenue), 'i');
-
-    const rawTitle = String(req.query.title || '').trim();
-    if (rawTitle) filter.title = new RegExp(`^${escapeRegex(rawTitle)}$`, 'i');
-
-    const maxPrice = Number(req.query.maxPrice);
-    const minPrice = Number(req.query.minPrice);
-    if (Number.isFinite(maxPrice) || Number.isFinite(minPrice)) {
-      filter.price = {};
-      if (Number.isFinite(maxPrice)) filter.price.$lte = maxPrice;
-      if (Number.isFinite(minPrice)) filter.price.$gte = minPrice;
-    }
-
-    // Date window: event runs on at least one day inside [from, to].
-    const from = parseDateOnly(req.query.from);
-    const to = parseDateOnly(req.query.to);
-    if (from) and.push({ $or: [{ endDate: { $gte: from } }, { endDate: null, date: { $gte: from } }] });
-    if (to) and.push({ $or: [{ startDate: { $lte: to } }, { startDate: null, date: { $lte: to } }] });
-
-    if (String(req.query.upcoming || '').toLowerCase() === 'true') {
-      const today = new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);
-      and.push({ $or: [{ endDate: { $gte: today } }, { endDate: null, date: { $gte: new Date() } }] });
-    }
-
-    const exclude = String(req.query.exclude || '')
-      .split(',')
-      .map((id) => id.trim())
-      .filter((id) => isValidObjectId(id))
-      .map((id) => new mongoose.Types.ObjectId(id)); // aggregate() does not cast strings
-    if (exclude.length) filter._id = { $nin: exclude };
-
-    if (and.length) filter.$and = and;
+    const { filter, rawQuery } = buildEventFilter(req.query);
 
     const pageRaw = parseInt(req.query.page, 10);
     const limitRaw = parseInt(req.query.limit, 10);
     const paged = 'page' in req.query || 'limit' in req.query;
     const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
-    const limit =
-      Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 100) : 10;
-    const skip = (page - 1) * limit;
+    const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 100) : 10;
 
-    const isMovieQuery = Boolean(
-      rawSourceMovieId ||
-      rawSourceType.toLowerCase() === 'movie' ||
-      category.toLowerCase() === 'movie' ||
-      category.toLowerCase() === 'movies'
-    );
+    // Text searches are always relevance-ranked; listings use the requested sort.
+    const requestedSort = String(req.query.sort || '').trim();
+    const sortKey = SORTS[requestedSort] ? requestedSort : rawQuery ? 'relevance' : '';
 
-    if (relevance) {
-      return res.json(await relevanceSearch(filter, rawQuery, page, limit));
-    }
-
-    if (!paged) {
+    if (!paged && !sortKey) {
+      // Legacy unpaged list (dashboards).
       const events = await Event.find(filter).sort({ date: 1 }).limit(100);
       return res.json(events);
     }
 
-    const [total, events] = await Promise.all([
-      Event.countDocuments(filter),
-      Event.find(filter).sort({ date: 1 }).skip(skip).limit(limit)
-    ]);
-
-    const totalPages = Math.max(1, Math.ceil(total / limit));
-    return res.json({ data: events, page, limit, total, totalPages });
+    return res.json(await rankedSearch(filter, rawQuery, page, limit, sortKey || 'date'));
   } catch (error) {
     console.error('GET ALL EVENTS ERROR ❌', error);
     return res.status(500).json({ message: 'Failed to fetch events' });
+  }
+};
+
+// =======================
+// SEARCH SUGGESTIONS (PUBLIC) — header search dropdown
+// GET /api/events/suggest?q=&city=
+// =======================
+function suggestionOf(e) {
+  return {
+    id: String(e._id),
+    title: e.title,
+    category: e.category,
+    venue: e.venue,
+    city: e.city || '',
+    price: e.price,
+    startDate: e.startDate || e.date,
+    endDate: e.endDate || e.startDate || e.date,
+    imageUrl: e.imageUrl || e.movieMeta?.posterUrl || '',
+    rating: e.movieMeta?.voteAverage || null,
+    isUpcoming: e.isUpcoming,
+  };
+}
+
+exports.getSuggestions = async (req, res) => {
+  try {
+    const q = String(req.query.q || '').trim().slice(0, 80);
+    if (q.length < 2) return res.json({ query: q, events: [], movies: [] });
+    const city = req.query.city;
+    const live = buildEventFilter({ q, city, live: 'true' }).filter;
+    const movies = buildEventFilter({ q, city, category: 'Movie' }).filter;
+    const [ev, mv] = await Promise.all([rankedSearch(live, q, 1, 5), rankedSearch(movies, q, 1, 5)]);
+    return res.json({
+      query: q,
+      events: ev.data.map(suggestionOf),
+      movies: mv.data.map(suggestionOf),
+      totalEvents: ev.total,
+      totalMovies: mv.total,
+    });
+  } catch (error) {
+    console.error('GET SUGGESTIONS ERROR ❌', error);
+    return res.status(500).json({ message: 'Failed to fetch suggestions' });
   }
 };
 
@@ -695,6 +778,7 @@ exports.updateEvent = async (req, res) => {
     if (req.body.imagePreset != null) updates.imagePreset = String(req.body.imagePreset);
     if (req.body.designConfig != null) updates.designConfig = parseJsonObject(req.body.designConfig);
     if (req.body.customFields != null) updates.customFields = parseCustomFields(req.body.customFields);
+    Object.assign(updates, listingFieldsFrom(req.body, { partial: true }));
     if (req.file) {
       const newId = await uploadBufferToGridFS(req.file);
       updates.imageFileId = newId;
@@ -786,12 +870,35 @@ const { buildSeatLayout, MAX_SEATS_PER_BOOKING } = require('../utils/seat-map.ut
 const seatReservations = require('../services/seat-reservation.service');
 
 // GET /api/events/facets — values that actually exist in the catalog.
+// categories / venues: plain lists (used by the AI assistant); categoryCounts: upcoming events per
+// category; cities; priceRange — used by the explore page filters.
 exports.getFacets = async (req, res) => {
   try {
-    const [categories, venues] = await Promise.all([Event.distinct('category'), Event.distinct('venue')]);
-    const clean = (list) =>
-      [...new Set((list || []).map((v) => String(v || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-    return res.json({ categories: clean(categories), venues: clean(venues) });
+    const today = startOfTodayUtc();
+    const upcoming = { $or: [{ endDate: { $gte: today } }, { endDate: null, date: { $gte: today } }] };
+    const [categories, venues, cities, counts, prices] = await Promise.all([
+      Event.distinct('category'),
+      Event.distinct('venue'),
+      Event.distinct('city'),
+      Event.aggregate([{ $match: upcoming }, { $group: { _id: '$category', n: { $sum: 1 } } }]),
+      Event.aggregate([{ $match: upcoming }, { $group: { _id: null, min: { $min: '$price' }, max: { $max: '$price' } } }]),
+    ]);
+    // Case-insensitive de-duplication ("city mall" / "City Mall"), keeping the first spelling.
+    const clean = (list) => {
+      const seen = new Map();
+      for (const v of list || []) {
+        const t = String(v || '').trim();
+        if (t && !seen.has(t.toLowerCase())) seen.set(t.toLowerCase(), t);
+      }
+      return [...seen.values()].sort((a, b) => a.localeCompare(b));
+    };
+    return res.json({
+      categories: clean(categories),
+      venues: clean(venues),
+      cities: clean(cities),
+      categoryCounts: Object.fromEntries(counts.filter((c) => c._id).map((c) => [c._id, c.n])),
+      priceRange: { min: prices[0]?.min ?? 0, max: prices[0]?.max ?? 0 },
+    });
   } catch (error) {
     console.error('GET FACETS ERROR ❌', error);
     return res.status(500).json({ message: 'Failed to fetch facets' });

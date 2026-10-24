@@ -38,6 +38,9 @@ router.get('/categories', eventController.getCategories);
 // Catalog facets (categories, venues) for the AI assistant
 router.get('/facets', eventController.getFacets);
 
+// Header search dropdown suggestions (events + movies)
+router.get('/suggest', eventController.getSuggestions);
+
 // Get single movie-backed event by source movie id
 router.get('/movie-source/:movieId', eventController.getMovieEventBySource);
 

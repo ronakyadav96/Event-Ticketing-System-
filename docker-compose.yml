@@ -1,0 +1,50 @@
+# Local infrastructure for the AI chat service.
+#   docker compose up -d              → Postgres (chat history + LangGraph checkpoints) and Redis (turn locks)
+#   docker compose --profile app up   → also runs backend and ai-service in containers
+# MongoDB is the Atlas cluster configured in backend/.env.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ticketing_ai
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ticketing_ai"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  backend:
+    profiles: [app]
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      PORT: 5001
+    ports: ["5001:5001"]
+
+  ai-service:
+    profiles: [app]
+    build: ./ai-service
+    env_file: ./ai-service/.env
+    environment:
+      NODE_BACKEND_BASE_URL: http://backend:5001
+      POSTGRES_URL: postgresql://postgres:postgres@postgres:5432/ticketing_ai
+      REDIS_URL: redis://redis:6379/0
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      backend: { condition: service_started }
+
+volumes:
+  pgdata:

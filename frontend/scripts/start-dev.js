@@ -4,7 +4,7 @@ const net = require('node:net');
 const path = require('node:path');
 
 const APP_DIR = path.resolve(__dirname, '..');
-const BACKEND_DIR = path.resolve(APP_DIR, '..', 'event-ticketing-backend');
+const BACKEND_DIR = path.resolve(APP_DIR, '..', 'backend');
 const BACKEND_ENTRY = path.join(BACKEND_DIR, 'src', 'server.js');
 const ANGULAR_CLI = path.join(APP_DIR, 'node_modules', '@angular', 'cli', 'bin', 'ng.js');
 const BACKEND_HOST = '127.0.0.1';
