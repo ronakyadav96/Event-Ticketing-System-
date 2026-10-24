@@ -1,0 +1,14 @@
+{
+  "name": "event-ticketing-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "smoke": "node smoke.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "^7.0.0",
+    "playwright-core": "^1.50.0"
+  }
+}

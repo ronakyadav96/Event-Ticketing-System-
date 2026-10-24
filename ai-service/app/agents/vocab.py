@@ -66,6 +66,12 @@ CITY_ALIASES: Dict[str, str] = {
     "kolkata": "Kolkata", "calcutta": "Kolkata", "chennai": "Chennai", "madras": "Chennai",
 }
 
+# Words that describe "a thing to attend" rather than what it is about; never search text.
+GENERIC_WORDS = [
+    "show", "shows", "event", "events", "program", "programme", "programs", "function", "live", "ticket",
+    "tickets", "night", "nights", "evening", "near me", "nearby", "something", "anything", "kuch", "koi",
+]
+
 # "events", "shows", "kuch karne ko": live entertainment, not the movie catalog.
 _LIVE_WORDS = re.compile(r"\b(events?|shows?|live|kuch\s+karne|plans?|outing|experiences?|hangout)\b", re.I)
 _MOVIE_WORDS = re.compile(r"\b(movies?|films?|flim|picture|pikchar|cinema)\b", re.I)
@@ -187,7 +193,7 @@ def normalize_search(spec: Dict[str, Any], query: str, facets: Dict[str, Any]) -
                 category = topic[0]
                 text = text or topic[1]
         if text:
-            text = _strip_words(text, all_category_words + list(CITY_ALIASES) + [c.lower() for c in categories])
+            text = _strip_words(text, all_category_words + GENERIC_WORDS + list(CITY_ALIASES) + [c.lower() for c in categories])
 
     spec["category"] = category
     spec["genre"] = genre

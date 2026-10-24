@@ -358,7 +358,13 @@ async function rankedSearch(filter, rawQuery, page, limit, sortKey = 'relevance'
       $addFields: {
         isUpcoming,
         _score: {
-          $add: [titleScore, { $cond: [isUpcoming, 30, 0] }, { $cond: [{ $eq: ['$featured', true] }, 10, 0] }],
+          $add: [
+            titleScore,
+            { $cond: [isUpcoming, 30, 0] },
+            { $cond: [{ $eq: ['$featured', true] }, 10, 0] },
+            // Live events edge out equally matching movies (the movie catalog is far larger).
+            { $cond: [{ $regexMatch: { input: { $ifNull: ['$category', ''] }, regex: MOVIE_CATEGORY } }, 0, 5] },
+          ],
         },
       },
     },

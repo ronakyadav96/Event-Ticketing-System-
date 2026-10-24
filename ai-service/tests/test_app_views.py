@@ -52,6 +52,7 @@ def test_neutral_message_keeps_conversation_language():
         ("natak dikhao", {}, {"category": "Plays"}),
         ("funny movies", {"category": "Movie"}, {"category": "Movie", "genre": "comedy"}),
         ("show me events", {}, {"live": True, "category": None}),
+        ("magic show dikhao", {"text": "magic show"}, {"text": "magic", "category": None}),
         ("comedy in bangalore", {"category": "Comedy", "venue": "bangalore"}, {"city": "Bengaluru", "venue": None}),
     ],
 )
@@ -143,3 +144,12 @@ async def test_faq_and_small_talk_never_navigate(graph, fake_node, model):
     model.on("hello", intent="SMALL_TALK")
     out = await Chat(graph).say("hello")
     assert out["reply"]["view"] is None
+
+
+@pytest.mark.parametrize("message", ["Laugh Riot ke tickets book karo", "laugh riot book kar do", "Laugh Riot ki 2 ticket book karni hai"])
+def test_hinglish_booking_phrases_without_the_model(message):
+    from app.agents.intent import degraded_classify
+
+    out = degraded_classify(message, {}, FACETS)
+    assert out["intent"] == "BOOKING"
+    assert out["entities"]["event_title"].lower() == "laugh riot"

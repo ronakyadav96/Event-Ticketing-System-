@@ -202,6 +202,11 @@ def _validate(ex: Extraction, context: Dict[str, Any], query: str) -> Dict[str, 
 # unambiguous, so it is resolved directly: instant, and independent of model availability.
 
 _BOOK_PHRASE = re.compile(r"^\s*(?:book|reserve)\s+(?:tickets?\s+(?:for|to)\s+)?(.+?)\s*[.!]?\s*$", re.I)
+# Hinglish word order: "<title> (ke tickets) book karo / kar do / karna hai".
+_BOOK_PHRASE_HI = re.compile(
+    r"^\s*(.+?)\s+(?:(?:ke|ki|ka)\s+)?(?:(?:\d+\s+)?tickets?\s+)?book\s+(?:karo|kar\s*do|krdo|kardo|karna\s+hai|karni\s+hai|karwa\s*do|kariye)\s*[.!]?\s*$",
+    re.I,
+)
 _DETAILS_PHRASE = re.compile(r"^\s*(?:tell\s+me\s+(?:more\s+)?about|details\s+(?:of|for|about)|more\s+about)\s+(.+?)\s*[.?!]?\s*$", re.I)
 _SHOW_MORE = re.compile(
     r"^\s*(?:(?:show\s+(?:me\s+)?)?more(?:\s+(?:results|options|events|movies|shows))?"
@@ -256,7 +261,7 @@ def fast_classify(query: str, state: Dict[str, Any]) -> Optional[Dict[str, Any]]
         if seats:
             return result(Intent.BOOKING, seats=[x.strip().upper() for x in seats.group(1).split(",")])
 
-    m = _BOOK_PHRASE.match(query)
+    m = _BOOK_PHRASE.match(query) or _BOOK_PHRASE_HI.match(query)
     if m and idle:
         event_id = _known_by_title(state, m.group(1))
         if event_id:
@@ -333,7 +338,8 @@ _FILLER = {
     "ka", "ki", "ko", "liye", "wala", "wali", "wale", "dekhna", "dekhni", "jaana", "jana", "hoga", "hogi", "abhi",
     "ye", "yeh", "bhai", "yaar", "sab", "saare", "sare", "acha", "accha", "chal", "raha", "rahe", "rahi", "near",
     "nearby", "paas", "show", "shows", "tomorrow", "week", "next", "this", "coming", "sunna", "sunne", "sunni",
-    "dekhne", "karna", "karne", "khelna", "jaate", "jayein", "chalein", "plan", "tonight",
+    "dekhne", "karna", "karne", "khelna", "jaate", "jayein", "chalein", "plan", "tonight", "karo", "kardo",
+    "krdo", "kariye",
 }
 
 
@@ -445,10 +451,10 @@ def degraded_classify(query: str, state: Dict[str, Any], facets: Optional[Dict[s
         return result(Intent.FAQ_POLICY)
 
     idle = stage in (BookingStage.IDLE.value, BookingStage.COMPLETED.value)
-    m = _BOOK_PHRASE.match(q)
+    m = _BOOK_PHRASE.match(q) or _BOOK_PHRASE_HI.match(q)
     if m and idle:
         target = m.group(1).strip()
-        if re.fullmatch(r"(it|this|that|this one|that one|now|tickets?)", target.lower()):
+        if re.fullmatch(r"(it|this|that|this one|that one|now|tickets?|ise|isko|ye|yeh|ye\s+wala|yahi|isi)", target.lower()):
             return result(Intent.BOOKING)  # the event in focus
         return result(Intent.BOOKING, event_title=target)
     m = _DETAILS_PHRASE.match(q)
