@@ -158,7 +158,7 @@
             </div>
 
             <!-- Coupons & Gift Cards -->
-            <div class="offer-box" *ngIf="claimablePromotions.length || claimedPromotions.length">
+            <div class="offer-box" *ngIf="promotionsAtCheckout && (claimablePromotions.length || claimedPromotions.length)">
               <div class="offer-heading">Apply Coupons &amp; Gift Cards</div>
               
               <div class="offer-list" *ngIf="claimablePromotions.length">
@@ -232,7 +232,7 @@
             <span>₹{{ fnbTotalRupees }}</span>
           </div>
 
-          <div class="summary-line discount" *ngIf="selectedPromotion">
+          <div class="summary-line discount" *ngIf="promotionsAtCheckout && selectedPromotion">
             <span>Discount ({{ selectedPromotion.code }})</span>
             <span class="discount-num">- ₹{{ discountRupees }}</span>
           </div>

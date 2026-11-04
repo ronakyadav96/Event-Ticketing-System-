@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { EventService } from '../../services/event.service';
 import { BookingService } from '../../services/booking.service';
 import { AuthService } from '../../auth/auth.service';
-import { PromotionRecord, PromotionService } from '../../services/promotion.service';
+import { PROMOTIONS_AT_CHECKOUT, PromotionRecord, PromotionService } from '../../services/promotion.service';
 import { SeatPickerComponent } from '../../shared/seat-picker/seat-picker.component';
 import { ShowtimeSelectorComponent } from '../../shared/showtime-selector/showtime-selector.component';
 
@@ -61,7 +61,7 @@ export class BookingPageComponent implements OnInit {
   phone = '';
 
   // Food & Beverages
-  readonly fnbCatalog: FnbItem[] = [
+  fnbCatalog: FnbItem[] = [
     { id: 'fnb1', name: 'Caramel Popcorn + Coke Combo', category: 'Combos', price: 340, image: '', icon: '🍿' },
     { id: 'fnb2', name: 'Salted Large Popcorn', category: 'Snacks', price: 260, image: '', icon: '🍿' },
     { id: 'fnb3', name: 'Cheesy Nachos with Salsa', category: 'Snacks', price: 220, image: '', icon: '🧀' },
@@ -71,6 +71,7 @@ export class BookingPageComponent implements OnInit {
   fnbQuantities: Record<string, number> = {};
 
   // Promotions
+  readonly promotionsAtCheckout = PROMOTIONS_AT_CHECKOUT;
   claimablePromotions: PromotionRecord[] = [];
   claimedPromotions: PromotionRecord[] = [];
   selectedPromotionId = '';
@@ -96,6 +97,17 @@ export class BookingPageComponent implements OnInit {
       this.loading = false;
       return;
     }
+
+    // Show the prices the server will charge.
+    this.bs.getFnbCatalog().subscribe({
+      next: (res) => {
+        const prices = new Map((res?.items || []).map((i) => [i.id, i.price]));
+        this.fnbCatalog = this.fnbCatalog.map((item) =>
+          prices.has(item.id) ? { ...item, price: prices.get(item.id)! } : item
+        );
+      },
+      error: () => undefined,
+    });
 
     // Prefill user details if logged in
     const user = this.currentUser;
@@ -178,6 +190,7 @@ export class BookingPageComponent implements OnInit {
   }
 
   get discountRupees(): number {
+    if (!PROMOTIONS_AT_CHECKOUT) return 0;
     return this.promotionService.calculateDiscount(this.seatsSubtotalRupees, this.selectedPromotion);
   }
 
@@ -260,9 +273,7 @@ export class BookingPageComponent implements OnInit {
       return;
     }
 
-    // Stripe paid checkout
-    const payablePerSeat = Math.max(100, Math.round((this.finalPayableRupees / (this.seatsCount || 1)) * 100));
-
+    // Stripe paid checkout: the server prices tickets + snacks.
     this.bs.createCheckoutSession({
       eventId: this.eventId,
       ticketName: 'Standard Pass',
@@ -271,8 +282,7 @@ export class BookingPageComponent implements OnInit {
       quantity: this.seatsCount,
       seats: this.seatsCount,
       showAt: showAtIso,
-      unitAmount: payablePerSeat,
-      promotionId: this.selectedPromotionId || undefined,
+      fnb: { ...this.fnbQuantities },
     }).subscribe({
       next: (res: any) => {
         if (res?.url) {

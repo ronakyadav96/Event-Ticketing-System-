@@ -5,6 +5,7 @@ const {
   createCheckoutSession,
   createSeatCheckout,
   stripeWebhook,
+  getFnbCatalog,
   getOrderBySession,
   cancelOrder,
   getRefundQuote,
@@ -16,6 +17,9 @@ const { protect } = require('../middlewares/auth.middleware');
 
 // Stripe calls this; authenticity is checked with the webhook signature.
 router.post('/webhook', stripeWebhook);
+
+// Snack prices (public, read-only).
+router.get('/fnb-catalog', getFnbCatalog);
 
 // Seat-selected checkout (AI assistant): server decides price, show and seat availability.
 router.post('/checkout', protect, createSeatCheckout);

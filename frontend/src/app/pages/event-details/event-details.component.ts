@@ -10,7 +10,7 @@ import { environment } from '../../../environments/environment';
 import { EventService } from '../../services/event.service';
 import { BookingService } from '../../services/booking.service';
 import { AuthService } from '../../auth/auth.service';
-import { PromotionRecord, PromotionService } from '../../services/promotion.service';
+import { PROMOTIONS_AT_CHECKOUT, PromotionRecord, PromotionService } from '../../services/promotion.service';
 import { MovieService } from '../../services/movie.service';
 import { MovieRecommendationItem } from '../../models/movie.model';
 import { MovieTemplateComponent } from '../../templates/movie-template/movie-template.component';
@@ -320,6 +320,7 @@ export class EventDetailsComponent implements OnInit {
   }
 
   get discountRupees(): number {
+    if (!PROMOTIONS_AT_CHECKOUT) return 0;
     return this.promotionService.calculateDiscount(this.subtotalRupees, this.selectedPromotion);
   }
 
@@ -588,11 +589,7 @@ export class EventDetailsComponent implements OnInit {
       return;
     }
 
-    const subtotalPaise = Math.max(0, Math.round(this.subtotalRupees * 100));
-    const discountPaise = Math.max(0, Math.round(this.discountRupees * 100));
-    const finalPaise = Math.max(0, subtotalPaise - discountPaise);
-    const discountedUnitAmount = qty > 0 ? Math.floor(finalPaise / qty) : originalUnitAmount;
-    const isFree = baseIsFree || finalPaise <= 0;
+    const isFree = baseIsFree;
 
     this.submitting = true;
     this.msg = '';
@@ -644,15 +641,9 @@ export class EventDetailsComponent implements OnInit {
         eventId,
         ticketName: this.event?.title || 'Event Ticket',
         quantity: qty,
-        unitAmount: discountedUnitAmount,
-        currency: 'inr',
         name: this.name,
         email: this.email,
         showAt: showAtIso,
-        promotionId: this.selectedPromotion?.id || null,
-        promotionCode: this.selectedPromotion?.code || null,
-        discountAmount: this.discountRupees,
-        finalAmount: this.finalPayableRupees,
         registrationTemplate: this.registrationTemplate,
         registrationData: {
           phone: this.phone,

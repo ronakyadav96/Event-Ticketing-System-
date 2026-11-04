@@ -40,6 +40,12 @@ export class BookingService {
     return this.createBooking(data);
   }
 
+  getFnbCatalog(): Observable<{ success: boolean; items: { id: string; price: number }[] }> {
+    return this.http.get<{ success: boolean; items: { id: string; price: number }[] }>(
+      `${this.PAYMENTS_API}/fnb-catalog`
+    );
+  }
+
   createCheckoutSession(data: CheckoutSessionPayload): Observable<CheckoutSessionResponse> {
     return this.http.post<CheckoutSessionResponse>(
       `${this.PAYMENTS_API}/create-checkout-session`,

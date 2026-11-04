@@ -19,6 +19,12 @@ const StripeOrderSchema = new mongoose.Schema(
     // quantity = seats
     quantity: { type: Number, required: true },
     unitAmount: { type: Number, required: true }, // smallest unit: paise
+    // Food & beverages bought with the tickets, priced by the server (paise).
+    fnbItems: {
+      type: [{ _id: false, id: String, name: String, quantity: Number, unitAmount: Number }],
+      default: [],
+    },
+    fnbAmount: { type: Number, default: 0 },
     currency: { type: String, default: 'inr' },
 
     status: {
@@ -48,5 +54,10 @@ const StripeOrderSchema = new mongoose.Schema(
 );
 
 StripeOrderSchema.index({ stripeSessionId: 1 });
+
+// Total Stripe must charge for this order, in paise.
+StripeOrderSchema.methods.expectedAmount = function expectedAmount() {
+  return Number(this.unitAmount) * Number(this.quantity) + Number(this.fnbAmount || 0);
+};
 
 module.exports = mongoose.model('StripeOrder', StripeOrderSchema);

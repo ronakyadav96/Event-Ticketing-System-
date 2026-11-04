@@ -6,9 +6,10 @@ const Booking = require('../models/Booking');
 const Event = require('../models/Event');
 const emailService = require('../services/email.service');
 const seatReservations = require('../services/seat-reservation.service');
-const { parseShowAt, isBookableSlot } = require('../utils/showtime.util');
+const { parseShowAt, isBookableSlot, isShowTimeAllowed } = require('../utils/showtime.util');
 const { validateSeatSelection } = require('../utils/seat-map.util');
 const { refundQuote } = require('../utils/refund-policy.util');
+const { FNB_CATALOG, priceFnbSelection } = require('../config/fnb-catalog');
 
 // Stripe is optional at boot: without a key every payment endpoint answers with a controlled
 // PAYMENT_UNAVAILABLE state instead of crashing the whole API or faking a checkout.
@@ -63,7 +64,9 @@ function orderView(order, extra = {}) {
     seats: order.seatNumbers || [],
     quantity: order.quantity,
     unitAmount: order.unitAmount,
-    amountTotal: order.unitAmount * order.quantity,
+    fnbItems: order.fnbItems || [],
+    fnbAmount: order.fnbAmount || 0,
+    amountTotal: order.expectedAmount(),
     currency: order.currency,
     checkoutUrl: order.status === 'PENDING' ? order.checkoutUrl : null,
     expiresAt: order.expiresAt ? new Date(order.expiresAt).toISOString() : null,
@@ -117,7 +120,7 @@ async function finalizePaidOrder({ order, session }) {
   };
 
   // 1. Verify that Stripe's session really belongs to this order and charged the right amount.
-  const expectedAmount = Number(order.unitAmount) * Number(order.quantity);
+  const expectedAmount = order.expectedAmount();
   if (session.payment_status !== 'paid') {
     order.status = 'PENDING';
     await order.save();
@@ -408,14 +411,15 @@ exports.createSeatCheckout = async (req, res) => {
 
 /* ================= QUANTITY CHECKOUT (web booking page) ================= */
 
-// POST /api/payments/create-checkout-session — used by the Angular booking page, which adds
-// snacks and promotions to the per-seat amount. The event must exist; no fallback amounts.
+// POST /api/payments/create-checkout-session — used by the Angular booking pages.
+// body: { eventId, quantity, showAt, fnb?: { [itemId]: qty }, name, email, ... }
+// The amount is always event price x quantity + server-priced snacks; any client-sent
+// unitAmount / discount is ignored so the charge cannot be tampered with.
 exports.createCheckoutSession = async (req, res) => {
   if (!stripe) return paymentUnavailable(res);
   try {
     const {
       eventId,
-      currency = 'inr',
       name,
       email,
       registrationTemplate,
@@ -429,15 +433,27 @@ exports.createCheckoutSession = async (req, res) => {
     const eventDoc = await Event.findById(eventId).select('title date startDate endDate showTimes price');
     if (!eventDoc) return res.status(404).json({ success: false, message: 'Event not found.' });
 
-    const quantity = Math.max(1, Math.min(10, Number(req.body.quantity ?? req.body.seats ?? 1)));
-    const unitAmount = Math.round(Number(req.body.unitAmount ?? 0)) || Math.round(Number(eventDoc.price) * 100);
+    const quantity = Number(req.body.quantity ?? req.body.seats ?? 1);
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
+      return res.status(400).json({ success: false, message: 'quantity must be between 1 and 10.' });
+    }
+    const unitAmount = Math.round(Number(eventDoc.price) * 100);
     if (!(unitAmount > 0)) {
       return res.status(400).json({ success: false, message: 'This event does not require payment.' });
     }
 
+    const fnb = priceFnbSelection(req.body.fnb);
+    if (!fnb.ok) return res.status(400).json({ success: false, message: fnb.message });
+
     const showAtDate = parseShowAt(showAt) || (eventDoc.date ? new Date(eventDoc.date) : null);
     if (!showAtDate || Number.isNaN(showAtDate.getTime())) {
       return res.status(400).json({ success: false, message: 'Invalid show date/time.' });
+    }
+    if (showAtDate.getTime() < Date.now()) {
+      return res.status(400).json({ success: false, message: 'Cannot book past events.' });
+    }
+    if (!isShowTimeAllowed(eventDoc, showAtDate)) {
+      return res.status(400).json({ success: false, message: 'Selected show date/time not available.' });
     }
 
     const order = await StripeOrder.create({
@@ -451,7 +467,9 @@ exports.createCheckoutSession = async (req, res) => {
       showAt: showAtDate,
       quantity,
       unitAmount,
-      currency: String(currency).toLowerCase(),
+      fnbItems: fnb.items,
+      fnbAmount: fnb.totalPaise,
+      currency: 'inr',
       status: 'PENDING',
     });
 
@@ -467,6 +485,14 @@ exports.createCheckoutSession = async (req, res) => {
           },
           quantity,
         },
+        ...fnb.items.map((item) => ({
+          price_data: {
+            currency: order.currency,
+            product_data: { name: item.name },
+            unit_amount: item.unitAmount,
+          },
+          quantity: item.quantity,
+        })),
       ],
       success_url: `${base}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base}/payment-cancel?session_id={CHECKOUT_SESSION_ID}`,
@@ -491,6 +517,9 @@ exports.createCheckoutSession = async (req, res) => {
     return paymentUnavailable(res);
   }
 };
+
+// GET /api/payments/fnb-catalog — prices the booking page shows (rupees).
+exports.getFnbCatalog = (req, res) => res.json({ success: true, items: FNB_CATALOG });
 
 /* ================= WEBHOOK ================= */
 

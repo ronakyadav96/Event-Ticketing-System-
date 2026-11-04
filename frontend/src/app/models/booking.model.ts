@@ -43,8 +43,8 @@ export interface CheckoutSessionPayload {
   seats?: number;
   quantity?: number;
   ticketName?: string;
-  unitAmount?: number;
-  currency?: string;
+  // Server prices tickets and snacks itself; send snack quantities by item id.
+  fnb?: Record<string, number>;
   showAt?: string | Date | null;
   name?: string;
   email?: string;

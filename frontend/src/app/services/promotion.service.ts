@@ -1,5 +1,9 @@
 import { Injectable } from '@angular/core';
 
+// Promotions live only in this browser's localStorage, so the server cannot verify them and
+// charges the full price. Keep discounts out of checkout until promotions move to the backend.
+export const PROMOTIONS_AT_CHECKOUT = false;
+
 export type PromotionKind = 'coupon' | 'gift';
 export type PromotionDiscountType = 'percent' | 'flat';
 export type PromotionScope = 'event' | 'platform';

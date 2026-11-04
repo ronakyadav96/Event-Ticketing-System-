@@ -317,4 +317,9 @@ function start() {
   process.once('SIGTERM', () => shutdown('SIGTERM'));
 }
 
-start();
+// Tests import the app and manage their own database connection.
+if (process.env.NODE_ENV !== 'test') {
+  start();
+}
+
+module.exports = app;
