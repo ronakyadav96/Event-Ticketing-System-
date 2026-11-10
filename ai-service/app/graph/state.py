@@ -86,6 +86,8 @@ def empty_search() -> Dict[str, Any]:
         "filters": {},       # filters of the current search session (reused by "more" / "another")
         "page": 1,           # last page fetched for those filters (relevance order is stable)
         "total": 0,          # total matches reported by Node
+        "mix": None,         # {"categories": [...]} while browsing "other types" (one page across categories)
+        "shown_categories": [],  # categories shown in this search chain ("other types" excludes them)
         "seen": [],          # ids already shown for the current filters
         "rejected": [],      # ids the user explicitly rejected
         "last_results": [],  # ids of the most recent result list, in display order

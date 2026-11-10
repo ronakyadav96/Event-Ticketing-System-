@@ -15,6 +15,13 @@ LOGIN_REQUIRED = "Please log in to your account first — I can only access book
 LOGIN_TO_BOOK = "🔒 Please log in to book tickets — it only takes a moment, and I'll bring you straight back to this booking."
 
 
+def language_instruction(language: Optional[str]) -> str:
+    """Appended to Model 2 prompts: answer in the language the user wrote in (English or Hinglish only)."""
+    if language == "hinglish":
+        return "\nReply in Hinglish: Hindi words in Roman script mixed with English, the way the user wrote. Never use Devanagari."
+    return "\nReply in English."
+
+
 def login_required_reply(agent: str, text: str = LOGIN_REQUIRED) -> Dict[str, Any]:
     """The UI shows a sign-in button for replies carrying the LOGIN_REQUIRED code."""
     return make_reply(text, agent, error="LOGIN_REQUIRED")

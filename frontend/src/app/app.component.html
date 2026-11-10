@@ -219,5 +219,5 @@
   <app-footer *ngIf="!isLoginPage && !isRegisterPage"></app-footer>
 
   <!-- AI CHATBOT WIDGET -->
-  <app-chat-widget *ngIf="!isLoginPage && !isRegisterPage"></app-chat-widget>
+  <app-chat-widget *ngIf="chatEnabled && !isLoginPage && !isRegisterPage"></app-chat-widget>
 </div>

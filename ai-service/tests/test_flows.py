@@ -46,7 +46,7 @@ async def test_search_never_selects_and_more_excludes_seen(graph, fake_node, mod
     ids_first = [e["id"] for e in first["reply"]["events"]]
     assert ids_first and first["booking"]["event"] is None and first["search"]["focus"] is None
 
-    model.on("show me another", **search(more_results=True))
+    model.on("show me another", **search(action="MORE"))
     second = await chat.say("show me another")
     ids_second = [e["id"] for e in second["reply"]["events"]]
     assert not set(ids_first) & set(ids_second)
@@ -272,13 +272,13 @@ async def test_threads_are_isolated_per_user_and_conversation(graph, fake_node, 
 
 
 async def test_degraded_mode_without_model(graph, fake_node, monkeypatch):
-    from app.agents import intent as intent_module
+    from app import llm
     from app.llm import LLMUnavailable
 
     async def down(*_a, **_k):
         raise LLMUnavailable("down")
 
-    monkeypatch.setattr(intent_module, "extract", down)
+    monkeypatch.setattr(llm, "extract", down)
     chat = Chat(graph)
     out = await chat.say("tell me a story about dragons")
     assert out["reply"]["error"] == "LLM_UNAVAILABLE"
@@ -298,8 +298,8 @@ async def test_no_match_returns_no_unrelated_events(graph, fake_node, model):
 async def test_repeated_more_pages_through_all_matches_without_repeats(graph, fake_node, model):
     chat = Chat(graph)
     model.on("comedy", **search(category="Comedy"))
-    model.on("more", **search(more_results=True))
-    model.on("another one", **search(category="Comedy", more_results=True))  # model repeating filters
+    model.on("more", **search(action="MORE"))
+    model.on("another one", **search(category="Comedy", action="MORE"))  # model repeating filters
     shown = []
     for msg in ["comedy", "more", "another one"]:
         out = await chat.say(msg)
@@ -320,7 +320,7 @@ async def test_new_criteria_start_a_fresh_search(graph, fake_node, model):
     chat = Chat(graph)
     model.on("comedy", **search(category="Comedy"))
     await chat.say("comedy")
-    model.on("show me a different one, something sci-fi", **search(genre="science fiction", more_results=True))
+    model.on("show me a different one, something sci-fi", **search(genre="science fiction"))
     out = await chat.say("show me a different one, something sci-fi")
     assert {e["title"] for e in out["reply"]["events"]} == {"Star Voyage"}
     assert out["search"]["filters"] == {"genre": "science fiction"}
@@ -373,7 +373,7 @@ async def test_more_results_when_model_repeats_filters(graph, fake_node, model):
     chat = Chat(graph)
     model.on("comedy shows", **search(category="Comedy"))
     first = await chat.say("comedy shows")
-    model.on("another one", **search(category="Comedy", more_results=True))
+    model.on("another one", **search(category="Comedy", action="MORE"))
     second = await chat.say("another one")
     assert not {e["id"] for e in first["reply"]["events"]} & {e["id"] for e in second["reply"]["events"]}
 
@@ -381,13 +381,13 @@ async def test_more_results_when_model_repeats_filters(graph, fake_node, model):
 # ── Reliability without the model: UI phrases, names, booking options ─────────
 
 def _model_down(monkeypatch):
-    from app.agents import intent as intent_module
+    from app import llm
     from app.llm import LLMUnavailable
 
     async def down(*_a, **_k):
         raise LLMUnavailable("down")
 
-    monkeypatch.setattr(intent_module, "extract", down)
+    monkeypatch.setattr(llm, "extract", down)
 
 
 async def test_asking_for_the_same_search_again_pages_forward(graph, fake_node, model):
@@ -435,3 +435,121 @@ async def test_booking_steps_accept_picker_options_without_the_model(graph, fake
     assert out["booking"]["time"] == "21:30"
     out = await chat.say("2 tickets")
     assert out["booking"]["quantity"] == 2
+
+
+# ── Understanding pipeline: rewrite → state update → policy ───────────────────
+
+async def test_other_type_shows_categories_not_seen_yet(graph, fake_node, model):
+    chat = Chat(graph)
+    model.on("show me comedy", **search(category="Comedy"))
+    await chat.say("show me comedy")
+    model.rewrite("kuch alag type ka dikhao", "Show events of a different kind than Comedy.", language="hinglish")
+    model.on("kuch alag type ka dikhao", **search(action="CHANGE_TYPE"))
+    out = await chat.say("kuch alag type ka dikhao")
+    categories = {e["category"] for e in out["reply"]["events"]}
+    assert categories == {"Movie", "Concert"}
+    assert model.standalones[-1] == "Show events of a different kind than Comedy."
+    assert "Show me Movie" in out["reply"]["quick_replies"]
+
+    # Another "other type" after that excludes everything shown so far.
+    model.on("aur koi type", **search(action="CHANGE_TYPE"))
+    out = await chat.say("aur koi type")
+    assert {e["category"] for e in out["reply"]["events"]} <= {"Comedy", "Movie", "Concert"}
+
+
+async def test_other_type_with_a_named_category(graph, fake_node, model):
+    chat = Chat(graph)
+    model.on("show me comedy", **search(category="Comedy"))
+    await chat.say("show me comedy")
+    model.on("not comedy, concerts instead", **search(action="CHANGE_TYPE", category="Concert", exclude_categories=["Comedy"]))
+    out = await chat.say("not comedy, concerts instead")
+    assert [e["title"] for e in out["reply"]["events"]] == ["Rock Night"]
+
+
+async def test_refine_keeps_the_current_search(graph, fake_node, model):
+    chat = Chat(graph)
+    model.on("comedy", **search(category="Comedy"))
+    await chat.say("comedy")
+    model.on("sirf canvas club wale", **search(action="REFINE", text="canvas club"))
+    out = await chat.say("sirf canvas club wale")
+    assert out["search"]["filters"] == {"category": "Comedy", "text": "canvas club"}
+    assert {e["title"] for e in out["reply"]["events"]} == {"Laugh Riot", "Giggle Fest"}
+
+
+async def test_more_after_other_types_pages_the_mix(graph, fake_node, model):
+    chat = Chat(graph)
+    model.on("show me comedy", **search(category="Comedy"))
+    await chat.say("show me comedy")
+    model.on("other types", **search(action="CHANGE_TYPE"))
+    first = {e["id"] for e in (await chat.say("other types"))["reply"]["events"]}
+    model.on("show me another", **search(action="MORE"))
+    second = await chat.say("show me another")
+    assert not first & {e["id"] for e in second["reply"]["events"]}
+    assert all(e["category"] != "Comedy" for e in second["reply"]["events"])
+
+
+async def test_out_of_domain_rewrite_skips_the_tracker(graph, fake_node, model):
+    chat = Chat(graph)
+    model.on("show me comedy", **search(category="Comedy"))
+    await chat.say("show me comedy")
+    tracked = len(model.contexts)
+    model.rewrite("python me loop kaise likhte hai", "How do I write a loop in Python?", scope="out_of_domain", language="hinglish")
+    out = await chat.say("python me loop kaise likhte hai")
+    assert out["reply"]["text"].startswith("I’m your Event AI 🎬")
+    assert len(model.contexts) == tracked
+
+
+async def test_first_message_skips_the_rewrite_call(graph, fake_node, model):
+    calls = []
+    original = model.__call__
+
+    async def spy(schema, system, user, **options):
+        calls.append(schema.__name__)
+        return await original(schema, system, user, **options)
+
+    from app import llm
+    import pytest as _pytest
+    mp = _pytest.MonkeyPatch()
+    mp.setattr(llm, "extract", spy)
+    try:
+        chat = Chat(graph)
+        model.on("koi comedy dikhao", **search(category="Comedy"))
+        first = await chat.say("koi comedy dikhao")
+        assert calls == ["StateUpdate"] and first["entities"]["_language"] == "hinglish"
+        model.on("aur dikhao", **search(action="MORE"))
+        await chat.say("aur dikhao")
+        assert calls == ["StateUpdate", "Rewrite", "StateUpdate"]
+    finally:
+        mp.undo()
+
+
+async def test_category_quick_reply_works_without_the_model(graph, fake_node, monkeypatch):
+    _model_down(monkeypatch)
+    out = await Chat(graph).say("Show me Concert")
+    assert [e["title"] for e in out["reply"]["events"]] == ["Rock Night"]
+
+
+async def test_hinglish_follow_ups_without_the_model(graph, fake_node, monkeypatch):
+    _model_down(monkeypatch)
+    chat = Chat(graph)
+    first = await chat.say("koi comedy dikhao")
+    assert first["reply"]["events"] and {e["category"] for e in first["reply"]["events"]} == {"Comedy"}
+    more = await chat.say("kuch aur dikhao")
+    assert more["reply"]["events"]
+    assert not {e["id"] for e in first["reply"]["events"]} & {e["id"] for e in more["reply"]["events"]}
+    other = await chat.say("dusre type ka dikhao")
+    assert other["reply"]["events"] and all(e["category"] != "Comedy" for e in other["reply"]["events"])
+
+
+async def test_degraded_mode_understands_positions_dates_and_prices(graph, fake_node, monkeypatch):
+    _model_down(monkeypatch)
+    chat = Chat(graph)
+    first = await chat.say("koi comedy dikhao")
+    second_id = first["reply"]["events"][1]["id"]
+    out = await chat.say("doosre wale ke baare me batao")
+    assert out["search"]["focus"] == second_id
+    out = await chat.say("comedy 300 se kam")
+    assert out["search"]["filters"] == {"category": "Comedy", "max_price": 300.0}
+    out = await chat.say("sirf kal wale")
+    assert out["search"]["filters"]["category"] == "Comedy"
+    assert out["search"]["filters"]["date_from"] == out["search"]["filters"]["date_to"]

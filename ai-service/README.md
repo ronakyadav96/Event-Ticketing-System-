@@ -6,7 +6,7 @@ events, seats, prices, payments, bookings and refunds.
 
 ```
 Angular ─► FastAPI (/api/v1) ─► identity + conversation ownership ─► LangGraph
-   hydrate → classify (Model 1) → route → guardrail | search | booking | refund | faq → validate
+   hydrate → understand (rewrite → state update → policy) → route → guardrail | search | booking | refund | faq → validate
             └─► tools ─► Node/Express ─► MongoDB / Stripe
    ─► PostgreSQL (messages + checkpoints) ─► response (single `booking` state object)
 ```
@@ -15,8 +15,11 @@ Angular ─► FastAPI (/api/v1) ─► identity + conversation ownership ─►
 
 | Path | Purpose |
 |---|---|
-| `app/agents/intent.py` | The only intent classifier (Model 1 structured extraction + validated degraded mode) |
-| `app/agents/search.py` | Event search, contextual follow-ups ("another", "not this one"), event details |
+| `app/understanding/rewrite.py` | Model 1, step 1: latest message (English/Hinglish, follow-ups) → one standalone English request; catches off-topic and small talk |
+| `app/understanding/tracker.py` | Model 1, step 2: intent + what changes (search action NEW/MORE/REFINE/CHANGE_TYPE, filters, booking slots), validated |
+| `app/understanding/policy.py` | Deterministic search policy: new search, next page, refine, or other event types |
+| `app/understanding/fallback.py` | UI-phrase fast path and degraded mode (English + Hinglish) when the model is unavailable |
+| `app/agents/search.py` | Executes the search plan (filtered pages or a mix of categories), event details |
 | `app/agents/booking.py` | Booking state machine (`BookingStage`), payment status, booking status |
 | `app/agents/refund.py` | Cancellation of paid bookings, refund requests, refund status |
 | `app/agents/faq.py` | Grounded FAQ answers from the RAG index |
@@ -36,6 +39,17 @@ cp .env.example .env   # set JWT_SECRET (same as Node), GEMINI_API_KEY, POSTGRES
 ```
 
 `APP_ENV=production` disables every in-memory fallback (Postgres and Redis become required).
+
+Local Postgres + Redis: `docker compose up -d` from the repo root (see `docker-compose.yml`).
+Without them the service still runs in development, but chat history is lost on restart.
+
+## Deploy
+
+`Dockerfile` builds a production image (listens on `$PORT`). On Render: New → Web Service →
+root directory `ai-service`, runtime Docker, and set `APP_ENV=production`, `JWT_SECRET`,
+`GEMINI_API_KEY`, `NODE_BACKEND_BASE_URL`, `POSTGRES_URL`, `REDIS_URL` and
+`CORS_ORIGINS=<frontend URL>`. Then put `https://<service>/api/v1` in
+`event-ticketing-app/src/environments/environment.prod.ts` → `aiApiUrl`.
 
 ## Tests
 

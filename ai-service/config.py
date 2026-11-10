@@ -40,17 +40,25 @@ class Settings(BaseSettings):
     # Never enabled in production (see allow_memory_fallback).
     USE_IN_MEMORY_FALLBACK: bool = True
 
+    # Chat quotas per minute (0 disables). Guests also share a per-IP quota because a guest id
+    # is just a random header the client can rotate.
+    CHAT_RATE_LIMIT_USER: int = 30
+    CHAT_RATE_LIMIT_GUEST: int = 15
+    CHAT_RATE_LIMIT_IP: int = 40
+
     # RAG.
     VECTOR_STORE_PATH: str = str(SERVICE_ROOT / "data" / "vectorstore")
     EMBEDDING_PROVIDER: str = "auto"  # auto | huggingface | builtin
     RAG_MIN_SCORE: float = 0.15
     RAG_TOP_K: int = 3
 
-    # Gemini. Model 1 = fast structured understanding, Model 2 = response generation.
+    # Gemini. Model 1 = fast structured understanding (rewrite, then state update), Model 2 =
+    # response generation. Each step uses its own model so free-tier per-model quotas add up.
     GEMINI_API_KEY: Optional[str] = None
     GOOGLE_API_KEY: Optional[str] = None
-    GEMINI_MODEL_INTENT: str = "gemini-flash-lite-latest"
-    GEMINI_MODEL_GENERATION: str = "gemini-flash-latest"
+    GEMINI_MODEL_REWRITE: str = "gemini-3.1-flash-lite"
+    GEMINI_MODEL_INTENT: str = "gemini-3.5-flash-lite"
+    GEMINI_MODEL_GENERATION: str = "gemini-flash-lite-latest"
     GEMINI_TIMEOUT_SECONDS: float = 8.0          # Model 2 (wording has deterministic fallbacks)
     GEMINI_INTENT_TIMEOUT_SECONDS: float = 15.0  # Model 1 (understanding is required to act)
 

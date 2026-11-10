@@ -24,7 +24,11 @@ def get_index() -> VectorIndex:
         if index is None:
             chunks = load_chunks()
             index = VectorIndex.build(embeddings, chunks, fingerprint)
-            index.save(directory)
+            try:
+                index.save(directory)
+            except OSError as exc:
+                # Read-only filesystems (serverless) keep the index in memory only.
+                logger.warning("Could not persist FAQ index to %s: %s", directory, exc)
             logger.info("Built FAQ index: %d chunks (%s) at %s", index.count(), embedding_id(embeddings), directory)
         _index = index
     return _index

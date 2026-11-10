@@ -74,4 +74,38 @@ export class BookingService {
   deleteBooking(id: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.API}/${encodeURIComponent(id)}`, this.getAuthHeaders());
   }
+
+  /** Server-side refund policy evaluation for a paid booking (nothing is changed). */
+  getRefundQuote(bookingId: string): Observable<RefundQuoteResponse> {
+    return this.http.get<RefundQuoteResponse>(`${this.PAYMENTS_API}/refund-quote`, {
+      ...this.getAuthHeaders(),
+      params: new HttpParams().set('bookingId', bookingId),
+    });
+  }
+
+  /** Cancels a paid booking and refunds the policy amount. */
+  cancelAndRefund(bookingId: string): Observable<RefundResponse> {
+    return this.http.post<RefundResponse>(`${this.PAYMENTS_API}/refund`, { bookingId }, this.getAuthHeaders());
+  }
+}
+
+export interface RefundQuote {
+  eligible: boolean;
+  refundPercent: number;
+  refundAmount: number; // smallest currency unit (paise)
+  amountPaid: number;
+  currency: string;
+  reason: string | null;
+}
+
+export interface RefundQuoteResponse {
+  success: boolean;
+  quote: RefundQuote;
+}
+
+export interface RefundResponse {
+  success: boolean;
+  status: string;
+  message?: string;
+  booking?: { paymentStatus: string; refundAmount?: number; refundStatus?: string | null };
 }

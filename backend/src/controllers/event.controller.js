@@ -495,7 +495,10 @@ exports.getMovieEventBySource = async (req, res) => {
             tomorrow.setDate(tomorrow.getDate() + 1);
             tomorrow.setHours(10, 0, 0, 0);
 
-            event = await Event.create({
+            // Upsert so two concurrent first visits cannot create duplicate events.
+            event = await Event.findOneAndUpdate(
+              { sourceMovieId: String(sourceMovieId) },
+              { $setOnInsert: {
               title: m.title,
               description:
                 m.overview ||
@@ -508,7 +511,7 @@ exports.getMovieEventBySource = async (req, res) => {
               price: 250,
               category: 'Movie',
               totalSeats: 120,
-              bookedSeats: 15,
+              bookedSeats: 0,
               imageUrl: posterUrl,
               sourceMovieId: String(sourceMovieId),
               sourceType: 'tmdb',
@@ -517,9 +520,11 @@ exports.getMovieEventBySource = async (req, res) => {
                 movieTitle: m.title,
                 releaseDate: m.releaseDate || '',
                 posterUrl: posterUrl,
-                voteAverage: m.voteAverage || 8.5,
+                voteAverage: m.voteAverage || 0,
               },
-            });
+              } },
+              { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
+            );
           }
         }
       } catch (autoErr) {

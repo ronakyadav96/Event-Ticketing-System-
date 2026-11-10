@@ -9,7 +9,7 @@ Guardrail agent: small talk, out-of-domain, unsafe input and "could not understa
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.agents.common import first_name, make_reply
+from app.agents.common import first_name, language_instruction, make_reply
 from app.llm import LLMUnavailable, generate
 
 AGENT = "guardrail_agent"
@@ -85,12 +85,14 @@ def _fallback_small_talk(query: str, name: str) -> str:
     return f"Hi{who}! 👋 How can I help you with movies and events today?"
 
 
-async def small_talk_reply(query: str, user_name: Optional[str], recent: List[Tuple[str, str]]) -> Dict[str, Any]:
+async def small_talk_reply(
+    query: str, user_name: Optional[str], recent: List[Tuple[str, str]], language: Optional[str] = None
+) -> Dict[str, Any]:
     name = first_name(user_name)
     convo = "\n".join(f"{role}: {text}" for role, text in recent[-4:])
     prompt = f"User first name: {name or '(not provided)'}\nRecent conversation:\n{convo or '(none)'}\n\nUser says: {query}"
     try:
-        text = await generate(SMALL_TALK_SYSTEM, prompt, temperature=0.7)
+        text = await generate(SMALL_TALK_SYSTEM + language_instruction(language), prompt, temperature=0.7)
     except LLMUnavailable:
         text = _fallback_small_talk(query, name)
     return make_reply(text, AGENT, quick_replies=SUGGESTIONS)

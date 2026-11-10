@@ -89,3 +89,32 @@ def test_payment_url_only_with_open_checkout(client, model, fake_node):
     assert state["booking"]["stage"] == "COMPLETED"
     assert state["booking"]["ticket"]["ticket_id"] == "TKT-PAID-0001"
     assert state["booking"]["payment"]["payment_url"] is None
+
+
+def test_chat_is_rate_limited_per_guest(client, model, monkeypatch):
+    from config import settings
+
+    monkeypatch.setattr(settings, "CHAT_RATE_LIMIT_GUEST", 2)
+    model.on("hello", intent="SMALL_TALK")
+    body = {"message": "hello", "conversation_id": "conv_ratelimit1"}
+    assert client.post("/api/v1/chat", headers=GUEST, json=body).status_code == 200
+    assert client.post("/api/v1/chat", headers=GUEST, json=body).status_code == 200
+    r = client.post("/api/v1/chat", headers=GUEST, json=body)
+    assert r.status_code == 429
+    assert int(r.headers["Retry-After"]) >= 1
+
+
+def test_rotating_guest_ids_still_hits_the_ip_quota(client, model, monkeypatch):
+    from config import settings
+
+    monkeypatch.setattr(settings, "CHAT_RATE_LIMIT_IP", 2)
+    model.on("hello", intent="SMALL_TALK")
+    codes = [
+        client.post(
+            "/api/v1/chat",
+            headers={"X-Guest-Id": f"rotating-guest-{i:06d}"},
+            json={"message": "hello", "conversation_id": f"conv_rotate{i:04d}"},
+        ).status_code
+        for i in range(3)
+    ]
+    assert codes == [200, 200, 429]

@@ -69,3 +69,14 @@ button:disabled {
 .register-text span:hover {
   text-decoration: underline;
 }
+
+.info {
+  color: #15803d;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.register-text a {
+  color: #4f46e5;
+  cursor: pointer;
+}

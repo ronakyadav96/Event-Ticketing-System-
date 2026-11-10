@@ -19,7 +19,6 @@ from app.agents import faq as faq_agent
 from app.agents import guardrail
 from app.agents import refund as refund_agent
 from app.agents import search as search_agent
-from app.agents.intent import classify
 from app.graph.state import (
     ACTIVE_BOOKING_STAGES,
     AgentState,
@@ -30,6 +29,7 @@ from app.graph.state import (
     empty_search,
 )
 from app.tools import catalog as catalog_tools
+from app.understanding import understand
 
 logger = logging.getLogger(__name__)
 
@@ -92,9 +92,10 @@ async def classify_node(state: AgentState) -> Dict[str, Any]:
         return {"intent": Intent.OUT_OF_DOMAIN.value, "confidence": 1.0, "entities": {"guard": violation}}
 
     facets = await catalog_tools.get_facets()
-    result = await classify(query, state, facets)
+    result = await understand(query, state, facets)
     entities = dict(result["entities"])
     entities["_source"] = result["source"]
+    entities["_language"] = result["language"]
     logger.info("Intent %s (%.2f, %s)", result["intent"], result["confidence"], result["source"])
     return {"intent": result["intent"], "confidence": result["confidence"], "entities": entities}
 
@@ -131,7 +132,9 @@ async def guardrail_node(state: AgentState) -> Dict[str, Any]:
     if entities.get("guard"):
         reply = guardrail.safety_reply(entities["guard"])
     elif intent == Intent.SMALL_TALK.value:
-        reply = await guardrail.small_talk_reply(_latest_user_text(state), state.get("user_name"), _recent_pairs(state))
+        reply = await guardrail.small_talk_reply(
+            _latest_user_text(state), state.get("user_name"), _recent_pairs(state), entities.get("_language")
+        )
     elif intent == Intent.OUT_OF_DOMAIN.value:
         reply = guardrail.out_of_domain_reply()
     else:

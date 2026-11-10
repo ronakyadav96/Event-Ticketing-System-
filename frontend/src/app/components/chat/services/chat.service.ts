@@ -245,7 +245,7 @@ export class ChatService {
   /** Re-reads authoritative booking/payment state (e.g. after returning from Stripe). */
   refreshState(): void {
     const id = this.currentConversationId();
-    if (!id || this.messages().every((m) => m.id === 'welcome')) return;
+    if (!this.api || !id || this.messages().every((m) => m.id === 'welcome')) return;
     const epoch = this.epoch;
     const { headers } = this.identity();
     this.http
@@ -335,6 +335,8 @@ export class ChatService {
           this.isSending.set(false);
           if (err.status === 401) {
             this.appendError('Your session has expired. Please log in again.');
+          } else if (err.status === 429) {
+            this.appendError("You're sending messages too quickly. Please wait a minute and try again.");
           } else if (err.status === 409) {
             this.appendError('Still working on your previous message — please wait a moment.');
           } else if (err.status === 0) {

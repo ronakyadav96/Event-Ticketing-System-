@@ -3,7 +3,8 @@ const router = express.Router();
 
 const Booking = require('../models/Booking');
 const Event = require('../models/Event');
-const { protect } = require('../middlewares/auth.middleware');
+const { protect, authorizeRoles } = require('../middlewares/auth.middleware');
+const seatReservations = require('../services/seat-reservation.service');
 const { parseShowAt, isShowTimeAllowed } = require('../utils/showtime.util');
 
 // ✅ helper: generate unique ticket id
@@ -104,7 +105,7 @@ router.post('/', protect, async (req, res) => {
     });
   } catch (err) {
     console.error('Booking create error:', err);
-    return res.status(500).json({ message: 'Booking failed', error: err.message });
+    return res.status(500).json({ message: 'Booking failed' });
   }
 });
 
@@ -134,7 +135,7 @@ router.get('/ticket/:ticketId', protect, async (req, res) => {
     return res.json(booking);
   } catch (err) {
     console.error('getByTicketId error:', err);
-    return res.status(500).json({ message: 'Failed to load booking', error: err.message });
+    return res.status(500).json({ message: 'Failed to load booking' });
   }
 });
 
@@ -149,7 +150,7 @@ router.get('/my', protect, async (req, res) => {
     return res.json(bookings);
   } catch (err) {
     console.error('my bookings error:', err);
-    return res.status(500).json({ message: 'Failed to load bookings', error: err.message });
+    return res.status(500).json({ message: 'Failed to load bookings' });
   }
 });
 
@@ -186,7 +187,7 @@ router.get('/', protect, async (req, res) => {
     return res.json({ data: bookings, page, limit, total, totalPages });
   } catch (err) {
     console.error('bookings error:', err);
-    return res.status(500).json({ message: 'Failed to load bookings', error: err.message });
+    return res.status(500).json({ message: 'Failed to load bookings' });
   }
 });
 
@@ -212,40 +213,38 @@ router.get('/:id', protect, async (req, res) => {
     return res.json(booking);
   } catch (err) {
     console.error('booking by id error:', err);
-    return res.status(500).json({ message: 'Failed to load booking', error: err.message });
+    return res.status(500).json({ message: 'Failed to load booking' });
   }
 });
 
 // ==========================
-// DELETE BOOKING (ADMIN OR OWNER)
+// DELETE BOOKING (SUPERADMIN ONLY)
 // DELETE /api/bookings/:id
+// Users cancel through POST /api/payments/refund so the refund policy always applies.
 // ==========================
-router.delete('/:id', protect, async (req, res) => {
+router.delete('/:id', protect, authorizeRoles('superadmin'), async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-    const isOwner = String(booking.user) === String(req.user.id);
-    const isAdmin = !!req.user?.isAdmin || req.user?.role === 'admin' || req.user?.role === 'superadmin';
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
-
-    // decrement booked seats on event (never below 0)
-    const seatsToRelease = Math.max(Number(booking.seats || 0), 0);
-    if (seatsToRelease > 0) {
-      await Event.findByIdAndUpdate(
-        booking.event,
-        { $inc: { bookedSeats: -seatsToRelease } },
-        { new: true }
-      );
+    // Cancelled/refunded bookings already gave their seats back.
+    const alreadyReleased = ['CANCELLED', 'REFUNDED', 'EXPIRED'].includes(String(booking.paymentStatus).toUpperCase());
+    if (!alreadyReleased) {
+      await seatReservations.releaseBookingSeats(booking._id);
+      const seatsToRelease = Math.max(Number(booking.seats || 0), 0);
+      if (seatsToRelease > 0) {
+        await Event.findOneAndUpdate(
+          { _id: booking.event, bookedSeats: { $gte: seatsToRelease } },
+          { $inc: { bookedSeats: -seatsToRelease } }
+        );
+      }
     }
 
     await booking.deleteOne();
     return res.json({ message: 'Booking deleted' });
   } catch (err) {
     console.error('delete booking error:', err);
-    return res.status(500).json({ message: 'Failed to delete booking', error: err.message });
+    return res.status(500).json({ message: 'Failed to delete booking' });
   }
 });
 

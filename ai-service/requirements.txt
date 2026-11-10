@@ -1,27 +1,31 @@
+# Pinned: an unpinned langchain-google-genai upgrade switched to the v1 API, where the Gemini
+# "-latest" model aliases do not exist, and every model call failed in production.
+
 # Web framework & config
-fastapi>=0.110.0
-uvicorn[standard]>=0.28.0
-pydantic>=2.6.0
-pydantic-settings>=2.2.0
+fastapi==0.143.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.1
+pydantic-settings==2.15.0
 
 # Persistence: conversation store + LangGraph checkpointer (PostgreSQL), turn locks (Redis)
-psycopg[binary]>=3.1.18
-psycopg-pool>=3.2.0
-redis>=5.0.0
+psycopg[binary]==3.3.6
+psycopg-pool==3.3.3
+redis==8.1.0
 
 # Node backend client
-httpx>=0.27.0
+httpx==0.28.1
 
 # Orchestration & LLM (Gemini)
-langgraph>=0.2.0
-langgraph-checkpoint-postgres>=2.0.0
-langchain-core>=0.3.0
-langchain-google-genai>=2.0.0
+langgraph==1.2.14
+langgraph-checkpoint-postgres==3.1.2
+langchain-core==1.6.9
+langchain-google-genai==4.4.1
+google-genai==2.29.0
 
 # Optional: better FAQ embeddings (EMBEDDING_PROVIDER=auto picks them up when installed)
 # langchain-community>=0.3.0
 # sentence-transformers>=2.3.0
 
 # Tests
-pytest>=8.0.0
-pytest-asyncio>=0.23.0
+pytest==9.1.1
+pytest-asyncio==1.4.0

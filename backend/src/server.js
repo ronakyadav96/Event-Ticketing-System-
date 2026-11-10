@@ -23,11 +23,21 @@ app.set('trust proxy', 1);
    which the browser then reports as a "CORS error").
 ====================================================== */
 
+// Only browser origins listed in CLIENT_URL (comma-separated) may call the API.
+const allowedOrigins = new Set(
+  (process.env.CLIENT_URL || 'http://localhost:4200')
+    .split(',')
+    .map((o) => o.trim().replace(/\/+$/, ''))
+    .filter(Boolean)
+);
+
 app.use((req, res, next) => {
-  const origin = req.headers.origin || '*';
-  res.setHeader('Access-Control-Allow-Origin', origin);
+  const origin = req.headers.origin;
   res.setHeader('Vary', 'Origin');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  if (origin && allowedOrigins.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Max-Age', '86400'); // cache preflight for 24 h
@@ -240,6 +250,28 @@ mongoose.connection.on('disconnected', () => {
 
 let serverStarted = false;
 
+// Serverless (Vercel): there is no long-running listen(), so connect on demand
+// before routing; the connection is reused while the function instance stays warm.
+// Concurrent requests share one connection attempt instead of failing while it is in progress.
+let mongoConnectPromise = null;
+
+function ensureMongo() {
+  if (isMongoReady()) return Promise.resolve(true);
+  if (!mongoConnectPromise) {
+    mongoConnectPromise = connectMongo().finally(() => {
+      mongoConnectPromise = null;
+    });
+  }
+  return mongoConnectPromise;
+}
+
+if (process.env.VERCEL) {
+  app.use(async (req, res, next) => {
+    await ensureMongo();
+    next();
+  });
+}
+
 /* ======================================================
    ROUTES WITH RATE LIMITING HARDENING
 ====================================================== */
@@ -252,7 +284,6 @@ app.use('/api/admin', requireMongo, require('./routes/admin.routes'));
 app.use('/api/dashboard', requireMongo, require('./routes/dashboard.routes'));
 app.use('/api/hero-images', requireMongo, require('./routes/heroImage.routes'));
 app.use('/api/movies', require('./routes/movie.routes'));
-app.use('/api/chat-history', apiLimiter, require('./routes/chatHistory.routes'));
 
 /* ======================================================
    HEALTH CHECK
@@ -277,8 +308,9 @@ app.get('/health', (req, res) => {
 
 app.use((err, req, res, next) => {
   console.error('🔥 Server Error:', err);
-  res.status(500).json({
-    message: err.message || 'Internal Server Error',
+  const isProd = process.env.NODE_ENV === 'production';
+  res.status(err.status || 500).json({
+    message: isProd ? 'Internal Server Error' : err.message || 'Internal Server Error',
   });
 });
 
@@ -317,4 +349,10 @@ function start() {
   process.once('SIGTERM', () => shutdown('SIGTERM'));
 }
 
-start();
+// Tests import the app and manage their own database connection.
+// On Vercel the platform invokes the exported app directly.
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
+  start();
+}
+
+module.exports = app;

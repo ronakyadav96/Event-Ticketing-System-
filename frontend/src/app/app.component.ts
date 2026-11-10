@@ -13,6 +13,7 @@ import { FooterComponent } from './shared/footer/footer.component';
 import { CitySelectorComponent } from './shared/city-selector/city-selector.component';
 import { FormsModule } from '@angular/forms';
 import { ChatWidgetComponent } from './components/chat/chat-widget.component';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -37,6 +38,8 @@ export class AppComponent implements OnDestroy {
 
   private destroy$ = new Subject<void>();
 
+  // The assistant is only shown when an AI service URL is configured for this build.
+  readonly chatEnabled = !!environment.aiApiUrl;
   isLoginPage = false;
   isRegisterPage = false;
   isEventsPage = false;

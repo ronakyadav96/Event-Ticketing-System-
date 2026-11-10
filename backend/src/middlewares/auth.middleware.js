@@ -37,6 +37,10 @@ const protect = async (req, res, next) => {
     try {
       if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(userId)) {
         user = await User.findById(userId).select('-password');
+        // A valid signature is not enough: deleted accounts must lose access immediately.
+        if (!user) {
+          return res.status(401).json({ message: 'User no longer exists' });
+        }
       }
     } catch (dbErr) {
       // Ignore database lookup errors; fallback to decoded JWT token

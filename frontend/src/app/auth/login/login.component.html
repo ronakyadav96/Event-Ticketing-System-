@@ -18,7 +18,12 @@
     <span class="btn-loader" *ngIf="loading"></span>
   </button>
 
+  <p class="info" *ngIf="resetDone">Password updated. Please log in with your new password.</p>
   <p class="error" *ngIf="error">{{ error }}</p>
+
+  <p class="register-text">
+    <a routerLink="/forgot-password">Forgot password?</a>
+  </p>
 
   <p class="register-text">
     Don't have an account?

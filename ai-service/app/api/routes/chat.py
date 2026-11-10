@@ -31,7 +31,8 @@ from app.api.schemas import (
 )
 from app.graph.workflow import delete_thread, get_thread_state, run_turn, update_thread_state
 from app.graph.state import BookingStage, empty_booking
-from db import ConversationBusy, get_store, turn_lock
+from config import settings
+from db import ConversationBusy, RateLimited, get_store, rate_limiter, turn_lock
 from services.node_client import NodeAPIError, NodeUnavailable
 
 logger = logging.getLogger(__name__)
@@ -92,6 +93,26 @@ async def _require_owner(conversation_id: str, identity: Identity) -> None:
 
 # ── Chat turn ────────────────────────────────────────────────────────────────
 
+async def _enforce_rate_limit(request: Request, identity: Identity) -> None:
+    client_ip = request.client.host if request.client else "unknown"
+    if identity.is_authenticated:
+        limits = {f"user:{identity.user_id}": settings.CHAT_RATE_LIMIT_USER}
+    else:
+        limits = {
+            f"user:{identity.user_id}": settings.CHAT_RATE_LIMIT_GUEST,
+            f"ip:{client_ip}": settings.CHAT_RATE_LIMIT_IP,
+        }
+    try:
+        await rate_limiter.check(limits)
+    except RateLimited as exc:
+        logger.warning("[CHAT] rate limited user=%s ip=%s", identity.user_id, client_ip)
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="You're sending messages too quickly. Please wait a moment and try again.",
+            headers={"Retry-After": str(exc.retry_after)},
+        )
+
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat(body: ChatRequest, request: Request, identity: Identity = Depends(get_identity)) -> ChatResponse:
     started = time.perf_counter()
@@ -99,6 +120,8 @@ async def chat(body: ChatRequest, request: Request, identity: Identity = Depends
     message = body.message.strip()
     if not message:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Message is empty.")
+
+    await _enforce_rate_limit(request, identity)
 
     store = get_store()
     owner = await store.get_owner(body.conversation_id)

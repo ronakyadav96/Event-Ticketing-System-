@@ -6,3 +6,6 @@ coverage
 src/uploads
 
 backups
+.vercel
+.env*
+!.env.example

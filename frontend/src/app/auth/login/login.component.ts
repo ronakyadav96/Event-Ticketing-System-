@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
@@ -16,12 +16,15 @@ export class LoginComponent {
   password = '';
   error = '';
   loading = false;
+  resetDone = false;
 
   constructor(
     private auth: AuthService,
     private router: Router,
     private route: ActivatedRoute
-  ) {}
+  ) {
+    this.resetDone = this.route.snapshot.queryParamMap.get('reset') === '1';
+  }
 
   goToRegister() {
     this.router.navigate(['/register']);

@@ -32,6 +32,19 @@
           </div>
         </div>
         <div class="ticket-id">Ticket ID: <b>{{ b?.ticketId || '-' }}</b></div>
+        <span class="status-pill" *ngIf="statusLabel(b) as label">{{ label }}</span>
+        <div class="cancel-row" *ngIf="canCancel(b) || cancelMessage[b._id]">
+          <button
+            *ngIf="canCancel(b)"
+            type="button"
+            class="btn small danger"
+            [disabled]="cancellingId === b._id"
+            (click)="cancelBooking(b)"
+          >
+            {{ cancellingId === b._id ? 'Checking…' : 'Cancel booking' }}
+          </button>
+          <span class="cancel-msg" *ngIf="cancelMessage[b._id]">{{ cancelMessage[b._id] }}</span>
+        </div>
       </div>
 
       <div class="ticket-qr" *ngIf="b?.ticketId">

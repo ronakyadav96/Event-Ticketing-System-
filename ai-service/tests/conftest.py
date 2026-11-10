@@ -32,9 +32,10 @@ os.environ.update(
     }
 )
 
-from app.agents import intent as intent_module  # noqa: E402
-from app.agents.intent import Extraction  # noqa: E402
+from app import llm  # noqa: E402
+from app.understanding.schemas import Rewrite, StateUpdate  # noqa: E402
 from app.graph import workflow  # noqa: E402
+from db import rate_limiter  # noqa: E402
 from services.node_client import NodeAPIError, node_client  # noqa: E402
 
 JWT_SECRET = "test-secret"
@@ -193,6 +194,13 @@ class FakeNode:
                                     "paymentStatus": "PAID", "amountPaid": 60000, "_owner": token, "_within_24h": within_24h}
 
 
+@pytest.fixture(autouse=True)
+def _fresh_rate_limits():
+    rate_limiter.reset()
+    yield
+    rate_limiter.reset()
+
+
 @pytest.fixture
 def fake_node(monkeypatch):
     fake = FakeNode()
@@ -206,30 +214,43 @@ def fake_node(monkeypatch):
 
 
 class ScriptedModel:
-    """Maps a user message to the Extraction Model 1 would return."""
+    """
+    Scripted Model 1. The rewrite step returns the message unchanged (in scope) unless a
+    rewrite was scripted with rewrite(); the state tracker returns the fields given to on().
+    """
 
     def __init__(self):
         self.rules: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {}
+        self.rewrites: Dict[str, Dict[str, Any]] = {}
         self.contexts: List[Dict[str, Any]] = []
+        self.standalones: List[str] = []
 
     def on(self, message: str, **fields):
         self.rules[message] = (lambda ctx: fields) if not callable(fields.get("_fn")) else fields["_fn"]
 
-    async def __call__(self, schema, system, user):
+    def rewrite(self, message: str, standalone: Optional[str] = None, scope: str = "events", language: str = "english"):
+        self.rewrites[message] = {"standalone": standalone or message, "scope": scope, "language": language}
+
+    async def __call__(self, schema, system, user, **_options):
         payload = json.loads(user)
-        self.contexts.append(payload["CONTEXT"])
         msg = payload["LATEST_MESSAGE"]
+        if schema is Rewrite:
+            return Rewrite(**self.rewrites.get(msg, {"standalone": msg, "scope": "events", "language": "english"}))
+        self.contexts.append(payload["CONTEXT"])
+        self.standalones.append(payload["STANDALONE_REQUEST"])
         if msg not in self.rules:
             raise AssertionError(f"No scripted extraction for {msg!r}")
         fields = dict(self.rules[msg](payload["CONTEXT"]))
         fields.setdefault("confidence", 0.95)
-        return Extraction(**fields)
+        if isinstance(fields.get("search"), dict):
+            fields["search"] = {"action": "NEW", **fields["search"]}
+        return StateUpdate(**fields)
 
 
 @pytest.fixture
 def model(monkeypatch):
     scripted = ScriptedModel()
-    monkeypatch.setattr(intent_module, "extract", scripted)
+    monkeypatch.setattr(llm, "extract", scripted)
     return scripted
 
 

@@ -148,6 +148,41 @@
   font-size: 12px;
 }
 
+.btn.danger {
+  color: #b91c1c;
+  border-color: rgba(185, 28, 28, 0.35);
+  background: rgba(185, 28, 28, 0.04);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.status-pill {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.cancel-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.cancel-msg {
+  font-size: 13px;
+  color: rgba(17, 24, 39, 0.75);
+}
+
 .infinite-sentinel {
   height: 1px;
 }

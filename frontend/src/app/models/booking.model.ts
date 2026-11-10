@@ -13,7 +13,7 @@ export interface Booking {
   seats: number;
   registrationTemplate?: string;
   registrationData?: Record<string, any>;
-  paymentStatus?: 'PENDING' | 'PAID' | 'FAILED';
+  paymentStatus?: 'PENDING' | 'PAID' | 'FAILED' | 'REFUND_PROCESSING' | 'REFUNDED' | 'CANCELLED';
   stripeSessionId?: string | null;
   stripePaymentIntentId?: string | null;
   showAt?: string | Date | null;

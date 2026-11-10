@@ -6,23 +6,24 @@ authoritative JSON; every factual line (titles, venues, prices, dates, seats) is
 deterministically from that same data.
 """
 
+import asyncio
 import copy
 import json
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.agents.common import backend_error_text, fmt_date, fmt_time, make_reply, rupees
+from app.agents.common import backend_error_text, fmt_date, fmt_time, language_instruction, make_reply, rupees
 from app.agents.resolve import remember_events, resolve_event_reference
 from app.graph.state import empty_search
 from app.llm import LLMUnavailable, generate
 from app.tools import catalog as catalog_tools
+from app.understanding.policy import plan_search, requested_filters
 from services.node_client import NodeAPIError, NodeUnavailable
 
 logger = logging.getLogger(__name__)
 
 AGENT = "event_search_agent"
 PAGE_SIZE = 5
-_FILTER_KEYS = ("text", "category", "genre", "venue", "date_from", "date_to", "max_price")
 
 
 def _describe_filters(filters: Dict[str, Any]) -> str:
@@ -38,8 +39,11 @@ def _describe_filters(filters: Dict[str, Any]) -> str:
         label += f" at {filters['venue']}"
     if filters.get("max_price"):
         label += f" under {rupees(filters['max_price'])}"
-    if filters.get("date_from") or filters.get("date_to"):
-        label += f" ({filters.get('date_from') or '…'} to {filters.get('date_to') or '…'})"
+    start, end = filters.get("date_from"), filters.get("date_to")
+    if start and start == end:
+        label += f" on {fmt_date(start)}"
+    elif start or end:
+        label += f" ({fmt_date(start) if start else '…'} to {fmt_date(end) if end else '…'})"
     return label
 
 
@@ -64,60 +68,79 @@ def _intro(label: str, shown_from: int, shown_to: int, total: int, continuing: b
     return f"I found {total} {label} — here are the top {shown_to} 👇"
 
 
-def _same_search(requested: Dict[str, Any], previous: Dict[str, Any]) -> bool:
-    """A follow-up keeps the current search if it adds nothing new (the model often repeats filters)."""
-    return all(str(previous.get(k, "")).lower() == str(v).lower() for k, v in requested.items())
+async def _fetch_filtered(filters: Dict[str, Any], rejected: List[str], page: int, seen: List[str]) -> Tuple[List[Dict[str, Any]], int, int]:
+    """One page of the filtered search, skipping anything already shown (the catalog may change between pages)."""
+    events: List[Dict[str, Any]] = []
+    total = 0
+    for _ in range(3):
+        result = await catalog_tools.search_events(**filters, exclude=rejected, page=page, limit=PAGE_SIZE)
+        total = result["total"]
+        events = [e for e in result["events"] if e["id"] not in seen]
+        if events or (page * PAGE_SIZE) >= total:
+            break
+        page += 1
+    return events, total, page
+
+
+async def _fetch_mix(categories: List[str], filters: Dict[str, Any], rejected: List[str], page: int, seen: List[str]) -> Tuple[List[Dict[str, Any]], int]:
+    """One page across several categories: the top unseen event(s) of each, interleaved."""
+    categories = categories[:PAGE_SIZE]
+    if not categories:
+        return [], 0
+    per = max(1, -(-PAGE_SIZE // len(categories)))
+    results = await asyncio.gather(
+        *(catalog_tools.search_events(**{**filters, "category": c}, exclude=rejected, page=page, limit=per) for c in categories)
+    )
+    total = sum(r["total"] for r in results)
+    columns = [[e for e in r["events"] if e["id"] not in seen] for r in results]
+    events: List[Dict[str, Any]] = []
+    for row in range(per):
+        events += [col[row] for col in columns if len(col) > row]
+    return events[:PAGE_SIZE], total
 
 
 async def run_search(state: Dict[str, Any], entities: Dict[str, Any], query: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
-    One search session = one set of filters, paged through in a fixed (relevance) order.
-
-    - New filters (category, genre, title, venue, ...) → a fresh MongoDB search, page 1.
-    - "another" / "more" / "something else" with nothing new → the next page of the same search,
-      so results never repeat; rejected events are always excluded.
-    - Every event ever shown stays in search["catalog"] (selectable later by its id).
+    One search session = one plan from the policy (fixed filters, or a mix of categories),
+    paged through in a fixed (relevance) order so results never repeat. Rejected events are
+    always excluded, and every event ever shown stays in search["catalog"] (selectable by id).
     """
     search = copy.deepcopy(state.get("search") or empty_search())
-    spec = entities.get("search") or {}
+    spec = dict(entities.get("search") or {})
+    if not requested_filters(spec) and entities.get("event_title"):
+        spec["text"] = entities["event_title"]
 
+    facets = await catalog_tools.get_facets()
+    plan = plan_search(search, spec, facets.get("categories") or [])
     rejected = list(dict.fromkeys((search.get("rejected") or []) + list(spec.get("reject_event_ids") or [])))
-    requested = {k: spec.get(k) for k in _FILTER_KEYS if spec.get(k) not in (None, "")}
-    if not requested and entities.get("event_title"):
-        requested = {"text": entities["event_title"]}
+    continuing = plan["continue"]
+    filters = plan["filters"]
+    page = int(search.get("page") or 1) + 1 if continuing else 1
+    seen = list(search.get("seen") or []) if continuing else []
 
-    previous = dict(search.get("filters") or {})
-    has_previous = bool(previous) or bool(search.get("seen"))
-    wants_more = bool(spec.get("more_results")) or bool(spec.get("reject_event_ids"))
-    # Asking again for exactly the same search also pages forward instead of repeating page 1.
-    repeated = bool(requested) and requested == previous
-    continuing = has_previous and (repeated or (wants_more and _same_search(requested, previous)))
-
-    if continuing:
-        filters = previous
-        page = int(search.get("page") or 1) + 1
-        seen = list(search.get("seen") or [])
+    if plan["kind"] == "mix":
+        label = "events of other kinds"
     else:
-        filters = requested
-        page = 1
-        seen = []
+        label = _describe_filters(filters)
 
-    label = _describe_filters(filters)
-    events: List[Dict[str, Any]] = []
-    total = 0
     try:
-        # Skip anything already shown in this search (e.g. if the catalog changed between pages).
-        for _ in range(3):
-            result = await catalog_tools.search_events(**filters, exclude=rejected, page=page, limit=PAGE_SIZE)
-            total = result["total"]
-            events = [e for e in result["events"] if e["id"] not in seen]
-            if events or (page * PAGE_SIZE) >= total:
-                break
-            page += 1
+        if plan["kind"] == "mix":
+            events, total = await _fetch_mix(plan["categories"], filters, rejected, page, seen)
+        else:
+            events, total, page = await _fetch_filtered(filters, rejected, page, seen)
     except (NodeUnavailable, NodeAPIError) as exc:
         return make_reply(backend_error_text(exc), AGENT, error="BACKEND_UNAVAILABLE"), search
 
-    search.update(filters=filters, page=page, total=total, rejected=rejected, focus=None)
+    shown_categories = list(search.get("shown_categories") or []) if plan["keep_shown_categories"] else []
+    search.update(
+        filters=filters,
+        mix={"categories": plan["categories"]} if plan["kind"] == "mix" else None,
+        page=page,
+        total=total,
+        rejected=rejected,
+        focus=None,
+        shown_categories=shown_categories,
+    )
 
     if not events:
         search["last_results"] = []
@@ -125,21 +148,32 @@ async def run_search(state: Dict[str, Any], entities: Dict[str, Any], query: str
             text = f"You've seen all {total} {label} I have. Want to search for something else?"
         else:
             text = f"I couldn't find any {label}. Try a different title, genre, category or venue?"
-        return make_reply(text, AGENT, quick_replies=["Show me movies", "Show me events"]), search
+        quick = [f"Show me {c}" for c in (facets.get("categories") or []) if c not in shown_categories][:4]
+        return make_reply(text, AGENT, quick_replies=quick or ["Show me movies", "Show me events"]), search
 
     remember_events(search, events, as_last_results=True)
     search["seen"] = list(dict.fromkeys(seen + [e["id"] for e in events]))
+    new_categories = [e["category"] for e in events if e.get("category")]
+    search["shown_categories"] = list(dict.fromkeys(shown_categories + new_categories))
     shown_to = min(len(search["seen"]), total)
 
-    text = _intro(label, shown_to - len(events) + 1, shown_to, total, continuing)
+    if plan["kind"] == "mix" and not continuing:
+        kinds = ", ".join(dict.fromkeys(new_categories))
+        text = f"Here's something different — {kinds} 👇"
+    else:
+        text = _intro(label, shown_to - len(events) + 1, shown_to, total, continuing)
     if not any(e.get("upcoming") for e in events):
         text += "\n\nNone of these currently have upcoming shows to book."
     else:
         text += "\nTap **Book** on any card to pick your show and seats."
+
     quick = []
     if shown_to < total:
         quick.append("Show me more")
-    quick += [f"Book {e['title']}" for e in events if e.get("upcoming")][:2]
+    if plan["kind"] == "mix":
+        quick += [f"Show me {c}" for c in dict.fromkeys(new_categories)][:3]
+    else:
+        quick += [f"Book {e['title']}" for e in events if e.get("upcoming")][:2]
     return make_reply(text, AGENT, events=events, quick_replies=quick), search
 
 
@@ -208,7 +242,11 @@ async def run_details(state: Dict[str, Any], entities: Dict[str, Any], query: st
 
     about_data = {k: event.get(k) for k in ("title", "category", "description", "rating", "release_date")}
     try:
-        about = await generate(DETAILS_SYSTEM, json.dumps(about_data, ensure_ascii=False), temperature=0.4)
+        about = await generate(
+            DETAILS_SYSTEM + language_instruction(entities.get("_language")),
+            json.dumps(about_data, ensure_ascii=False),
+            temperature=0.4,
+        )
     except LLMUnavailable:
         about = event.get("description") or f"{event.get('title')} is a {str(event.get('category') or 'live').lower()} event."
 

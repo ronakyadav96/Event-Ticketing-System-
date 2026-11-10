@@ -1,0 +1,10 @@
+{
+  "framework": null,
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "src/data/movie-recommender/**",
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
+}

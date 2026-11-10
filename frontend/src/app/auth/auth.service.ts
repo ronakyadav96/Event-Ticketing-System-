@@ -80,6 +80,21 @@ export class AuthService {
     );
   }
 
+  forgotPassword(email: string) {
+    return this.http.post<{ message: string; otp?: string }>(`${this.apiUrl}/forgot-password`, {
+      email: (email || '').trim().toLowerCase(),
+    });
+  }
+
+  resetPassword(email: string, otp: string, password: string) {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/reset-password`, {
+      email: (email || '').trim().toLowerCase(),
+      otp: (otp || '').trim(),
+      // Login and register trim the password too, so reset must match.
+      password: (password || '').trim(),
+    });
+  }
+
   // 💾 SAVE LOGIN DATA
   saveAuthData(token: string, user: User): void {
     const normalizedUser: User = {

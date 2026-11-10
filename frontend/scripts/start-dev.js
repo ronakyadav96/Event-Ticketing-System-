@@ -1,4 +1,5 @@
 const { spawn } = require('node:child_process');
+const fs = require('node:fs');
 const http = require('node:http');
 const net = require('node:net');
 const path = require('node:path');
@@ -9,8 +10,12 @@ const BACKEND_ENTRY = path.join(BACKEND_DIR, 'src', 'server.js');
 const ANGULAR_CLI = path.join(APP_DIR, 'node_modules', '@angular', 'cli', 'bin', 'ng.js');
 const BACKEND_HOST = '127.0.0.1';
 const BACKEND_PORT = Number(process.env.BACKEND_PORT || 5001);
+const AI_DIR = path.resolve(APP_DIR, '..', 'ai-service');
+const AI_UVICORN = path.join(AI_DIR, '.venv', 'bin', 'uvicorn');
+const AI_PORT = Number(process.env.AI_PORT || 8000);
 
 let backendProcess;
+let aiProcess;
 let frontendProcess;
 let shuttingDown = false;
 
@@ -90,6 +95,33 @@ function startBackend() {
   });
 }
 
+// The chat assistant is optional: skip it when its virtualenv has not been created yet.
+function startAiService() {
+  if (!fs.existsSync(AI_UVICORN)) {
+    console.warn(
+      `AI service not started: ${AI_UVICORN} not found. ` +
+        'Create it with: cd ai-service && python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt'
+    );
+    return;
+  }
+  console.log(`Starting AI service on http://127.0.0.1:${AI_PORT}...`);
+  aiProcess = spawn(AI_UVICORN, ['main:app', '--host', '127.0.0.1', '--port', String(AI_PORT)], {
+    cwd: AI_DIR,
+    env: process.env,
+    stdio: 'inherit',
+  });
+
+  aiProcess.once('error', (error) => {
+    console.error(`Could not start AI service: ${error.message}`);
+  });
+
+  aiProcess.once('exit', (code, signal) => {
+    if (!shuttingDown) {
+      console.error(`AI service stopped${signal ? ` (${signal})` : ` with exit code ${code}`}.`);
+    }
+  });
+}
+
 function stopProcess(child) {
   if (!child || child.killed || child.exitCode !== null) return;
   child.kill('SIGTERM');
@@ -100,6 +132,7 @@ async function shutdown(code = 0) {
   shuttingDown = true;
   stopProcess(frontendProcess);
   stopProcess(backendProcess);
+  stopProcess(aiProcess);
   setTimeout(() => process.exit(code), 500).unref();
 }
 
@@ -108,6 +141,12 @@ async function start() {
     console.log(`Using existing backend on http://${BACKEND_HOST}:${BACKEND_PORT}.`);
   } else {
     startBackend();
+  }
+
+  if (await canConnect(AI_PORT, BACKEND_HOST)) {
+    console.log(`Using existing AI service on http://${BACKEND_HOST}:${AI_PORT}.`);
+  } else {
+    startAiService();
   }
 
   if (!(await waitForBackend())) {

@@ -13,8 +13,7 @@ import asyncio
 import logging
 import time
 from functools import lru_cache
-from typing import Dict
-from typing import Type, TypeVar
+from typing import Dict, List, Optional, Type, TypeVar
 
 from pydantic import BaseModel
 
@@ -29,9 +28,11 @@ class LLMUnavailable(Exception):
     """Gemini is not configured, timed out, or returned an unusable result."""
 
 
-# Circuit breaker: a model that just failed (quota exhausted, overloaded, timed out) is skipped
-# for a cool-down period, so users get the instant fallback instead of waiting for every timeout.
+# Circuit breaker: a model that just failed is skipped for a cool-down period, so users get the
+# instant fallback instead of waiting for every timeout. Exhausted quota (429) lasts about a
+# minute; overload (503) and timeouts are usually brief.
 _COOLDOWN_SECONDS = 60.0
+_TRANSIENT_COOLDOWN_SECONDS = 15.0
 _cooling_until: Dict[str, float] = {}
 
 
@@ -40,8 +41,11 @@ def _available(model_name: str) -> bool:
 
 
 def _trip(model_name: str, exc: Exception) -> None:
-    _cooling_until[model_name] = time.monotonic() + _COOLDOWN_SECONDS
-    logger.warning("Gemini model %s unavailable (%r); skipping it for %ds", model_name, exc, _COOLDOWN_SECONDS)
+    text = repr(exc)
+    quota = "429" in text or "RESOURCE_EXHAUSTED" in text
+    seconds = _COOLDOWN_SECONDS if quota else _TRANSIENT_COOLDOWN_SECONDS
+    _cooling_until[model_name] = time.monotonic() + seconds
+    logger.warning("Gemini model %s unavailable (%s); skipping it for %ds", model_name, text[:300], seconds)
 
 
 def reset_circuit() -> None:
@@ -64,32 +68,33 @@ def _chat_model(model_name: str, temperature: float):
     )
 
 
-async def _extract_once(model_name: str, schema: Type[T], system: str, user: str) -> T:
+async def _extract_once(model_name: str, schema: Type[T], system: str, user: str, timeout: float) -> T:
     model = _chat_model(model_name, 0.0).with_structured_output(schema)
-    result = await asyncio.wait_for(
-        model.ainvoke([("system", system), ("human", user)]),
-        timeout=settings.GEMINI_INTENT_TIMEOUT_SECONDS,
-    )
+    result = await asyncio.wait_for(model.ainvoke([("system", system), ("human", user)]), timeout=timeout)
     if not isinstance(result, schema):
         raise ValueError("no structured result")
     return result
 
 
-async def extract(schema: Type[T], system: str, user: str) -> T:
+async def extract(
+    schema: Type[T], system: str, user: str, *, models: Optional[List[str]] = None, timeout: Optional[float] = None
+) -> T:
     """Model 1: structured extraction into `schema`.
 
-    Gemini latency spikes are common, so a failed/slow call is retried once on the
-    generation model before the caller falls back to degraded mode.
+    By default a failed/slow call is retried once on the generation model before the caller
+    falls back to degraded mode. Callers with their own fallback pass a single model.
     """
-    models = [settings.GEMINI_MODEL_INTENT]
-    if settings.GEMINI_MODEL_GENERATION not in models:
-        models.append(settings.GEMINI_MODEL_GENERATION)
+    if models is None:
+        models = [settings.GEMINI_MODEL_INTENT]
+        if settings.GEMINI_MODEL_GENERATION not in models:
+            models.append(settings.GEMINI_MODEL_GENERATION)
+    timeout = timeout or settings.GEMINI_INTENT_TIMEOUT_SECONDS
     last_error: Exception = LLMUnavailable("all models cooling down")
     for name in models:
         if not _available(name):
             continue
         try:
-            return await _extract_once(name, schema, system, user)
+            return await _extract_once(name, schema, system, user, timeout)
         except LLMUnavailable:
             raise
         except Exception as exc:
