@@ -20,11 +20,11 @@
       <div class="ticket-main">
         <div class="title">{{ b?.event?.title || 'Unknown Event' }}</div>
         <div class="meta">
-          <span>Date: {{ (b?.showAt || b?.event?.date || b?.createdAt) | date:'medium' }}</span>
+          <span>Date: {{ (b?.showAt || b?.event?.date || b?.createdAt) | date:'EEE, d MMM y, h:mm a' }}</span>
           <span>Venue: {{ b?.event?.venue || '-' }}</span>
           <span>Seats: {{ b?.seats ?? '-' }}</span>
         </div>
-        <div class="reg-block" *ngIf="b?.registrationTemplate || b?.registrationData">
+        <div class="reg-block" *ngIf="hasRegistrationDetails(b)">
           <div class="reg-title">Registration: {{ getRegistrationTemplateLabel(b?.registrationTemplate) }}</div>
           <div class="reg-item" *ngFor="let item of getRegistrationItems(b)">
             <span class="reg-label">{{ item.label }}:</span>

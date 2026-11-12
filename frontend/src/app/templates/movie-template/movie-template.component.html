@@ -17,7 +17,7 @@
       <div class="poster-box">
         <img *ngIf="eventImageUrl && !eventImgFailed; else noPoster" [src]="eventImageUrl" (error)="onImgError()" alt="poster" />
         <ng-template #noPoster>
-          <div class="poster-fallback">🎬 Movie Poster</div>
+          <div class="poster-fallback">Movie Poster</div>
         </ng-template>
       </div>
 
@@ -96,7 +96,7 @@
         <div class="review-bms-card" *ngFor="let r of reviews">
           <div class="review-card-top">
             <div class="user-meta">
-              <div class="user-avatar-circle">👤</div>
+              <div class="user-avatar-circle">{{ r.name.charAt(0) }}</div>
               <div class="user-name-box">
                 <span class="user-name">{{ r.name }}</span>
                 <span class="verified-tag">Booked on <span class="brand-sub">Tamasha</span></span>
@@ -113,15 +113,15 @@
           <div class="review-card-footer">
             <div class="reactions-group">
               <button class="thumb-btn" type="button" [class.active]="r.liked" (click)="toggleLike(r)">
-                👍 <span class="thumb-count">{{ r.likes }}</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v11H4V10z"/><path d="M7 10l4-7a2 2 0 0 1 3 2l-1 5h6a2 2 0 0 1 2 2.3l-1.4 7A2 2 0 0 1 17.6 21H7"/></svg> <span class="thumb-count">{{ r.likes }}</span>
               </button>
-              <button class="thumb-btn" type="button">
-                👎
+              <button class="thumb-btn" type="button" aria-label="Not helpful">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:rotate(180deg)"><path d="M7 10v11H4V10z"/><path d="M7 10l4-7a2 2 0 0 1 3 2l-1 5h6a2 2 0 0 1 2 2.3l-1.4 7A2 2 0 0 1 17.6 21H7"/></svg>
               </button>
             </div>
             <div class="time-share-group">
               <span class="review-time">{{ r.time }}</span>
-              <button class="share-btn" type="button" title="Share review">🔗</button>
+              
             </div>
           </div>
         </div>

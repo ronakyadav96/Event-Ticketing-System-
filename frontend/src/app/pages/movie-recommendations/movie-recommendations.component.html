@@ -5,10 +5,10 @@
     <header class="movies-head">
       <div class="movies-head-top">
         <div>
-          <span class="movies-kicker">✦ Now showing</span>
+          <span class="movies-kicker">Now showing</span>
           <h1 class="catalog-title">Movies in {{ cityService.currentCity }}</h1>
         </div>
-        <button type="button" class="cinemas-link" (click)="browseByCinemas()">🎦 Browse by cinema</button>
+        <button type="button" class="cinemas-link" (click)="browseByCinemas()">Browse by cinema</button>
       </div>
 
       <div class="chip-row">
@@ -80,11 +80,11 @@
           <span class="tile-rating">★ {{ movie.voteAverage || '—' }}</span>
           <div class="tile-hover">
             <p class="tile-overview" *ngIf="movie.overview">{{ movie.overview }}</p>
-            <span class="tile-book">🎟 Book now</span>
+            <span class="tile-book">Book now</span>
           </div>
         </div>
         <h3 class="tile-title">{{ movie.title }}</h3>
-        <div class="tile-meta">UA16+ · Hindi, English</div>
+        <div class="tile-meta">{{ movie.releaseDate ? (movie.releaseDate | slice:0:4) : '' }}{{ movie.releaseDate && movie.discoveryCategory ? ' · ' : '' }}{{ movie.discoveryCategory || '' }}</div>
       </article>
     </div>
 

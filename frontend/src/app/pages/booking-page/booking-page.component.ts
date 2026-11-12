@@ -119,6 +119,10 @@ export class BookingPageComponent implements OnInit {
     this.es.getEventById(this.eventId).subscribe({
       next: (res: any) => {
         this.event = res?.event || res;
+        // Non-movie events start on their own first show time instead of the 10:00 placeholder.
+        if (!this.isMovie && Array.isArray(this.event?.showTimes) && this.event.showTimes[0]) {
+          this.selectedShowTime = this.event.showTimes[0];
+        }
         this.loading = false;
         this.refreshPromotions();
       },
@@ -165,6 +169,11 @@ export class BookingPageComponent implements OnInit {
     return Number.isFinite(price) ? Math.max(0, Math.round(price)) : 0;
   }
 
+  /** Imported or creator-made movies use the cinema showtime picker; everything else picks from its own schedule. */
+  get isMovie(): boolean {
+    return this.event?.sourceType === 'tmdb_movie' || String(this.event?.category || '').toLowerCase() === 'movie';
+  }
+
   get isFreeEvent(): boolean {
     return this.unitPriceRupees <= 0;
   }
@@ -185,10 +194,33 @@ export class BookingPageComponent implements OnInit {
     return Math.max(0, this.seatsSubtotalRupees + this.fnbTotalRupees - this.discountRupees);
   }
 
-  onShowtimeSelect(evt: { hallName: string; time: string }): void {
+  onShowtimeSelect(evt: { hallName: string; time: string; date?: Date }): void {
     this.selectedHallName = evt.hallName;
-    this.selectedShowTime = evt.time;
+    this.selectedShowTime = this.to24h(evt.time);
+    if (evt.date) {
+      const d = new Date(evt.date);
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      this.selectedShowDate = `${d.getFullYear()}-${m}-${day}`;
+    }
     this.nextStep(); // auto advance to seat selection
+  }
+
+  /** Summary label for the chosen time, e.g. "9:00 PM". */
+  get showTimeLabel(): string {
+    const [h, m] = String(this.selectedShowTime || '').split(':').map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) return this.selectedShowTime;
+    return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+  }
+
+  /** "09:45 PM" -> "21:45" so the show time can be parsed into a real date. */
+  private to24h(t: string): string {
+    const m = /^(\d{1,2}):(\d{2})\s*([AP]M)?$/i.exec(String(t || '').trim());
+    if (!m) return t;
+    let h = Number(m[1]) % 12;
+    if (!m[3]) h = Number(m[1]);
+    else if (m[3].toUpperCase() === 'PM') h += 12;
+    return `${String(h).padStart(2, '0')}:${m[2]}`;
   }
 
   private refreshPromotions(): void {

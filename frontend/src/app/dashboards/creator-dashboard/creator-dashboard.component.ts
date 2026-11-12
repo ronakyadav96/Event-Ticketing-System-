@@ -5,6 +5,7 @@ import { DashboardService } from '../../services/dashboard.service';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../auth/auth.service';
 import { PromotionRecord, PromotionService } from '../../services/promotion.service';
+import { InrPipe } from '../../shared/pipes/inr.pipe';
 
 type RangeDays = 7 | 30;
 type CreatorSection = 'overview' | 'events' | 'sales' | 'promotions';
@@ -30,7 +31,7 @@ type DailyPoint = {
 @Component({
   standalone: true,
   selector: 'app-creator-dashboard',
-  imports: [CommonModule, RouterModule, DatePipe, FormsModule],
+  imports: [CommonModule, RouterModule, DatePipe, FormsModule, InrPipe],
   templateUrl: './creator-dashboard.component.html',
   styleUrls: ['./creator-dashboard.component.css']
 })
@@ -43,6 +44,20 @@ export class CreatorDashboardComponent implements OnInit {
 
   loading = false;
   errorMsg = '';
+
+  // Derived stats are cached: recomputing them on every change detection froze the page for accounts with thousands of events.
+  myEventsCount: number = 0;
+  upcomingEventsCount: number = 0;
+  ticketsSold: number = 0;
+  totalRevenue: number = 0;
+  soldOutCount: number = 0;
+  dailySeries: DailyPoint[] = [];
+  bookingsLinePoints: string = '';
+  revenueLinePoints: string = '';
+  top5ByTickets: Array<{ title: string; value: number }> = [];
+  top5ByRevenue: Array<{ title: string; value: number }> = [];
+  /** Rows shown in the My Events table; grows with "Show more". */
+  eventsShown = 50;
   promoMsg = '';
 
   rangeDays: RangeDays = 30;
@@ -73,6 +88,7 @@ export class CreatorDashboardComponent implements OnInit {
         this.raw = res;
         this.events = this.normalizeEvents(res);
         this.bookings = this.normalizeBookings(res);
+        this.refreshStats();
         this.refreshPromotions();
         this.loading = false;
       },
@@ -141,20 +157,40 @@ export class CreatorDashboardComponent implements OnInit {
     this.creatorPromotions = this.promotionService.listByCreator(this.authService.getUser());
   }
 
+  /** Shows about six evenly spaced date labels under the trend chart. */
+  isAxisLabel(i: number, total: number): boolean {
+    const step = Math.max(1, Math.ceil(total / 6));
+    return i % step === 0 || i === total - 1;
+  }
+
   setRange(days: RangeDays): void {
     this.rangeDays = days;
+    this.refreshStats();
   }
 
   setActiveSection(section: CreatorSection): void {
     this.activeSection = section;
   }
 
+  private refreshStats(): void {
+    this.myEventsCount = this.compute_myEventsCount();
+    this.upcomingEventsCount = this.compute_upcomingEventsCount();
+    this.ticketsSold = this.compute_ticketsSold();
+    this.totalRevenue = this.compute_totalRevenue();
+    this.soldOutCount = this.compute_soldOutCount();
+    this.dailySeries = this.compute_dailySeries();
+    this.bookingsLinePoints = this.buildLinePoints(this.dailySeries.map((p) => p.bookings));
+    this.revenueLinePoints = this.buildLinePoints(this.dailySeries.map((p) => p.revenue));
+    this.top5ByTickets = this.compute_top5ByTickets();
+    this.top5ByRevenue = this.compute_top5ByRevenue();
+  }
+
   // ===== KPIs =====
-  get myEventsCount(): number {
+  private compute_myEventsCount(): number {
     return this.events.length;
   }
 
-  get upcomingEventsCount(): number {
+  private compute_upcomingEventsCount(): number {
     const now = Date.now();
     return this.events.filter((e) => {
       const d = new Date(e.date || 0).getTime();
@@ -162,20 +198,20 @@ export class CreatorDashboardComponent implements OnInit {
     }).length;
   }
 
-  get ticketsSold(): number {
+  private compute_ticketsSold(): number {
     return this.events.reduce((sum, e) => sum + Number(e.bookedSeats || 0), 0);
   }
 
-  get totalRevenue(): number {
+  private compute_totalRevenue(): number {
     return this.events.reduce((sum, e) => sum + (Number(e.bookedSeats || 0) * Number(e.price || 0)), 0);
   }
 
-  get soldOutCount(): number {
+  private compute_soldOutCount(): number {
     return this.events.filter((e) => this.seatsLeft(e) === 0).length;
   }
 
   // ===== Charts =====
-  get dailySeries(): DailyPoint[] {
+  private compute_dailySeries(): DailyPoint[] {
     const end = this.startOfDay(new Date());
     const start = new Date(end);
     start.setDate(start.getDate() - (this.rangeDays - 1));
@@ -218,23 +254,15 @@ export class CreatorDashboardComponent implements OnInit {
     return out;
   }
 
-  get bookingsLinePoints(): string {
-    return this.buildLinePoints(this.dailySeries.map((p) => p.bookings));
-  }
-
-  get revenueLinePoints(): string {
-    return this.buildLinePoints(this.dailySeries.map((p) => p.revenue));
-  }
-
   // ===== Top 5 =====
-  get top5ByTickets(): Array<{ title: string; value: number }> {
+  private compute_top5ByTickets(): Array<{ title: string; value: number }> {
     return [...this.events]
       .sort((a, b) => Number(b.bookedSeats || 0) - Number(a.bookedSeats || 0))
       .slice(0, 5)
       .map((e) => ({ title: e.title, value: Number(e.bookedSeats || 0) }));
   }
 
-  get top5ByRevenue(): Array<{ title: string; value: number }> {
+  private compute_top5ByRevenue(): Array<{ title: string; value: number }> {
     return [...this.events]
       .sort((a, b) => (Number(b.bookedSeats || 0) * Number(b.price || 0)) - (Number(a.bookedSeats || 0) * Number(a.price || 0)))
       .slice(0, 5)

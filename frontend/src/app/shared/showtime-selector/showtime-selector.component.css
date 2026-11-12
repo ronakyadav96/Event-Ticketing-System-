@@ -53,7 +53,7 @@
 /* 2. DATE SELECTOR & FILTER BAR (Sticky) */
 .date-filter-sticky-bar {
   position: sticky;
-  top: 106px;
+  top: var(--sticky-offset, 72px);
   z-index: 70;
   background: var(--card-bg);
   border-bottom: 1px solid var(--border-subtle);
@@ -237,11 +237,11 @@
 }
 
 .legend-dot.available {
-  background: #10b981;
+  background: var(--text-secondary);
 }
 
 .legend-dot.fast-filling {
-  background: #f59e0b;
+  background: var(--warn-fg);
 }
 
 /* 4. THEATRE SHOWTIMES LISTINGS */
@@ -336,7 +336,7 @@
   position: relative;
   width: 104px;
   height: 48px;
-  border: 1px solid #10b981;
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
   background: var(--card-bg);
   display: flex;
@@ -350,13 +350,13 @@
 
 .showtime-slot-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 4px 10px rgba(var(--brand-rgb), 0.18);
 }
 
 .slot-time {
   font-size: 12.5px;
   font-weight: 700;
-  color: #10b981;
+  color: var(--text-primary);
 }
 
 .slot-badge {
@@ -369,30 +369,30 @@
 
 /* Status variants */
 .showtime-slot-btn.fast-filling {
-  border-color: #f59e0b;
+  border-color: var(--warn-border);
 }
 
 .showtime-slot-btn.fast-filling .slot-time {
-  color: #f59e0b;
+  color: var(--warn-fg);
 }
 
 .showtime-slot-btn.almost-full {
-  border-color: #ef4444;
+  border-color: var(--danger-border);
 }
 
 .showtime-slot-btn.almost-full .slot-time {
-  color: #ef4444;
+  color: var(--danger-fg);
 }
 
 .showtime-slot-btn.active {
-  background: #10b981;
-  border-color: #10b981;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+  box-shadow: 0 4px 12px rgba(var(--brand-rgb), 0.3);
 }
 
 .showtime-slot-btn.active .slot-time,
 .showtime-slot-btn.active .slot-badge {
-  color: #ffffff;
+  color: var(--on-brand);
 }
 
 /* Hover Tooltip */

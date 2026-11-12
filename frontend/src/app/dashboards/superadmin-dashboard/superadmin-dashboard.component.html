@@ -168,7 +168,7 @@
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Total Revenue</div>
-      <div class="kpi-value">Rs {{ totalRevenue }}</div>
+      <div class="kpi-value">{{ totalRevenue | inr }}</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Creators</div>
@@ -197,7 +197,7 @@
         <polyline class="line-path" [attr.points]="revenueLinePoints"></polyline>
       </svg>
       <div class="chart-x">
-        <span *ngFor="let p of revenueSeries">{{ p.label }}</span>
+        <span *ngFor="let p of revenueSeries; let i = index" [hidden]="!isAxisLabel(i, revenueSeries.length)">{{ p.label }}</span>
       </div>
     </div>
 
@@ -208,7 +208,7 @@
         <div class="bar-track">
           <div class="bar-fill" [style.width.%]="(c.revenue / (categoryBreakdown[0]?.revenue || 1)) * 100"></div>
         </div>
-        <div class="bar-num">Rs {{ c.revenue }}</div>
+        <div class="bar-num">{{ c.revenue | inr }}</div>
       </div>
     </div>
 
@@ -219,7 +219,7 @@
         <div class="bar-track">
           <div class="bar-fill" [style.width.%]="(e.revenue / (topEventsOverall[0]?.revenue || 1)) * 100"></div>
         </div>
-        <div class="bar-num">Rs {{ e.revenue }}</div>
+        <div class="bar-num">{{ e.revenue | inr }}</div>
       </div>
     </div>
   </div>
@@ -233,7 +233,7 @@
             <div class="mini-title">{{ b?.event?.title || 'Event' }}</div>
             <div class="mini-sub">{{ b?.user?.name || b?.name || 'User' }} · Seats {{ b?.seats ?? 1 }}</div>
           </div>
-          <div class="mini-meta">{{ b?.createdAt ? (b.createdAt | date:'medium') : '-' }}</div>
+          <div class="mini-meta">{{ b?.createdAt ? (b.createdAt | date:'d MMM y, h:mm a') : '-' }}</div>
         </div>
         <div class="empty-mini" *ngIf="recentBookingsAdmin.length === 0">No bookings found.</div>
       </div>
@@ -247,7 +247,7 @@
             <div class="mini-title">{{ e?.title || 'Event' }}</div>
             <div class="mini-sub">{{ e?.category || '-' }} · {{ e?.venue || '-' }}</div>
           </div>
-          <div class="mini-meta">{{ e?.createdAt ? (e.createdAt | date:'medium') : (e?.date | date:'mediumDate') }}</div>
+          <div class="mini-meta">{{ e?.createdAt ? (e.createdAt | date:'d MMM y, h:mm a') : (e?.date | date:'mediumDate') }}</div>
         </div>
         <div class="empty-mini" *ngIf="recentCreatedEventsAdmin.length === 0">No events found.</div>
       </div>
@@ -261,7 +261,7 @@
             <div class="mini-title">{{ c.name }}</div>
             <div class="mini-sub">Events {{ c.events }} · Tickets {{ c.tickets }}</div>
           </div>
-          <div class="mini-meta">Rs {{ c.revenue }}</div>
+          <div class="mini-meta">{{ c.revenue | inr }}</div>
         </div>
         <div class="empty-mini" *ngIf="topCreatorsAdmin.length === 0">No creators data.</div>
       </div>
@@ -373,7 +373,7 @@
       <div class="list-row clickable" *ngFor="let e of pagedEvents" (click)="openDetails('events', e)">
         <div class="row-main">
           <div class="row-title">{{ e?.title || '-' }}</div>
-          <div class="row-sub">{{ e?.venue || '-' }} · {{ e?.date | date:'medium' }}</div>
+          <div class="row-sub">{{ e?.venue || '-' }} · {{ e?.date | date:'d MMM y, h:mm a' }}</div>
         </div>
         <div class="row-actions">
           <button class="btn small ghost" type="button" (click)="$event.stopPropagation(); openDetails('events', e)">Details</button>
@@ -469,7 +469,7 @@
           <div class="kv">
             <div class="k">Email</div><div class="v">{{ detailItem?.email || '-' }}</div>
             <div class="k">User ID</div><div class="v mono">{{ detailItem?._id || detailItem?.id || '-' }}</div>
-            <div class="k">Created</div><div class="v">{{ detailItem?.createdAt ? (detailItem.createdAt | date:'medium') : '-' }}</div>
+            <div class="k">Created</div><div class="v">{{ detailItem?.createdAt ? (detailItem.createdAt | date:'d MMM y, h:mm a') : '-' }}</div>
           </div>
           <div class="dash-modal-actions">
             <button class="btn edit" type="button" (click)="closeDetails(); editUser(detailItem)">Edit</button>
@@ -485,7 +485,7 @@
           <div class="kv">
             <div class="k">Email</div><div class="v">{{ detailItem?.email || '-' }}</div>
             <div class="k">User ID</div><div class="v mono">{{ detailItem?._id || detailItem?.id || '-' }}</div>
-            <div class="k">Created</div><div class="v">{{ detailItem?.createdAt ? (detailItem.createdAt | date:'medium') : '-' }}</div>
+            <div class="k">Created</div><div class="v">{{ detailItem?.createdAt ? (detailItem.createdAt | date:'d MMM y, h:mm a') : '-' }}</div>
           </div>
           <div class="dash-modal-actions">
             <button class="btn edit" type="button" (click)="closeDetails(); editUser(detailItem)">Edit</button>
@@ -502,7 +502,7 @@
             <div class="k">Date</div><div class="v">{{ detailItem?.date ? (detailItem.date | date:'fullDate') : '-' }}</div>
             <div class="k">Time</div><div class="v">{{ detailItem?.date ? (detailItem.date | date:'shortTime') : '-' }}</div>
             <div class="k">Venue</div><div class="v">{{ detailItem?.venue || '-' }}</div>
-            <div class="k">Price</div><div class="v">Rs {{ detailItem?.price ?? 0 }}</div>
+            <div class="k">Price</div><div class="v">{{ detailItem?.price ?? 0 | inr }}</div>
             <div class="k">Seats</div><div class="v">{{ detailItem?.bookedSeats ?? 0 }}/{{ detailItem?.totalSeats ?? 0 }}</div>
             <div class="k">Created By</div><div class="v">{{ getCreatorName(detailItem) }}</div>
             <div class="k">Event ID</div><div class="v mono">{{ detailItem?._id || detailItem?.id || '-' }}</div>
@@ -523,7 +523,7 @@
             <div class="k">Ticket</div><div class="v mono">{{ detailItem?.ticketId || '-' }}</div>
             <div class="k">Booked By</div><div class="v">{{ detailItem?.user?.name || detailItem?.name || 'User' }}</div>
             <div class="k">Email</div><div class="v">{{ detailItem?.user?.email || detailItem?.email || '-' }}</div>
-            <div class="k">Booked At</div><div class="v">{{ detailItem?.createdAt ? (detailItem.createdAt | date:'medium') : '-' }}</div>
+            <div class="k">Booked At</div><div class="v">{{ detailItem?.createdAt ? (detailItem.createdAt | date:'d MMM y, h:mm a') : '-' }}</div>
             <div class="k">Status</div><div class="v">{{ detailItem?.paymentStatus || '-' }}</div>
             <div class="k">Booking ID</div><div class="v mono">{{ detailItem?._id || detailItem?.id || '-' }}</div>
           </div>

@@ -28,8 +28,8 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(13, 10, 7, 0.97) 0%, rgba(13, 10, 7, 0.85) 40%, rgba(13, 10, 7, 0.45) 100%),
-    linear-gradient(0deg, var(--page-bg) 0%, rgba(13, 10, 7, 0) 45%),
+    linear-gradient(90deg, rgba(10, 10, 11, 0.97) 0%, rgba(10, 10, 11, 0.85) 40%, rgba(10, 10, 11, 0.45) 100%),
+    linear-gradient(0deg, var(--page-bg) 0%, rgba(10, 10, 11, 0) 45%),
     var(--jaali);
   background-size: auto, auto, 32px 32px;
 }
@@ -64,10 +64,10 @@
 .tm-title {
   margin: 0 0 14px;
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 600;
   font-size: clamp(40px, 5.5vw, 72px);
   line-height: 1.04;
-  color: #fff8ea;
+  color: #f7f4ee;
   text-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
 }
 
@@ -91,7 +91,7 @@
   padding: 14px 16px;
   border: 1px solid var(--border-subtle);
   border-radius: 14px;
-  background: rgba(25, 19, 12, 0.75);
+  background: rgba(20, 20, 22, 0.75);
   backdrop-filter: blur(8px);
 }
 
@@ -136,10 +136,7 @@
 .price-value {
   font-size: 34px;
   font-weight: 800;
-  background: var(--brand-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--text-primary);
 }
 
 .price-note {
@@ -166,14 +163,14 @@
   box-shadow: 0 16px 40px rgba(var(--brand-rgb), 0.45);
 }
 
-/* Poster with a gold jharokha-style frame */
+/* Poster card */
 .tm-poster {
   position: relative;
   aspect-ratio: 3 / 4;
-  border-radius: 170px 170px 18px 18px;
+  border-radius: 16px;
   overflow: hidden;
-  border: 2px solid rgba(var(--brand-rgb), 0.55);
-  box-shadow: 0 0 0 8px rgba(var(--brand-rgb), 0.08), 0 30px 60px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
 }
 
 .tm-poster img {
@@ -195,7 +192,7 @@
   font-family: var(--font-display);
   font-size: 24px;
   color: var(--brand-soft);
-  background: var(--jaali), linear-gradient(160deg, #2b2116, #160f08);
+  background: var(--jaali), linear-gradient(160deg, #1f1f22, #111113);
 }
 
 .tm-poster-fallback span {
@@ -214,7 +211,7 @@
 .tm-section-title {
   margin: 0 0 14px;
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 600;
   font-size: 28px;
   color: var(--text-primary);
 }

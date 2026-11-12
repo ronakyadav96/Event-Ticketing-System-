@@ -39,6 +39,13 @@ export class ShowtimeSelectorComponent implements OnInit {
   @Input() certificate = 'UA16+';
   @Input() genres: string[] = ['Action', 'Drama'];
   @Input() selectedTime = '';
+  /** 'event' shows the event's own venue, dates and show times instead of the demo cinema list. */
+  @Input() kind: 'movie' | 'event' = 'movie';
+  @Input() venue = '';
+  @Input() eventShowTimes: string[] = [];
+  @Input() startDate: string | Date | null = null;
+  @Input() endDate: string | Date | null = null;
+  @Input() priceLabel = '';
   @Output() selectShowtime = new EventEmitter<{
     hallName: string;
     time: string;
@@ -109,8 +116,64 @@ export class ShowtimeSelectorComponent implements OnInit {
     },
   ];
 
+  eventHall: CinemaShowtime | null = null;
+
   ngOnInit(): void {
     this.generateUpcomingDates();
+    if (this.kind === 'event') this.buildEventHall();
+  }
+
+  /** Halls to list: the demo cinemas for movies, the event's own venue otherwise. */
+  get halls(): CinemaShowtime[] {
+    return this.kind === 'event' && this.eventHall ? [this.eventHall] : this.cinemaHalls;
+  }
+
+  private buildEventHall(): void {
+    const times = (this.eventShowTimes || []).filter(Boolean);
+    this.eventHall = {
+      id: 'venue',
+      hallName: this.venue || 'Venue',
+      location: this.venue || '',
+      amenities: [],
+      format: '',
+      showtimes: (times.length ? times : ['18:00']).map((t) => ({
+        time: this.to12h(t),
+        status: 'available' as const,
+        price: this.priceLabel,
+      })),
+    };
+
+    // Only offer dates inside the event's run, starting today, at most a week out.
+    const dayMs = 24 * 60 * 60 * 1000;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = this.startDate ? new Date(this.startDate) : today;
+    const end = this.endDate ? new Date(this.endDate) : start;
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    const first = start > today ? start : today;
+    const inRun = this.datesListFrom(first, 8).filter((d) => d.fullDate.getTime() <= end.getTime() + dayMs - 1);
+    this.datesList = inRun.length ? inRun : this.datesListFrom(first, 1);
+    this.selectedDateIndex = 0;
+  }
+
+  private datesListFrom(first: Date, count: number): DateItem[] {
+    const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    return Array.from({ length: count }, (_, i) => {
+      const d = new Date(first);
+      d.setDate(first.getDate() + i);
+      return { dayName: days[d.getDay()], dateNumber: d.getDate(), month: months[d.getMonth()], fullDate: d };
+    });
+  }
+
+  /** "21:00" -> "09:00 PM"; already formatted values pass through. */
+  to12h(t: string): string {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(String(t).trim());
+    if (!m) return t;
+    const h = Number(m[1]);
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    return `${String(h % 12 || 12).padStart(2, '0')}:${m[2]} ${suffix}`;
   }
 
   generateUpcomingDates(): void {

@@ -7,7 +7,7 @@
     [class.over-billboard]="isHomeBillboard">
     <div class="header-inner" [class.has-role-nav]="canManageEvents">
       <a class="brand-logo" routerLink="/events" aria-label="Tamasha home">
-        <app-brand-logo></app-brand-logo>
+        <app-brand-logo [showTagline]="!canManageEvents"></app-brand-logo>
       </a>
 
       <nav class="main-nav" aria-label="Primary">
@@ -35,7 +35,7 @@
             class="header-search-input"
             [(ngModel)]="navbarQuery"
             (ngModelChange)="onNavbarQueryChange($event)"
-            placeholder="Search movies, shows and events..."
+            placeholder="Search movies and events"
             aria-label="Search movies and events"
           />
           <button
@@ -121,16 +121,14 @@
         routerLink="/events"
         routerLinkActive="active"
         [routerLinkActiveOptions]="{ exact: true }"
-        (click)="closeDrawer()">
-        <span class="d-icon">🏠</span> Home
+        (click)="closeDrawer()"> Home
       </a>
 
       <a
         class="drawer-link"
         routerLink="/movies"
         routerLinkActive="active"
-        (click)="closeDrawer()">
-        <span class="d-icon">🎬</span> Movies
+        (click)="closeDrawer()"> Movies
       </a>
 
       <a
@@ -138,24 +136,21 @@
         class="drawer-link"
         routerLink="/history"
         routerLinkActive="active"
-        (click)="closeDrawer()">
-        <span class="d-icon">🎟️</span> Your Orders &amp; Bookings
+        (click)="closeDrawer()"> Your Orders &amp; Bookings
       </a>
 
       <a
         class="drawer-link"
         routerLink="/coupons"
         routerLinkActive="active"
-        (click)="closeDrawer()">
-        <span class="d-icon">🏷️</span> Offers &amp; Discounts
+        (click)="closeDrawer()"> Offers &amp; Discounts
       </a>
 
       <a
         class="drawer-link"
         routerLink="/gifts"
         routerLinkActive="active"
-        (click)="closeDrawer()">
-        <span class="d-icon">🎁</span> Gift Cards
+        (click)="closeDrawer()"> Gift Cards
       </a>
 
       <div class="drawer-divider" *ngIf="isCreator || isSuperAdmin"></div>
@@ -165,8 +160,7 @@
         class="drawer-link"
         [routerLink]="isCreator ? '/creator-dashboard' : '/superadmin-dashboard'"
         routerLinkActive="active"
-        (click)="closeDrawer()">
-        <span class="d-icon">📊</span> {{ isSuperAdmin ? 'Admin Portal' : 'My Events' }}
+        (click)="closeDrawer()"> {{ isSuperAdmin ? 'Admin Portal' : 'My Events' }}
       </a>
 
       <a
@@ -174,8 +168,7 @@
         class="drawer-link"
         routerLink="/create-event"
         routerLinkActive="active"
-        (click)="closeDrawer()">
-        <span class="d-icon">➕</span> Create Event
+        (click)="closeDrawer()"> Create Event
       </a>
     </div>
 

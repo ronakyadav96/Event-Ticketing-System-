@@ -7,7 +7,7 @@
 
   <section class="tm-hero">
     <div class="tm-info">
-      <span class="tm-kicker">{{ look.icon }} {{ look.kicker }}</span>
+      <span class="tm-kicker">{{ look.kicker }}</span>
       <h1 class="tm-title">{{ event?.title }}</h1>
       <p class="tm-tagline">{{ event?.tagline || look.about }}</p>
 
@@ -37,7 +37,7 @@
           <span class="price-value">{{ isFreeEvent ? 'FREE' : ('₹' + unitPriceRupees) }}</span>
           <span class="price-note" *ngIf="!isFreeEvent">onwards</span>
         </div>
-        <button type="button" class="tm-book-btn" (click)="openBooking.emit()">🎟 Book tickets</button>
+        <button type="button" class="tm-book-btn" (click)="openBooking.emit()">Book tickets</button>
       </div>
     </div>
 

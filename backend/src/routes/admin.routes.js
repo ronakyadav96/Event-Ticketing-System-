@@ -137,7 +137,7 @@ router.get('/bookings', protect, authorizeRoles('superadmin'), async (req, res) 
 // 🔹 Get My Events (Creator)
 router.get('/my-events', protect, authorizeRoles('creator'), async (req, res) => {
   try {
-    const events = await Event.find({ createdBy: req.user.id });
+    const events = await Event.find({ createdBy: req.user.id, sourceType: { $ne: 'tmdb_movie' } });
     res.json(events);
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch events' });

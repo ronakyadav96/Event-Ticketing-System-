@@ -57,17 +57,17 @@ export class CreateEventComponent implements OnInit, AfterViewInit {
   readonly customCategoryValue = '__custom__';
   categories: string[] = [];
   private readonly defaultCategories = ['Conference', 'Workshop', 'Seminar', 'Concert', 'Webinar', 'Movie', 'Comedy', 'Sports'];
-  readonly fontOptions = ['Space Grotesk', 'Georgia', 'Courier New', 'Arial'];
+  readonly fontOptions = ['Inter', 'Playfair Display', 'Georgia', 'Arial'];
   readonly fontSizes = [10,12, 14, 16, 18, 20, 24, 28];
-  selectedFont = 'Arial';
+  selectedFont = 'Inter';
   selectedFontSize = 16;
   selectedColor = '#e5e7eb';
   designConfig = {
     badgeText: 'Book Now',
     heroKicker: 'Live Event',
     ctaText: 'Book Tickets',
-    themeColor: '#6d28d9',
-    overlayColor: '#0f172a',
+    themeColor: '#d6b67a',
+    overlayColor: '#0a0a0b',
     overlayOpacity: 55,
     gradientOverlay: true,
     textAlign: 'left' as 'left' | 'center' | 'right',
@@ -406,7 +406,7 @@ export class CreateEventComponent implements OnInit, AfterViewInit {
   }
 
   get priceLabel(): string {
-    return Number(this.price || 0) === 0 ? 'Free' : `Rs ${this.price}`;
+    return Number(this.price || 0) === 0 ? 'Free' : `₹${this.price}`;
   }
 
   get imageStatusLabel(): string {

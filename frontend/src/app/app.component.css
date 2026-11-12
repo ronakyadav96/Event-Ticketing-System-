@@ -21,19 +21,19 @@
   top: 0;
   z-index: 1000;
   height: 72px;
-  background: rgba(13, 10, 7, 0.96);
+  background: rgba(10, 10, 11, 0.96);
   border-bottom: 1px solid var(--border-light);
   transition: background 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease;
 }
 
 .global-header.over-billboard {
-  background: linear-gradient(180deg, rgba(13, 10, 7, 0.85) 0%, rgba(13, 10, 7, 0) 100%);
+  background: linear-gradient(180deg, rgba(10, 10, 11, 0.85) 0%, rgba(10, 10, 11, 0) 100%);
   border-bottom-color: transparent;
 }
 
 .global-header.over-billboard.scrolled,
 .global-header.scrolled {
-  background: rgba(13, 10, 7, 0.92);
+  background: rgba(10, 10, 11, 0.92);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom-color: var(--border-light);
@@ -142,6 +142,7 @@
 /* Search */
 .header-search {
   position: relative;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
 }
@@ -156,12 +157,12 @@
 }
 
 .header-search-input {
-  width: 240px;
+  width: 250px;
   height: 40px;
   padding: 0 34px 0 40px;
-  border: 1px solid rgba(251, 243, 228, 0.14);
+  border: 1px solid rgba(244, 242, 238, 0.14);
   border-radius: var(--radius-full);
-  background: rgba(251, 243, 228, 0.06);
+  background: rgba(244, 242, 238, 0.06);
   color: var(--text-primary);
   font-size: 13.5px;
   outline: none;
@@ -176,7 +177,7 @@
 .header-search.has-value .header-search-input {
   width: 320px;
   border-color: rgba(var(--brand-rgb), 0.6);
-  background: rgba(13, 10, 7, 0.85);
+  background: rgba(10, 10, 11, 0.85);
 }
 
 .search-clear-btn {
@@ -237,9 +238,9 @@
 .hamburger-btn {
   width: 40px;
   height: 40px;
-  border: 1px solid rgba(251, 243, 228, 0.14);
+  border: 1px solid rgba(244, 242, 238, 0.14);
   border-radius: 12px;
-  background: rgba(251, 243, 228, 0.04);
+  background: rgba(244, 242, 238, 0.04);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -453,7 +454,12 @@
   .main-nav { display: none; }
 }
 
-@media (max-width: 1440px) {
+.has-role-nav { gap: 20px; }
+
+/* With the manage links in the header, keep the main nav to the five most-used sections */
+.has-role-nav .main-nav .nav-link:nth-child(n+6) { display: none; }
+
+@media (max-width: 1360px) {
   .has-role-nav .main-nav { display: none; }
 }
 

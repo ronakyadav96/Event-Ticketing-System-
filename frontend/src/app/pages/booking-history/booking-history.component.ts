@@ -148,6 +148,11 @@ export class BookingHistoryComponent implements OnInit, OnDestroy {
     return isNaN(d) ? 0 : d;
   }
 
+  /** Only show the registration box when the attendee actually filled something in. */
+  hasRegistrationDetails(b: any): boolean {
+    return this.getRegistrationItems(b).some((item) => item.value !== 'Not provided');
+  }
+
   getRegistrationTemplateLabel(template: string): string {
     if (template === 'workshop') return 'Workshop Form';
     if (template === 'seminar') return 'Seminar Form';

@@ -9,6 +9,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../auth/auth.service';
 import { PromotionRecord, PromotionService } from '../../services/promotion.service';
+import { InrPipe } from '../../shared/pipes/inr.pipe';
 
 type RangeDays = 7 | 30;
 type AdminSection = 'overview' | 'users' | 'events' | 'bookings' | 'promotions' | 'media';
@@ -16,7 +17,7 @@ type AdminSection = 'overview' | 'users' | 'events' | 'bookings' | 'promotions' 
 @Component({
   standalone: true,
   selector: 'app-superadmin-dashboard',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, InrPipe],
   templateUrl: './superadmin-dashboard.component.html',
   styleUrls: ['./superadmin-dashboard.component.css']
 })
@@ -202,6 +203,12 @@ export class SuperadminDashboardComponent implements OnInit {
 
   private refreshPromotions(): void {
     this.adminPromotions = this.promotionService.listAll();
+  }
+
+  /** Shows about six evenly spaced date labels under the trend chart. */
+  isAxisLabel(i: number, total: number): boolean {
+    const step = Math.max(1, Math.ceil(total / 6));
+    return i % step === 0 || i === total - 1;
   }
 
   setRange(days: RangeDays): void {

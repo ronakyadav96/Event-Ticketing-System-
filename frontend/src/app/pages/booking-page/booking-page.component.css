@@ -1,6 +1,8 @@
 /* ================= BOOKING PAGE (BookMyShow Style) ================= */
 .booking-page-wrap {
-  min-height: calc(100vh - 108px);
+  /* The showtime date bar sits inside a clipped panel here, so any sticky offset just pushes it down */
+  --sticky-offset: 0px;
+  min-height: calc(100vh - 72px);
   background: var(--page-bg, var(--surface-alt));
   color: var(--text-primary);
   padding-bottom: 60px;
@@ -12,7 +14,7 @@
   border-bottom: 1px solid var(--border-subtle);
   padding: 14px 20px;
   position: sticky;
-  top: 106px;
+  top: 72px;
   z-index: 90;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
 }
@@ -369,7 +371,7 @@
 /* ================= RIGHT COLUMN: SUMMARY SIDEBAR ================= */
 .sidebar-summary-area {
   position: sticky;
-  top: 180px;
+  top: 150px;
 }
 
 .summary-card-bms {
@@ -495,5 +497,46 @@
 
   .stepper-steps {
     overflow-x: auto;
+  }
+}
+
+/* Phones: a compact two-row stepper (back + title, then the steps with only the current label) */
+@media (max-width: 640px) {
+  .stepper-header {
+    padding: 10px 16px;
+  }
+
+  .stepper-inner {
+    flex-wrap: wrap;
+    gap: 10px 14px;
+  }
+
+  .back-link {
+    font-size: 0;
+    gap: 0;
+  }
+
+  .back-link .arrow {
+    font-size: 18px;
+  }
+
+  .stepper-title-block {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .stepper-title-block h2 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .stepper-steps {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .step-item:not(.active) .step-label {
+    display: none;
   }
 }

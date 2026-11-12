@@ -9,7 +9,7 @@
 
       <div class="stepper-title-block" *ngIf="event">
         <h2>{{ event.title }}</h2>
-        <span class="stepper-sub">📍 {{ selectedHallName || event.venue || 'Cinema Arena' }}</span>
+        <span class="stepper-sub">{{ selectedHallName || event.venue || 'Venue to be announced' }}</span>
       </div>
 
       <div class="stepper-steps">
@@ -25,7 +25,7 @@
         <div class="step-sep"></div>
         <div class="step-item" [class.active]="currentStep === 3" [class.completed]="currentStep > 3" (click)="setStep(3)">
           <span class="step-num">3</span>
-          <span class="step-label">Snacks 🍿</span>
+          <span class="step-label">Snacks</span>
         </div>
         <div class="step-sep"></div>
         <div class="step-item" [class.active]="currentStep === 4" (click)="setStep(4)">
@@ -51,14 +51,20 @@
         <div class="step-panel" *ngIf="currentStep === 1">
           <div class="panel-head">
             <h3>Select Date &amp; Showtime</h3>
-            <p>Choose your preferred date and cinema showtime to continue.</p>
+            <p>{{ isMovie ? 'Choose your preferred date and cinema showtime to continue.' : 'Choose a date and show time to continue.' }}</p>
           </div>
 
           <!-- Showtime Selector Component -->
           <app-showtime-selector
             [movieTitle]="event.title"
-            [language]="event.language || 'Hindi'"
+            [language]="isMovie ? (event.language || 'Hindi') : (event.language || '')"
             [selectedTime]="selectedShowTime"
+            [kind]="isMovie ? 'movie' : 'event'"
+            [venue]="event.venue"
+            [eventShowTimes]="event.showTimes || []"
+            [startDate]="event.startDate || event.date"
+            [endDate]="event.endDate || event.date"
+            [priceLabel]="isFreeEvent ? 'Free' : '₹' + unitPriceRupees"
             (selectShowtime)="onShowtimeSelect($event)">
           </app-showtime-selector>
 
@@ -89,7 +95,7 @@
               type="button"
               (click)="nextStep()"
               [disabled]="selectedSeatIds.length === 0">
-              Add Snacks &amp; Combos 🍿 →
+              Add Snacks &amp; Combos →
             </button>
           </div>
         </div>
@@ -97,7 +103,7 @@
         <!-- STEP 3: Food & Beverage Add-ons -->
         <div class="step-panel" *ngIf="currentStep === 3">
           <div class="panel-head">
-            <h3>Grab a Bite 🍿🥤</h3>
+            <h3>Grab a Bite</h3>
             <p>Pre-book cinema snacks at a discount for an uninterrupted movie experience!</p>
           </div>
 
@@ -211,8 +217,8 @@
 
           <div class="summary-movie-info">
             <h4 class="sm-title">{{ event.title }}</h4>
-            <div class="sm-venue">📍 {{ selectedHallName || event.venue || 'Cinema Arena' }}</div>
-            <div class="sm-date">📅 {{ selectedShowDate | date:'EEE, dd MMM yyyy' }} &nbsp; 🕒 {{ selectedShowTime }}</div>
+            <div class="sm-venue">{{ selectedHallName || event.venue || 'Venue to be announced' }}</div>
+            <div class="sm-date">{{ selectedShowDate | date:'EEE, d MMM yyyy' }} · {{ showTimeLabel }}</div>
           </div>
 
           <div class="summary-divider"></div>
@@ -228,7 +234,7 @@
           </div>
 
           <div class="summary-line" *ngIf="fnbTotalRupees > 0">
-            <span>Snacks &amp; Drinks 🍿</span>
+            <span>Snacks &amp; Drinks</span>
             <span>₹{{ fnbTotalRupees }}</span>
           </div>
 

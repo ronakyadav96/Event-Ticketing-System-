@@ -221,7 +221,7 @@ export class EventDetailsComponent implements OnInit {
   }
 
   get bookingPriceLabel(): string {
-    return this.isFreeEvent ? 'Free' : `Rs ${this.unitPriceRupees}`;
+    return this.isFreeEvent ? 'Free' : `₹${this.unitPriceRupees}`;
   }
 
   get aboutSnippet(): string {
@@ -231,7 +231,7 @@ export class EventDetailsComponent implements OnInit {
   }
 
   get bookingAssistText(): string {
-    return this.isFreeEvent ? 'Free booking available for attendees.' : `Tickets currently start from Rs ${this.unitPriceRupees}.`;
+    return this.isFreeEvent ? 'Free booking available for attendees.' : `Tickets currently start from ₹${this.unitPriceRupees}.`;
   }
 
   get eventHighlights(): Array<{ label: string; value: string }> {

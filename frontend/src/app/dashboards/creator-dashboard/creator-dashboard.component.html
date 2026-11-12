@@ -31,7 +31,7 @@
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Revenue</div>
-      <div class="kpi-value">Rs {{ totalRevenue }}</div>
+      <div class="kpi-value">{{ totalRevenue | inr }}</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Sold Out</div>
@@ -149,7 +149,7 @@
         <polyline class="line-path" [attr.points]="bookingsLinePoints"></polyline>
       </svg>
       <div class="chart-x">
-        <span *ngFor="let p of dailySeries">{{ p.label }}</span>
+        <span *ngFor="let p of dailySeries; let i = index" [hidden]="!isAxisLabel(i, dailySeries.length)">{{ p.label }}</span>
       </div>
     </div>
 
@@ -161,7 +161,7 @@
         <polyline class="line-path revenue" [attr.points]="revenueLinePoints"></polyline>
       </svg>
       <div class="chart-x">
-        <span *ngFor="let p of dailySeries">{{ p.label }}</span>
+        <span *ngFor="let p of dailySeries; let i = index" [hidden]="!isAxisLabel(i, dailySeries.length)">{{ p.label }}</span>
       </div>
     </div>
   </div>
@@ -185,7 +185,7 @@
         <div class="bar-track">
           <div class="bar-fill revenue" [style.width.%]="(e.value / maxValue(top5ByRevenue)) * 100"></div>
         </div>
-        <div class="bar-num">Rs {{ e.value }}</div>
+        <div class="bar-num">{{ e.value | inr }}</div>
       </div>
     </div>
   </div>
@@ -209,11 +209,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let e of events">
+          <tr *ngFor="let e of events | slice:0:eventsShown">
             <td class="t-title">{{ e.title }}</td>
             <td>{{ e.date ? (e.date | date:'mediumDate') : '-' }}</td>
             <td>{{ e.venue || '-' }}</td>
-            <td class="right">Rs {{ e.price }}</td>
+            <td class="right">{{ e.price | inr }}</td>
             <td class="right">{{ e.bookedSeats }}/{{ e.totalSeats }} ({{ seatsLeft(e) }} left)</td>
             <td>
               <span class="status" [class.up]="statusOf(e)==='Upcoming'" [class.past]="statusOf(e)==='Past'" [class.so]="statusOf(e)==='Sold Out'">
@@ -230,6 +230,10 @@
           </tr>
         </tbody>
       </table>
+      <div class="show-more" *ngIf="events.length > eventsShown">
+        <span>Showing {{ eventsShown }} of {{ events.length }}</span>
+        <button class="btn small ghost" type="button" (click)="eventsShown = eventsShown + 50">Show more</button>
+      </div>
     </div>
   </div>
 </div>

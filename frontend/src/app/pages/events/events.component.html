@@ -15,7 +15,7 @@
 
       <!-- 1. MOVIES FOUND (TMDB) -->
       <div class="search-group-block" *ngIf="!searchLoading && foundMovies.length">
-        <h3 class="sub-section-title">🎬 Movies</h3>
+        <h3 class="sub-section-title">Movies</h3>
         <div class="search-movies-grid">
           <div class="movie-card-bms" *ngFor="let m of foundMovies; trackBy: trackMovie" (click)="openMovie(m)">
             <div class="movie-poster-box">
@@ -45,7 +45,7 @@
       <!-- 2. AI / ML MOVIE RECOMMENDATIONS (Based on search) -->
       <div class="similar-movies-wrap" *ngIf="!searchLoading && movieRecommendations.length">
         <div class="rec-head-row">
-          <h3 class="sub-section-title">✨ Recommended Movies (Based on "{{ selectedMovie?.title || q.trim() }}")</h3>
+          <h3 class="sub-section-title">Recommended Movies (Based on "{{ selectedMovie?.title || q.trim() }}")</h3>
           <span class="rec-ai-badge">AI Recommendations</span>
         </div>
         <div class="horizontal-cards-row">
@@ -72,7 +72,7 @@
 
       <!-- 3. LIVE EVENTS & SHOWS FOUND (MongoDB) -->
       <div class="search-group-block" *ngIf="!searchLoading && matchedEvents.length">
-        <h3 class="sub-section-title">🎪 Events, Shows & Activities</h3>
+        <h3 class="sub-section-title">Events, Shows & Activities</h3>
         <div class="events-catalog-grid">
           <div class="event-card-bms" *ngFor="let e of matchedEvents" (click)="openEvent(e)">
             <div class="poster-container">
@@ -89,8 +89,8 @@
             <div class="card-details">
               <span class="event-cat-tag">{{ e.category || 'Event' }}</span>
               <h3 class="event-title">{{ e.title }}</h3>
-              <div class="venue-line">📍 {{ e.venue || 'Main Auditorium' }}</div>
-              <div class="date-line">📅 {{ e.date | date:'EEE, dd MMM yyyy • h:mm a' }}</div>
+              <div class="venue-line">{{ e.venue || 'Main Auditorium' }}</div>
+              <div class="date-line">{{ e.date | date:'EEE, dd MMM yyyy • h:mm a' }}</div>
               <div class="price-action-row">
                 <div class="price-block">
                   <span class="price-label">Starts at</span>
@@ -129,23 +129,25 @@
             *ngFor="let item of billboard; let i = index"
             [src]="imgUrl(item)"
             [class.active]="i === billboardIndex"
+            [class.loaded]="item.__imgLoaded"
+            (load)="item.__imgLoaded = true"
             alt=""
             aria-hidden="true" />
         </div>
         <div class="billboard-shade"></div>
 
         <div class="billboard-content page-container">
-          <span class="billboard-kicker">✦ Tamasha Special · {{ b.category || 'Live' }}</span>
+          <span class="billboard-kicker">Tamasha Special · {{ b.category || 'Live' }}</span>
           <h1 class="billboard-title">{{ b.title }}</h1>
           <div class="billboard-meta">
             <span>{{ whenLabel(b) }}</span>
-            <span>📍 {{ b.venue || 'Venue soon' }}</span>
+            <span>{{ b.venue || 'Venue soon' }}</span>
             <span class="gold">₹{{ b.price ?? 0 }} onwards</span>
           </div>
           <p class="billboard-desc" *ngIf="plainText(b.description)">{{ sentence(plainText(b.description)) }}</p>
           <div class="billboard-actions">
-            <button type="button" class="btn-gold" (click)="openEvent(b)">🎟 Book tickets</button>
-            <button type="button" class="btn-glass" (click)="openEvent(b)">ⓘ More info</button>
+            <button type="button" class="btn-gold" (click)="openEvent(b)">Book tickets</button>
+            <button type="button" class="btn-glass" (click)="openEvent(b)">More info</button>
           </div>
         </div>
 
@@ -158,8 +160,16 @@
             [attr.aria-label]="'Show ' + item.title"></button>
         </div>
       </section>
+      <!-- Same-size placeholder while events load (and a plain brand hero if none have artwork),
+           so the page never jumps when the billboard arrives. -->
       <ng-template #heroFallback>
-        <div class="hero-fallback-wrap"><app-hero-carousel></app-hero-carousel></div>
+        <section class="billboard billboard-placeholder" [class.loading]="homeRowsLoading" aria-hidden="true">
+          <div class="billboard-content page-container" *ngIf="!homeRowsLoading">
+            <span class="billboard-kicker">Tamasha</span>
+            <h1 class="billboard-title">Har din naya tamasha</h1>
+            <p class="billboard-desc">Movies, comedy, concerts and live shows near you.</p>
+          </div>
+        </section>
       </ng-template>
 
       <div class="rows-wrap">
@@ -168,7 +178,7 @@
         <section class="mood-strip page-container">
           <span class="mood-label">What are you in the mood for?</span>
           <div class="mood-chips">
-            <a class="mood-chip" routerLink="/movies">🎬 Movies</a>
+            <a class="mood-chip" routerLink="/movies">Movies</a>
             <button type="button" class="mood-chip" *ngFor="let c of eventCategories" (click)="selectCategory(c)">{{ c }}</button>
           </div>
         </section>
@@ -281,7 +291,7 @@
     <ng-template #categoryView>
       <div class="page-container category-page">
         <div class="category-hero">
-          <span class="billboard-kicker">✦ Category</span>
+          <span class="billboard-kicker">Category</span>
           <h1 class="category-title">{{ categoryFilter }}</h1>
           <div class="mood-chips">
             <button type="button" class="mood-chip" (click)="selectCategory('all')">← Home</button>

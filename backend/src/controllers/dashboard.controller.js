@@ -33,7 +33,10 @@ exports.getCreatorDashboard = async (req, res) => {
     const from = parseDate(req.query.from);
     const to = parseDate(req.query.to);
 
-    const myEvents = await Event.find({ createdBy: creatorId });
+    // Imported TMDB movies are catalog entries, not the creator's own events
+    const myEvents = await Event.find({ createdBy: creatorId, sourceType: { $ne: 'tmdb_movie' } })
+      .select('title date startDate endDate showTimes venue price totalSeats bookedSeats category')
+      .lean();
 
     const eventIds = myEvents.map(e => e._id);
 
@@ -58,7 +61,8 @@ exports.getCreatorDashboard = async (req, res) => {
 
     const bookings = await Booking.find(bookingMatch)
       .populate('event', 'title price totalSeats')
-      .populate('user', 'name email');
+      .populate('user', 'name email')
+      .lean();
 
     let revenue = 0;
     let seatsBooked = 0;

@@ -1,6 +1,6 @@
 /* ================= EVENTS & HOME STYLING ================= */
 .events-page-wrap {
-  min-height: calc(100vh - 108px);
+  min-height: calc(100vh - 72px);
   background: var(--page-bg, var(--surface-alt));
   padding-bottom: 60px;
 }
@@ -810,10 +810,11 @@
   object-fit: cover;
   opacity: 0;
   transform: scale(1.06);
-  transition: opacity 1.2s ease, transform 7s ease-out;
+  transition: opacity 0.8s ease, transform 7s ease-out;
 }
 
-.billboard-media img.active {
+/* Reveal a slide only once its image has fully downloaded, so a half-loaded photo never flashes in */
+.billboard-media img.active.loaded {
   opacity: 1;
   transform: scale(1);
 }
@@ -822,8 +823,8 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(13, 10, 7, 0.95) 0%, rgba(13, 10, 7, 0.7) 35%, rgba(13, 10, 7, 0.1) 70%),
-    linear-gradient(0deg, var(--page-bg) 0%, rgba(13, 10, 7, 0) 38%),
+    linear-gradient(90deg, rgba(10, 10, 11, 0.95) 0%, rgba(10, 10, 11, 0.7) 35%, rgba(10, 10, 11, 0.1) 70%),
+    linear-gradient(0deg, var(--page-bg) 0%, rgba(10, 10, 11, 0) 38%),
     var(--jaali);
   background-size: auto, auto, 32px 32px;
 }
@@ -853,10 +854,10 @@
   max-width: 760px;
   margin: 0 0 14px;
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 600;
   font-size: clamp(40px, 6vw, 80px);
   line-height: 1.02;
-  color: #fff8ea;
+  color: #f7f4ee;
   text-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
 }
 
@@ -926,7 +927,7 @@
 .btn-glass {
   border: 1px solid rgba(255, 248, 234, 0.25);
   background: rgba(255, 248, 234, 0.1);
-  color: #fff8ea;
+  color: #f7f4ee;
   backdrop-filter: blur(8px);
 }
 
@@ -959,8 +960,25 @@
   background: var(--brand-primary);
 }
 
-.hero-fallback-wrap {
-  padding-top: 24px;
+/* Placeholder with the billboard's exact size: a soft shimmer while loading, a brand hero otherwise */
+.billboard-placeholder {
+  background:
+    radial-gradient(900px 420px at 15% 70%, rgba(var(--brand-rgb), 0.08), transparent 60%),
+    linear-gradient(180deg, #111113 0%, var(--page-bg) 100%);
+}
+
+.billboard-placeholder.loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.035) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: billboard-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes billboard-shimmer {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
 }
 
 /* ---------- Rows ---------- */
@@ -1001,7 +1019,7 @@
   padding: 9px 18px;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
-  background: rgba(25, 19, 12, 0.85);
+  background: rgba(20, 20, 22, 0.85);
   color: var(--text-primary);
   font-size: 13.5px;
   font-weight: 500;
@@ -1079,7 +1097,7 @@
   z-index: 3;
   width: 48px;
   border: none;
-  color: #fff8ea;
+  color: #f7f4ee;
   font-size: 40px;
   cursor: pointer;
   opacity: 0;
@@ -1088,12 +1106,12 @@
 
 .row-arrow.left {
   left: 0;
-  background: linear-gradient(90deg, rgba(13, 10, 7, 0.95), rgba(13, 10, 7, 0));
+  background: linear-gradient(90deg, rgba(10, 10, 11, 0.95), rgba(10, 10, 11, 0));
 }
 
 .row-arrow.right {
   right: 0;
-  background: linear-gradient(270deg, rgba(13, 10, 7, 0.95), rgba(13, 10, 7, 0));
+  background: linear-gradient(270deg, rgba(10, 10, 11, 0.95), rgba(10, 10, 11, 0));
 }
 
 .row-scroller:hover .row-arrow { opacity: 1; }
@@ -1132,7 +1150,7 @@
   font-family: var(--font-display);
   font-size: 20px;
   color: var(--brand-soft);
-  background: var(--jaali), linear-gradient(160deg, #2b2116, #160f08);
+  background: var(--jaali), linear-gradient(160deg, #1f1f22, #111113);
 }
 
 .poster-card:hover .poster,
@@ -1148,7 +1166,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 40px 10px 10px;
-  background: linear-gradient(0deg, rgba(13, 10, 7, 0.95), rgba(13, 10, 7, 0));
+  background: linear-gradient(0deg, rgba(10, 10, 11, 0.95), rgba(10, 10, 11, 0));
   opacity: 0;
   transition: opacity 0.2s ease;
 }
@@ -1198,7 +1216,7 @@
 
 .top-rank {
   margin-right: -26px;
-  text-shadow: 0 0 30px rgba(245, 165, 36, 0.15);
+  text-shadow: 0 0 30px rgba(214, 182, 122, 0.15);
   font-family: var(--font-display);
   font-size: 170px;
   line-height: 0.78;
@@ -1257,13 +1275,13 @@
   font-family: var(--font-display);
   font-size: 26px;
   color: var(--brand-soft);
-  background: var(--jaali), linear-gradient(160deg, #2b2116, #160f08);
+  background: var(--jaali), linear-gradient(160deg, #1f1f22, #111113);
 }
 
 .wide-shade {
   position: absolute;
   inset: 0;
-  background: linear-gradient(0deg, rgba(13, 10, 7, 0.95) 0%, rgba(13, 10, 7, 0.35) 45%, rgba(13, 10, 7, 0) 70%);
+  background: linear-gradient(0deg, rgba(10, 10, 11, 0.95) 0%, rgba(10, 10, 11, 0.35) 45%, rgba(10, 10, 11, 0) 70%);
 }
 
 .price-chip,
@@ -1285,7 +1303,7 @@
 
 .status-chip {
   left: 10px;
-  background: rgba(13, 10, 7, 0.75);
+  background: rgba(10, 10, 11, 0.75);
   color: var(--text-secondary);
   border: 1px solid var(--border-strong);
 }
@@ -1311,7 +1329,7 @@
   font-size: 18px;
   font-weight: 700;
   line-height: 1.25;
-  color: #fff8ea;
+  color: #f7f4ee;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1339,14 +1357,11 @@
 .category-title {
   margin: 0 0 18px;
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 600;
   font-size: 52px;
   line-height: 1.05;
   text-transform: capitalize;
-  background: linear-gradient(180deg, #ffe2a3 0%, #f5a524 60%, #e2572b 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--text-primary);
 }
 
 .wide-grid {
@@ -1375,6 +1390,10 @@
   .billboard { min-height: 460px; }
   .billboard-dots { right: auto; left: 50%; transform: translateX(-50%); bottom: 28px; }
   .billboard-content { padding-bottom: 70px; }
+  .rows-wrap { margin-top: -10px; }
+  .billboard-shade { background: linear-gradient(0deg, var(--page-bg) 8%, rgba(10, 10, 11, 0.82) 45%, rgba(10, 10, 11, 0.25) 100%); }
+  .billboard-meta { flex-direction: column; align-items: flex-start; row-gap: 4px; }
+  .billboard-meta > span + span::before { content: none; }
   .poster-card { flex-basis: 140px; }
   .top-card .poster { width: 120px; }
   .top-rank { font-size: 130px; }

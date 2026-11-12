@@ -47,8 +47,8 @@
         </div>
 
         <div class="st-holder">
-          <span>Booked by</span> <strong>{{ attendeeName }}</strong>
-          <span class="dot">·</span> {{ attendeeEmail }}
+          Booked by&nbsp;<strong>{{ attendeeName }}</strong>
+          <span class="dot">·</span>{{ attendeeEmail }}
         </div>
       </div>
 
@@ -65,7 +65,8 @@
     </article>
 
     <div class="ticket-actions">
-      <button type="button" class="btn-gold" (click)="printTicket()">⬇ Download ticket</button>
+      <button type="button" class="btn-gold" (click)="printTicket()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
+        Download ticket</button>
       <a class="btn-ghost" routerLink="/history">My Bookings</a>
     </div>
 

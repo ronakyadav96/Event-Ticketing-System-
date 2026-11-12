@@ -6,7 +6,6 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { EventService } from '../../services/event.service';
 import { Subject, takeUntil, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { HeroCarouselComponent } from '../../shared/hero-carousel/hero-carousel.component';
 import { MovieService } from '../../services/movie.service';
 import { MovieRecommendationItem } from '../../models/movie.model';
 import { BookingAssistantService } from '../../services/booking-assistant.service';
@@ -33,7 +32,7 @@ export interface HomeRow {
 @Component({
   standalone: true,
   selector: 'app-events',
-  imports: [CommonModule, RouterModule, FormsModule, DatePipe, HeroCarouselComponent],
+  imports: [CommonModule, RouterModule, FormsModule, DatePipe],
   templateUrl: './events.component.html',
   styleUrls: ['./events.component.css'],
 })
@@ -127,7 +126,7 @@ export class EventsComponent implements OnInit, OnDestroy {
   billboardIndex = 0;
   private billboardTimer: ReturnType<typeof setInterval> | null = null;
   homeRows: HomeRow[] = [];
-  homeRowsLoading = false;
+  homeRowsLoading = true;
 
   ngOnInit(): void {
     this.loadCategories();
@@ -160,12 +159,18 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   loadHomeMovieCarousels(): void {
     this.moviesLoading = true;
-    this.movieService.getMovies('', 1, 14).subscribe({
+    this.movieService.getMovies('', 1, 40).subscribe({
       next: (res) => {
-        const all = Array.isArray(res?.data) ? res.data : [];
-        this.recommendedMovies = all.slice(0, 8);
-        this.premiereMovies = all.slice(4, 12);
-        this.topMovies = [...all].sort((a, b) => (b.popularity || 0) - (a.popularity || 0)).slice(0, 10);
+        // The three movie rows never repeat a title: top 10 by popularity, the next 10 as trending,
+        // and the newest releases from the rest as premieres. Movies with posters come first.
+        const all = (Array.isArray(res?.data) ? res.data : [])
+          .sort((a, b) => Number(!!b.posterUrl) - Number(!!a.posterUrl) || (b.popularity || 0) - (a.popularity || 0));
+        this.topMovies = all.slice(0, 10);
+        this.recommendedMovies = all.slice(10, 20);
+        this.premiereMovies = all
+          .slice(20)
+          .sort((a, b) => String(b.releaseDate || '').localeCompare(String(a.releaseDate || '')))
+          .slice(0, 10);
         this.moviesLoading = false;
       },
       error: () => {

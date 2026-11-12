@@ -177,7 +177,7 @@ export class PromotionService {
   describePromotion(item: PromotionRecord): string {
     const value = item.discountType === 'percent'
       ? `${item.discountValue}% off`
-      : `Rs ${item.discountValue} off`;
+      : `₹${item.discountValue} off`;
     const target = item.scope === 'platform' ? 'All events' : (item.eventTitle || 'Selected event');
     return `${value} • ${target}`;
   }

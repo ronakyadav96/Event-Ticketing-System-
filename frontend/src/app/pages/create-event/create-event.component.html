@@ -25,7 +25,7 @@
         type="button"
         (click)="selectCreateStep(step.key)"
       >
-        <span class="progress-index">{{ isStepComplete(step.key) ? '?' : (i + 1) }}</span>
+        <span class="progress-index">{{ isStepComplete(step.key) ? 'âœ“' : (i + 1) }}</span>
         <span class="progress-text">{{ step.title }}</span>
       </button>
     </div>
@@ -50,7 +50,7 @@
 
             <label class="field-card span-2">
               <span>Tagline</span>
-              <input class="form-control" [(ngModel)]="tagline" name="tagline" maxlength="140" placeholder="An unforgettable live music evening with the city’s hottest lineup" />
+              <input class="form-control" [(ngModel)]="tagline" name="tagline" maxlength="140" placeholder="An unforgettable live music evening with the cityâ€™s hottest lineup" />
               <small>{{ tagline.length }}/140 characters</small>
             </label>
 
@@ -514,7 +514,7 @@
               <div class="hero-kicker">{{ designConfig.heroKicker || 'Live Event' }}</div>
               <h3>{{ title || 'Your event title' }}</h3>
               <p>{{ tagline || 'Your short event tagline will appear here.' }}</p>
-              <div class="hero-meta">{{ schedulePreview?.rangeText || 'Date' }} · {{ schedulePreview?.timesText || 'Time' }} · {{ previewVenue }}</div>
+              <div class="hero-meta">{{ schedulePreview?.rangeText || 'Date' }} Â· {{ schedulePreview?.timesText || 'Time' }} Â· {{ previewVenue }}</div>
               <button class="preview-cta" type="button" [class.outline]="designConfig.buttonStyle==='outline'" [class.rounded]="designConfig.buttonStyle==='rounded'" [style.--cta-color]="designConfig.themeColor">{{ designConfig.ctaText || 'Book Tickets' }}</button>
             </div>
           </div>
@@ -525,7 +525,7 @@
               <div class="ticket-card-preview">
                 <strong>{{ ticketMode | titlecase }}</strong>
                 <span>{{ ticketSummary }}</span>
-                <small>{{ totalSeats }} seats · {{ approvalRequired ? 'Approval required' : 'Instant booking' }}</small>
+                <small>{{ totalSeats }} {{ totalSeats === 1 ? 'seat' : 'seats' }} Â· {{ approvalRequired ? 'Approval required' : 'Instant booking' }}</small>
               </div>
             </div>
 

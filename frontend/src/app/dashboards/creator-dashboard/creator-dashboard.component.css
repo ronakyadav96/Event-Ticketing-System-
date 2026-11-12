@@ -638,8 +638,8 @@
 
 .chart-x{
   margin-top: 10px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(46px, 1fr));
+  display: flex;
+  justify-content: space-between;
   gap: 6px;
   font-size: 10px;
   color: rgba(var(--ink-rgb), 0.55);
@@ -794,4 +794,14 @@
   text-align: center;
   color: rgba(var(--ink-rgb), 0.60);
   font-weight: 900;
+}
+
+.show-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 14px 0 4px;
+  color: var(--text-muted);
+  font-size: 13px;
 }
