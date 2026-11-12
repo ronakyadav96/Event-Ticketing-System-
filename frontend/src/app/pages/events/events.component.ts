@@ -4,11 +4,31 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { EventService } from '../../services/event.service';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { HeroCarouselComponent } from '../../shared/hero-carousel/hero-carousel.component';
 import { MovieService } from '../../services/movie.service';
 import { MovieRecommendationItem } from '../../models/movie.model';
 import { BookingAssistantService } from '../../services/booking-assistant.service';
+
+/** Row titles for the home page, keyed by event category. */
+const ROW_COPY: Record<string, { title: string; subtitle: string }> = {
+  comedy: { title: 'Comedy Nights', subtitle: 'Stand-up and comedy shows' },
+  concert: { title: 'Live Music', subtitle: 'Concerts and gigs' },
+  plays: { title: 'Theatre', subtitle: 'Plays and stage shows' },
+  sports: { title: 'Sports', subtitle: 'Matches and tournaments' },
+  workshop: { title: 'Learn Something New', subtitle: 'Workshops and classes' },
+  activities: { title: 'Weekend Plans', subtitle: 'Activities and experiences' },
+  seminar: { title: 'Talks & Seminars', subtitle: 'Learn from experts' },
+};
+
+export interface HomeRow {
+  key: string;
+  title: string;
+  subtitle: string;
+  category: string | null;
+  items: any[];
+}
 
 @Component({
   standalone: true,
@@ -99,11 +119,20 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   recommendedMovies: MovieRecommendationItem[] = [];
   premiereMovies: MovieRecommendationItem[] = [];
+  topMovies: MovieRecommendationItem[] = [];
   moviesLoading = false;
+
+  // Home page: billboard of upcoming events and Netflix-style rows per category.
+  billboard: any[] = [];
+  billboardIndex = 0;
+  private billboardTimer: ReturnType<typeof setInterval> | null = null;
+  homeRows: HomeRow[] = [];
+  homeRowsLoading = false;
 
   ngOnInit(): void {
     this.loadCategories();
     this.loadHomeMovieCarousels();
+    this.loadHomeRows();
     if (this.showMovieCatalog) this.loadMovies(true);
 
     this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
@@ -136,12 +165,99 @@ export class EventsComponent implements OnInit, OnDestroy {
         const all = Array.isArray(res?.data) ? res.data : [];
         this.recommendedMovies = all.slice(0, 8);
         this.premiereMovies = all.slice(4, 12);
+        this.topMovies = [...all].sort((a, b) => (b.popularity || 0) - (a.popularity || 0)).slice(0, 10);
         this.moviesLoading = false;
       },
       error: () => {
         this.moviesLoading = false;
       }
     });
+  }
+
+  /** One row per category with upcoming events; thin categories are merged into a mixed row. */
+  loadHomeRows(): void {
+    this.homeRowsLoading = true;
+    this.es.getCategories().subscribe({
+      next: (list: string[]) => {
+        const categories = (Array.isArray(list) ? list : []).filter((c) => c.toLowerCase() !== 'movie');
+        if (!categories.length) {
+          this.homeRowsLoading = false;
+          return;
+        }
+        forkJoin(
+          categories.map((c) => this.es.getUpcomingEvents(c, 20).pipe(catchError(() => of([]))))
+        ).subscribe((results) => {
+          const rows: HomeRow[] = [];
+          const mixed: any[] = [];
+          categories.forEach((category, i) => {
+            const items = results[i] || [];
+            if (items.length >= 3) {
+              const copy = ROW_COPY[category.toLowerCase()] || { title: category, subtitle: '' };
+              rows.push({ key: category, category, items, ...copy });
+            } else {
+              mixed.push(...items);
+            }
+          });
+          if (mixed.length) {
+            rows.push({ key: 'mixed', category: null, title: 'Try Something Different', subtitle: 'Workshops, plays, activities and more', items: mixed });
+          }
+          this.homeRows = rows;
+          this.homeRowsLoading = false;
+
+          // Billboard: upcoming events with artwork, ones with a description first.
+          const all = results.flat().filter((e) => this.shouldShowImg(e));
+          this.billboard = all
+            .sort((a, b) => Number(!!this.plainText(b.description)) - Number(!!this.plainText(a.description)))
+            .slice(0, 5);
+          this.billboardIndex = 0;
+          this.startBillboard();
+        });
+      },
+      error: () => (this.homeRowsLoading = false),
+    });
+  }
+
+  get activeBillboard(): any | null {
+    return this.billboard[this.billboardIndex] || null;
+  }
+
+  showBillboard(i: number): void {
+    this.billboardIndex = i;
+    this.startBillboard();
+  }
+
+  private startBillboard(): void {
+    if (this.billboardTimer) clearInterval(this.billboardTimer);
+    if (this.billboard.length < 2) return;
+    this.billboardTimer = setInterval(() => {
+      this.billboardIndex = (this.billboardIndex + 1) % this.billboard.length;
+    }, 7000);
+  }
+
+  /** Categories for the chips; "Movie" is covered by the separate Movies link. */
+  get eventCategories(): string[] {
+    return this.categories.filter((c) => c.toLowerCase() !== 'movie');
+  }
+
+  /** Seed descriptions sometimes start lowercase. */
+  sentence(text: string): string {
+    const t = (text || '').trim();
+    return t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
+  }
+
+  /** Event descriptions may contain HTML from the rich editor. */
+  plainText(html: string | undefined | null): string {
+    if (!html) return '';
+    const text = String(html).replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+    return text;
+  }
+
+  /** "Sat, 14 Nov" for a future date; multi-show events whose first date passed are still running. */
+  whenLabel(e: any): string {
+    const d = new Date(e?.date);
+    if (isNaN(d.getTime())) return '';
+    if (d.getTime() < Date.now()) return 'Shows running now';
+    return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
   }
 
   scrollRow(elementId: string, distance: number): void {
@@ -376,6 +492,7 @@ export class EventsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.observer) this.observer.disconnect();
     if (this.movieObserver) this.movieObserver.disconnect();
+    if (this.billboardTimer) clearInterval(this.billboardTimer);
     this.destroy$.next();
     this.destroy$.complete();
   }

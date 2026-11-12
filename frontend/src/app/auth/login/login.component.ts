@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { BrandLogoComponent } from '../../theme/brand-logo.component';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
@@ -7,7 +8,7 @@ import { AuthService } from '../auth.service';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, BrandLogoComponent, RouterLink],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
@@ -45,14 +46,10 @@ export class LoginComponent {
           return;
         }
 
+        // Users and creators land on the home page (creators reach their tools from the header);
+        // the superadmin starts in the admin portal.
         const role = res?.user?.role;
-        if (role === 'superadmin') {
-          this.router.navigate(['/superadmin-dashboard']);
-        } else if (role === 'creator') {
-          this.router.navigate(['/creator-dashboard']);
-        } else {
-          this.router.navigate(['/events']);
-        }
+        this.router.navigate([role === 'superadmin' ? '/superadmin-dashboard' : '/events']);
       },
       error: (err) => {
         this.error = err?.error?.message || 'Invalid email or password';

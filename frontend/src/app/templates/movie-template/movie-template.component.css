@@ -1,6 +1,6 @@
 .movie-tpl {
-  color: #222222;
-  background: #ffffff;
+  color: var(--text-primary);
+  background: var(--card-bg);
   min-height: 100vh;
 }
 
@@ -9,8 +9,8 @@
   position: sticky;
   top: 106px;
   z-index: 90;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e5e8;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-subtle);
   padding: 12px 0;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
@@ -27,25 +27,25 @@
 .sticky-title {
   font-size: 22px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .book-tickets-btn {
-  background: #f84464;
-  color: #ffffff;
+  background: var(--brand-primary);
+  color: var(--on-brand);
   padding: 10px 32px;
   border-radius: 8px;
   font-size: 15px;
   font-weight: 700;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(248, 68, 100, 0.35);
+  box-shadow: 0 4px 12px rgba(var(--brand-rgb), 0.35);
   transition: all 0.2s ease;
 }
 
 .book-tickets-btn:hover {
-  background: #e11d48;
+  background: var(--brand-primary-hover);
   transform: translateY(-1px);
 }
 
@@ -91,7 +91,7 @@
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.12);
   flex-shrink: 0;
-  background: #1e293b;
+  background: var(--surface-inverse);
 }
 
 .poster-box img {
@@ -131,9 +131,9 @@
 }
 
 .badge.category {
-  background: rgba(248, 68, 100, 0.2);
-  color: #f84464;
-  border: 1px solid rgba(248, 68, 100, 0.4);
+  background: rgba(var(--brand-rgb), 0.2);
+  color: var(--brand-primary);
+  border: 1px solid rgba(var(--brand-rgb), 0.4);
 }
 
 .badge.rating {
@@ -211,25 +211,25 @@
 .price-val {
   font-size: 24px;
   font-weight: 800;
-  color: #f84464;
+  color: var(--brand-primary);
 }
 
 .book-btn {
   padding: 14px 44px;
   border-radius: 8px;
-  background: #f84464;
-  color: #ffffff;
+  background: var(--brand-primary);
+  color: var(--on-brand);
   font-size: 16px;
   font-weight: 700;
   border: none;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(248, 68, 100, 0.4);
+  box-shadow: 0 8px 24px rgba(var(--brand-rgb), 0.4);
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .book-btn:hover {
   transform: translateY(-2px);
-  background: #e11d48;
+  background: var(--brand-primary-hover);
 }
 
 /* CONTENT BODY */
@@ -247,11 +247,11 @@
   font-size: 22px;
   font-weight: 700;
   margin-bottom: 14px;
-  color: #222222;
+  color: var(--text-primary);
 }
 
 .description {
-  color: #555555;
+  color: var(--text-secondary);
   line-height: 1.7;
   font-size: 15px;
 }
@@ -271,17 +271,17 @@
 .reviews-main-title {
   font-size: 24px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
   margin: 0 0 4px;
 }
 
 .reviews-sub-note {
   font-size: 13px;
-  color: #777777;
+  color: var(--text-muted);
 }
 
 .all-reviews-link {
-  color: #f84464;
+  color: var(--brand-primary);
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
@@ -304,32 +304,32 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid #e2e2e6;
+  border: 1px solid var(--border-subtle);
   border-radius: 20px;
   padding: 6px 14px;
-  background: #ffffff;
+  background: var(--card-bg);
   white-space: nowrap;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .hashtag-pill:hover {
-  border-color: #f84464;
+  border-color: var(--brand-primary);
 }
 
 .tag-name {
-  color: #f84464;
+  color: var(--brand-primary);
   font-weight: 600;
   font-size: 13px;
 }
 
 .tag-counter {
-  background: #f0f0f4;
+  background: var(--surface-alt);
   border-radius: 12px;
   padding: 2px 8px;
   font-size: 11px;
   font-weight: 700;
-  color: #555555;
+  color: var(--text-secondary);
 }
 
 .reviews-cards-scroll {
@@ -347,10 +347,10 @@
 .review-bms-card {
   flex: 0 0 340px;
   max-width: 340px;
-  border: 1px solid #e5e5e8;
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
   padding: 18px;
-  background: #ffffff;
+  background: var(--card-bg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
@@ -373,7 +373,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #f0f0f4;
+  background: var(--surface-alt);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -383,17 +383,17 @@
 .user-name {
   font-size: 14px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
   display: block;
 }
 
 .verified-tag {
   font-size: 11px;
-  color: #888888;
+  color: var(--text-muted);
 }
 
 .brand-sub {
-  color: #f84464;
+  color: var(--brand-primary);
   font-weight: 700;
 }
 
@@ -403,20 +403,20 @@
   gap: 4px;
   font-size: 14px;
   font-weight: 700;
-  color: #f84464;
+  color: var(--brand-primary);
 }
 
 .review-tags-line {
   font-size: 13px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .review-text-content {
   font-size: 13.5px;
   line-height: 1.6;
-  color: #444444;
+  color: var(--text-secondary);
   margin: 0 0 16px;
   flex: 1;
 }
@@ -426,7 +426,7 @@
   align-items: center;
   justify-content: space-between;
   padding-top: 12px;
-  border-top: 1px solid #f0f0f4;
+  border-top: 1px solid var(--border-light);
 }
 
 .reactions-group {
@@ -438,7 +438,7 @@
 .thumb-btn {
   background: transparent;
   border: none;
-  color: #666666;
+  color: var(--text-secondary);
   font-size: 12.5px;
   font-weight: 600;
   display: inline-flex;
@@ -449,7 +449,7 @@
 }
 
 .thumb-btn.active {
-  color: #f84464;
+  color: var(--brand-primary);
 }
 
 .time-share-group {
@@ -460,7 +460,7 @@
 
 .review-time {
   font-size: 12px;
-  color: #888888;
+  color: var(--text-muted);
 }
 
 .share-btn {
@@ -496,7 +496,7 @@
   aspect-ratio: 2 / 3;
   border-radius: 8px;
   overflow: hidden;
-  background: #e2e8f0;
+  background: var(--surface-sunken);
 }
 
 .reco-poster img {
@@ -509,7 +509,7 @@
   font-size: 14px;
   font-weight: 700;
   margin-top: 8px;
-  color: #222222;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

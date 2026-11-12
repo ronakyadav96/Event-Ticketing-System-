@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy } from '@angular/core';
+import { Component, HostListener, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   Router,
@@ -14,6 +14,7 @@ import { CitySelectorComponent } from './shared/city-selector/city-selector.comp
 import { FormsModule } from '@angular/forms';
 import { ChatWidgetComponent } from './components/chat/chat-widget.component';
 import { environment } from '../environments/environment';
+import { BrandLogoComponent } from './theme/brand-logo.component';
 
 @Component({
   selector: 'app-root',
@@ -27,6 +28,7 @@ import { environment } from '../environments/environment';
     FooterComponent,
     CitySelectorComponent,
     ChatWidgetComponent,
+    BrandLogoComponent,
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
@@ -43,6 +45,9 @@ export class AppComponent implements OnDestroy {
   isLoginPage = false;
   isRegisterPage = false;
   isEventsPage = false;
+  // The home page opens with a full-bleed billboard that sits under a transparent header.
+  isHomeBillboard = false;
+  scrolled = false;
   isDrawerOpen = false;
   navbarQuery = '';
 
@@ -58,9 +63,13 @@ export class AppComponent implements OnDestroy {
         const url = event.urlAfterRedirects;
         const urlTree = this.router.parseUrl(url);
 
-        this.isLoginPage = url.includes('/login');
+        // Login, sign-up and password reset share the bare auth layout (no header, footer or chat).
+        this.isLoginPage = url.includes('/login') || url.includes('/forgot-password');
         this.isRegisterPage = url.includes('/register');
         this.isEventsPage = urlTree.root.children['primary']?.segments?.[0]?.path === 'events';
+
+        this.isHomeBillboard =
+          this.isEventsPage && !urlTree.queryParams?.['q'] && !urlTree.queryParams?.['category'];
 
         if (this.isEventsPage) {
           const q = urlTree.queryParams?.['q'];
@@ -133,8 +142,13 @@ export class AppComponent implements OnDestroy {
       console.error('Logout error:', err);
     } finally {
       this.isDrawerOpen = false;
-      this.router.navigate(['/events']);
+      this.router.navigate(['/login']);
     }
+  }
+
+  @HostListener('window:scroll')
+  onWindowScroll(): void {
+    this.scrolled = window.scrollY > 24;
   }
 
   toggleDrawer(): void {

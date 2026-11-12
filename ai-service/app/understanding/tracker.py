@@ -11,7 +11,7 @@ from app.understanding.schemas import StateUpdate
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """You are the state tracker of "Event AI", an event & movie ticket booking assistant.
+SYSTEM_PROMPT = """You are the state tracker of "Tamasha AI", the event & movie ticket booking assistant of Tamasha.
 STANDALONE_REQUEST is the user's latest message already rewritten into self-contained English
 (LATEST_MESSAGE is what they literally typed). Using CONTEXT, report the intent and what changes.
 

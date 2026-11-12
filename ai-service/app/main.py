@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Event AI Service", version="2.0.0", lifespan=lifespan)
+    app = FastAPI(title="Tamasha AI Service", version="2.0.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

@@ -1,7 +1,7 @@
 /* ================= SEAT PICKER BMS ================= */
 .seat-picker-bms {
-  background: #ffffff;
-  border: 1px solid #e5e5e8;
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
   padding: 30px 24px;
   margin: 16px 0;
@@ -30,7 +30,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  color: #888888;
+  color: var(--text-muted);
   text-transform: uppercase;
 }
 
@@ -41,10 +41,10 @@
   gap: 24px;
   font-size: 12px;
   font-weight: 600;
-  color: #555555;
+  color: var(--text-secondary);
   margin-bottom: 28px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #f0f0f4;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .legend-item {
@@ -60,7 +60,7 @@
 }
 
 .seat-glyph.available {
-  background: #ffffff;
+  background: var(--card-bg);
   border: 1px solid #10b981;
 }
 
@@ -69,8 +69,8 @@
 }
 
 .seat-glyph.booked {
-  background: #e5e7eb;
-  border: 1px solid #d1d5db;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
 }
 
 /* Seats Layout */
@@ -93,7 +93,7 @@
   width: 20px;
   font-weight: 700;
   font-size: 12px;
-  color: #888888;
+  color: var(--text-muted);
   text-align: center;
 }
 
@@ -107,7 +107,7 @@
   height: 30px;
   border-radius: 5px;
   border: 1px solid #10b981;
-  background: #ffffff;
+  background: var(--card-bg);
   color: #10b981;
   font-size: 11px;
   font-weight: 700;
@@ -145,9 +145,9 @@
 }
 
 .seat-box:disabled {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-  color: #94a3b8;
+  background: var(--surface-alt);
+  border-color: var(--border-strong);
+  color: var(--text-muted);
   cursor: not-allowed;
   opacity: 0.7;
 }
@@ -155,7 +155,7 @@
 .tier-pill-label {
   font-size: 11px;
   font-weight: 700;
-  color: #777777;
+  color: var(--text-muted);
   width: 70px;
   text-align: left;
   text-transform: uppercase;
@@ -166,8 +166,8 @@
   margin-top: 24px;
   padding: 14px 20px;
   border-radius: 8px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--surface-alt);
+  border: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -175,11 +175,11 @@
 
 .selected-pill-info {
   font-size: 13.5px;
-  color: #333333;
+  color: var(--text-primary);
 }
 
 .info-lead {
-  color: #666666;
+  color: var(--text-secondary);
   margin-right: 6px;
 }
 
@@ -190,12 +190,12 @@
 
 .calculated-price {
   font-size: 14px;
-  color: #333333;
+  color: var(--text-primary);
 }
 
 .calculated-price strong {
   font-size: 18px;
-  color: #f84464;
+  color: var(--brand-primary);
   margin-left: 4px;
 }
 

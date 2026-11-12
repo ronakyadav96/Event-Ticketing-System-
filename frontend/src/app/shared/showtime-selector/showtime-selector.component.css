@@ -1,9 +1,9 @@
 /* ================= SHOWTIME EXPERIENCE (BookMyShow Style) ================= */
 .showtime-experience-wrapper {
-  background: #ffffff;
+  background: var(--card-bg);
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #e5e5e8;
+  border: 1px solid var(--border-subtle);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
   margin-bottom: 32px;
 }
@@ -11,14 +11,14 @@
 /* 1. MOVIE METADATA BAR */
 .showtime-header-bar {
   padding: 24px 24px 18px;
-  border-bottom: 1px solid #ececee;
-  background: #ffffff;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--card-bg);
 }
 
 .header-movie-title {
   font-size: 26px;
   font-weight: 800;
-  color: #222222;
+  color: var(--text-primary);
   margin: 0 0 10px;
   letter-spacing: -0.3px;
 }
@@ -26,7 +26,7 @@
 .header-lang-tag {
   font-size: 20px;
   font-weight: 600;
-  color: #666666;
+  color: var(--text-secondary);
 }
 
 .header-tags-row {
@@ -38,16 +38,16 @@
 .runtime-pill, .cert-pill, .genre-pill {
   padding: 4px 12px;
   border-radius: 20px;
-  border: 1px solid #e0e0e4;
-  background: #ffffff;
-  color: #555555;
+  border: 1px solid var(--border-subtle);
+  background: var(--card-bg);
+  color: var(--text-secondary);
   font-size: 12px;
   font-weight: 600;
 }
 
 .cert-pill {
   font-weight: 800;
-  color: #222222;
+  color: var(--text-primary);
 }
 
 /* 2. DATE SELECTOR & FILTER BAR (Sticky) */
@@ -55,8 +55,8 @@
   position: sticky;
   top: 106px;
   z-index: 70;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e5e8;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-subtle);
   padding: 10px 24px;
 }
 
@@ -95,20 +95,20 @@
 }
 
 .date-chip-btn:hover {
-  background: #f8f8fa;
+  background: var(--card-bg);
 }
 
 .date-dow {
   font-size: 10.5px;
   font-weight: 700;
-  color: #777777;
+  color: var(--text-muted);
   text-transform: uppercase;
 }
 
 .date-num {
   font-size: 18px;
   font-weight: 800;
-  color: #222222;
+  color: var(--text-primary);
   margin: 1px 0;
   line-height: 1.1;
 }
@@ -116,13 +116,13 @@
 .date-mon {
   font-size: 10.5px;
   font-weight: 700;
-  color: #777777;
+  color: var(--text-muted);
   text-transform: uppercase;
 }
 
 .date-chip-btn.active {
-  background: #f84464;
-  box-shadow: 0 4px 10px rgba(248, 68, 100, 0.35);
+  background: var(--brand-primary);
+  box-shadow: 0 4px 10px rgba(var(--brand-rgb), 0.35);
 }
 
 .date-chip-btn.active .date-dow,
@@ -140,9 +140,9 @@
 }
 
 .filter-btn {
-  border: 1px solid #e0e0e4;
-  background: #ffffff;
-  color: #444444;
+  border: 1px solid var(--border-subtle);
+  background: var(--card-bg);
+  color: var(--text-secondary);
   padding: 8px 14px;
   border-radius: 6px;
   font-size: 13px;
@@ -153,21 +153,21 @@
 }
 
 .filter-btn:hover {
-  border-color: #f84464;
-  color: #f84464;
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
 }
 
 .filter-btn.active {
-  border-color: #f84464;
-  color: #f84464;
-  background: rgba(248, 68, 100, 0.06);
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+  background: rgba(var(--brand-rgb), 0.06);
 }
 
 .filter-search-icon {
   width: 36px;
   height: 36px;
-  border: 1px solid #e0e0e4;
-  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  background: var(--card-bg);
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -178,8 +178,8 @@
 
 /* 3. SUB-BAR: QUICK FILTERS & AVAILABILITY LEGEND */
 .sub-legend-bar {
-  background: #fbfbfc;
-  border-bottom: 1px solid #ececee;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-light);
   padding: 8px 24px;
 }
 
@@ -197,20 +197,20 @@
 }
 
 .quick-filter-chip {
-  background: #ffffff;
-  border: 1px solid #e0e0e4;
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
   border-radius: 20px;
   padding: 4px 12px;
   font-size: 12px;
-  color: #555555;
+  color: var(--text-secondary);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .quick-filter-chip:hover {
-  border-color: #f84464;
-  color: #f84464;
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
 }
 
 .legend-right {
@@ -220,7 +220,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  color: #666666;
+  color: var(--text-secondary);
 }
 
 .legend-item {
@@ -251,7 +251,7 @@
 
 .theatre-card {
   padding: 24px 0;
-  border-bottom: 1px solid #f0f0f4;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .theatre-card:last-child {
@@ -280,8 +280,8 @@
 .cinema-badge {
   font-size: 13px;
   font-weight: 800;
-  color: #d97706;
-  background: #fef3c7;
+  color: var(--warn-fg);
+  background: var(--warn-bg);
   padding: 2px 6px;
   border-radius: 4px;
 }
@@ -289,13 +289,13 @@
 .theatre-name {
   font-size: 15.5px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .info-glyph {
   font-size: 13px;
-  color: #888888;
+  color: var(--text-muted);
   cursor: pointer;
 }
 
@@ -307,14 +307,14 @@
 
 .amenity-tag {
   font-size: 12px;
-  color: #666666;
+  color: var(--text-secondary);
 }
 
 .favorite-heart-btn {
   background: transparent;
   border: none;
   font-size: 22px;
-  color: #bbbbbb;
+  color: var(--text-muted);
   cursor: pointer;
   transition: color 0.15s ease;
   line-height: 1;
@@ -322,7 +322,7 @@
 
 .favorite-heart-btn:hover,
 .favorite-heart-btn.favorited {
-  color: #f84464;
+  color: var(--brand-primary);
 }
 
 /* Grid of Green-Bordered Showtime Pills */
@@ -338,7 +338,7 @@
   height: 48px;
   border: 1px solid #10b981;
   border-radius: 6px;
-  background: #ffffff;
+  background: var(--card-bg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -362,7 +362,7 @@
 .slot-badge {
   font-size: 9px;
   font-weight: 800;
-  color: #888888;
+  color: var(--text-muted);
   letter-spacing: 0.5px;
   margin-top: 1px;
 }
@@ -401,7 +401,7 @@
   bottom: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
-  background: #222222;
+  background: var(--surface-inverse);
   color: #ffffff;
   font-size: 10px;
   font-weight: 700;

@@ -163,6 +163,18 @@ export class EventService {
     return this.http.post(`${this.API}/${id}/book`, { seats }, this.getAuthHeadersJson());
   }
 
+  /** Upcoming events (single date in the future, or a show schedule that is still running). */
+  getUpcomingEvents(category = '', limit = 20): Observable<Event[]> {
+    let params = new HttpParams().set('upcoming', 'true').set('page', '1').set('limit', String(limit));
+    if (category) params = params.set('category', category);
+    return this.http.get<any>(this.API, { params }).pipe(
+      map((res) => {
+        const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        return list.map((e: any) => this.normalizeEvent(e));
+      })
+    );
+  }
+
   getCategories(): Observable<string[]> {
     // Return cached result — categories rarely change during a session
     if (this.categoriesCache !== null) {

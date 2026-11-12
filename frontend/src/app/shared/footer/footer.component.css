@@ -1,6 +1,6 @@
 /* ================= FOOTER BMS ================= */
 .footer-bms {
-  background: #2b3148;
+  background: var(--stream-dark);
   color: #ffffff;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -13,7 +13,7 @@
 
 /* Support Strip */
 .support-strip {
-  background: #232738;
+  background: var(--surface-inverse);
   padding: 24px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -83,12 +83,12 @@
 }
 
 .footer-links-list a:hover {
-  color: #f84464;
+  color: var(--brand-primary);
 }
 
 /* Bottom Bar */
 .bottom-bar {
-  background: #1b1e2c;
+  background: var(--stream-dark-deep);
   padding: 20px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
@@ -118,7 +118,7 @@
 }
 
 .brand-red {
-  color: #f84464;
+  color: var(--brand-primary);
 }
 
 .copy-text {
@@ -141,4 +141,11 @@
     flex-direction: column;
     text-align: center;
   }
+}
+
+/* The footer is always dark: draw the theme wordmark in white. */
+.brand-line app-brand-logo {
+  --logo-color: #ffffff;
+  --logo-fill: none;
+  --logo-clip: border-box;
 }

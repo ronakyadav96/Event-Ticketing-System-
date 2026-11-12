@@ -210,6 +210,7 @@ def fake_node(monkeypatch):
         monkeypatch.setattr(node_client, name, getattr(fake, name))
     from app.tools import catalog
     catalog._facet_cache.update(at=0.0, value=None)
+    catalog._genre_cache.update(at=0.0, value=None)
     return fake
 
 

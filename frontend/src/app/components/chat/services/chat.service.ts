@@ -160,11 +160,10 @@ export class ChatService {
   // ── Conversations ───────────────────────────────────────────────────────────
 
   private welcome(): ChatMessage {
-    const name = this.auth.getUser()?.name?.trim().split(' ')[0];
     return {
       id: 'welcome',
       role: 'assistant',
-      text: `Hi${name ? ' ' + name : ''} 👋 I'm Event AI. Tell me what you'd like to watch — I'll find shows and book your seats.`,
+      text: "Hi, I'm Tamasha AI. How can I help you?",
       timestamp: new Date(),
     };
   }
@@ -340,7 +339,7 @@ export class ChatService {
           } else if (err.status === 409) {
             this.appendError('Still working on your previous message — please wait a moment.');
           } else if (err.status === 0) {
-            this.appendError('⚠️ Unable to reach the Event AI service. Please check that it is running.');
+            this.appendError('⚠️ Unable to reach the Tamasha AI service. Please check that it is running.');
           } else {
             this.appendError(err.error?.detail || 'Something went wrong. Please try again.');
           }

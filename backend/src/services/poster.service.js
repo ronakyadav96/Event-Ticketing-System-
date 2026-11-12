@@ -35,6 +35,11 @@ function setCache(cacheMap, key, data) {
   cacheMap.set(key, { data, expiresAt: Date.now() + CACHE_TTL_MS });
 }
 
+// API keys travel in the query string; never let them reach logs or error messages.
+function redactUrl(url) {
+  return String(url).replace(/([?&](?:api_?key|apikey)=)[^&]*/gi, '$1***');
+}
+
 function fetchJson(url) {
   const client = url.startsWith('https') ? https : http;
   return new Promise((resolve, reject) => {
@@ -45,21 +50,21 @@ function fetchJson(url) {
         try {
           resolve(JSON.parse(data));
         } catch {
-          reject(new Error(`Invalid JSON response from ${url}`));
+          reject(new Error(`Invalid JSON response from ${redactUrl(url)}`));
         }
       });
     });
     req.on('error', reject);
     req.on('timeout', () => {
       req.destroy();
-      reject(new Error(`Request timeout for ${url}`));
+      reject(new Error(`Request timeout for ${redactUrl(url)}`));
     });
   });
 }
 
 /**
  * Fetch full movie metadata from OMDb API.
- * Uses key e47d6ad3 and caches results for 24h.
+ * Uses OMDB_API_KEY and caches results for 24h.
  */
 async function getOmdbMovieData(title, year = '', imdbId = '') {
   if (!title && !imdbId) return null;
@@ -70,7 +75,7 @@ async function getOmdbMovieData(title, year = '', imdbId = '') {
   if (cached !== null) return cached;
 
   try {
-    let url = `http://www.omdbapi.com/?apikey=${OMDB_API_KEY}`;
+    let url = `https://www.omdbapi.com/?apikey=${OMDB_API_KEY}`;
     if (imdbId) {
       url += `&i=${encodeURIComponent(imdbId.trim())}`;
     } else {

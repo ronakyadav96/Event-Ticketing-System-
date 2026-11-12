@@ -409,13 +409,12 @@ exports.createSeatCheckout = async (req, res) => {
 /* ================= QUANTITY CHECKOUT (web booking page) ================= */
 
 // POST /api/payments/create-checkout-session — used by the Angular booking page, which adds
-// snacks and promotions to the per-seat amount. The event must exist; no fallback amounts.
+// snacks to the per-seat amount (never below the event price). The event must exist.
 exports.createCheckoutSession = async (req, res) => {
   if (!stripe) return paymentUnavailable(res);
   try {
     const {
       eventId,
-      currency = 'inr',
       name,
       email,
       registrationTemplate,
@@ -430,7 +429,11 @@ exports.createCheckoutSession = async (req, res) => {
     if (!eventDoc) return res.status(404).json({ success: false, message: 'Event not found.' });
 
     const quantity = Math.max(1, Math.min(10, Number(req.body.quantity ?? req.body.seats ?? 1)));
-    const unitAmount = Math.round(Number(req.body.unitAmount ?? 0)) || Math.round(Number(eventDoc.price) * 100);
+    // The client adds snacks to the per-seat amount, so it may only ever raise the price: a seat is
+    // never charged below the event's own price. (Discounts need server-side promotions to apply.)
+    const basePaise = Math.round(Number(eventDoc.price) * 100);
+    const requestedPaise = Math.round(Number(req.body.unitAmount ?? 0));
+    const unitAmount = Math.max(basePaise, Number.isFinite(requestedPaise) ? requestedPaise : 0);
     if (!(unitAmount > 0)) {
       return res.status(400).json({ success: false, message: 'This event does not require payment.' });
     }
@@ -451,7 +454,7 @@ exports.createCheckoutSession = async (req, res) => {
       showAt: showAtDate,
       quantity,
       unitAmount,
-      currency: String(currency).toLowerCase(),
+      currency: 'inr',
       status: 'PENDING',
     });
 

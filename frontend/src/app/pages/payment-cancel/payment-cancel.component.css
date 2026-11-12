@@ -7,8 +7,8 @@
 
 .status-card{
   width: min(520px, 100%);
-  background: #ffffff;
-  border: 1px solid rgba(17, 24, 39, 0.12);
+  background: var(--card-bg);
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
   border-radius: 16px;
   padding: 18px 18px 16px;
   box-shadow: var(--app-shadow, 0 18px 40px rgba(17, 24, 39, 0.12));
@@ -17,7 +17,7 @@
 
 .title{
   margin: 0;
-  color: #111827;
+  color: var(--text-primary);
   font-weight: 900;
   letter-spacing: -0.2px;
 }
@@ -28,7 +28,7 @@
 
 .sub{
   margin: 8px 0 0;
-  color: rgba(17, 24, 39, 0.68);
+  color: rgba(var(--ink-rgb), 0.68);
   font-weight: 700;
 }
 
@@ -37,8 +37,8 @@
   width: 100%;
   padding: 10px 12px;
   border-radius: 12px;
-  border: 1px solid rgba(17, 24, 39, 0.12);
-  background: var(--app-brand, #f84464);
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
+  background: var(--app-brand, var(--brand-primary));
   color: #ffffff;
   font-weight: 900;
   cursor: pointer;

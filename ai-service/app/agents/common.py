@@ -36,12 +36,13 @@ def make_reply(
     faq_sources: Optional[List[Dict[str, Any]]] = None,
     seat_map: Optional[Dict[str, Any]] = None,
     error: Optional[str] = None,
+    max_quick_replies: int = 6,
 ) -> Dict[str, Any]:
     return {
         "text": text,
         "agent": agent,
         "events": events or [],
-        "quick_replies": [q for q in (quick_replies or []) if q][:6],
+        "quick_replies": [q for q in (quick_replies or []) if q][:max_quick_replies],
         "faq_sources": faq_sources or [],
         "seat_map": seat_map,
         "error": error,

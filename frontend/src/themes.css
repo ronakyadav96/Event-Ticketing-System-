@@ -1,0 +1,159 @@
+/* ======================================================
+   TAMASHA THEME
+   Dark "cinema hall" base with kesariya gold and sindoori accents.
+   Every component reads its colors, fonts and radii from these variables.
+====================================================== */
+
+:root {
+  --brand-primary: #f5a524;
+  --brand-primary-hover: #ffb93f;
+  --brand-rgb: 245, 165, 36;
+  --brand-soft: #ffd27a;
+  --brand-2: #e2572b;
+  --brand-gradient: linear-gradient(135deg, #ffc24b 0%, #f5a524 45%, #e2572b 100%);
+  /* Text drawn on gold buttons and badges */
+  --on-brand: #1a1007;
+
+  --page-bg: #0d0a07;
+  --app-bg: #0d0a07;
+  --card-bg: #19130c;
+  --surface-white: #19130c;
+  --surface-alt: #211910;
+  --surface-sunken: #2b2116;
+  --surface-inverse: #2b2116;
+  --surface-rgb: 25, 19, 12;
+
+  --text-primary: #fbf3e4;
+  --text-secondary: #d8c8ad;
+  --text-muted: #a08e73;
+  --text-inverse: #ffffff;
+  --ink-rgb: 251, 243, 228;
+
+  --border-subtle: #33281b;
+  --border-light: #261d13;
+  --border-strong: #4a3a26;
+  --border-focus: #f5a524;
+
+  /* Status colors tuned for the dark background */
+  --success-fg: #4ade80;
+  --success-bg: rgba(74, 222, 128, 0.12);
+  --success-border: rgba(74, 222, 128, 0.35);
+  --danger-fg: #ff8a73;
+  --danger-bg: rgba(226, 87, 43, 0.12);
+  --danger-border: rgba(226, 87, 43, 0.4);
+  --warn-fg: #ffd27a;
+  --warn-bg: rgba(245, 165, 36, 0.14);
+  --warn-border: rgba(245, 165, 36, 0.4);
+
+  --stream-dark: #160f08;
+  --stream-dark-deep: #0f0a05;
+  --stream-card-bg: #211910;
+
+  --font-body: 'Poppins', system-ui, sans-serif;
+  --font-display: 'Yatra One', 'Poppins', serif;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.6);
+  --shadow-card-hover: 0 0 0 1px rgba(245, 165, 36, 0.45), 0 18px 44px rgba(0, 0, 0, 0.6);
+
+  /* Jaali (lattice) motif used behind the billboard, footer and auth pages */
+  --jaali: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M16 3 29 16 16 29 3 16z' fill='none' stroke='%23f5a524' stroke-opacity='.09'/%3E%3Ccircle cx='16' cy='16' r='1.8' fill='%23f5a524' fill-opacity='.13'/%3E%3Ccircle cx='0' cy='0' r='1.8' fill='%23f5a524' fill-opacity='.13'/%3E%3Ccircle cx='32' cy='0' r='1.8' fill='%23f5a524' fill-opacity='.13'/%3E%3Ccircle cx='0' cy='32' r='1.8' fill='%23f5a524' fill-opacity='.13'/%3E%3Ccircle cx='32' cy='32' r='1.8' fill='%23f5a524' fill-opacity='.13'/%3E%3C/svg%3E");
+
+  color-scheme: dark;
+}
+
+/* ======================================================
+   GLOBAL
+====================================================== */
+
+body {
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-body);
+  letter-spacing: -0.01em;
+}
+
+input, textarea, select, button {
+  font-family: inherit;
+}
+
+::selection {
+  background: rgba(var(--brand-rgb), 0.3);
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3a2d1d;
+  border-radius: 10px;
+  border: 2px solid var(--page-bg);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--page-bg);
+}
+
+/* Section titles use the desi display face */
+.section-head-bms h2,
+.row-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* Gold buttons get dark text for contrast */
+.btn-primary-bms,
+.pill-filter.active {
+  background: var(--brand-gradient) !important;
+  border-color: transparent !important;
+  color: var(--on-brand) !important;
+  font-weight: 700;
+}
+
+/* Chat launcher follows the brand */
+app-chat-widget .launcher {
+  background: var(--brand-gradient) !important;
+  color: var(--on-brand) !important;
+}
+
+/* Visible keyboard focus everywhere (mouse clicks are unaffected) */
+:focus-visible {
+  outline: 2px solid var(--brand-primary) !important;
+  outline-offset: 2px;
+}
+
+/* The chat launcher shrinks to its icon on phones so it does not cover content */
+@media (max-width: 600px) {
+  app-chat-widget .launcher-label {
+    display: none;
+  }
+
+  app-chat-widget .launcher {
+    padding: 12px !important;
+  }
+}
+
+/* Printing (e.g. "Download ticket") shows only the page content */
+@media print {
+  .global-header,
+  app-footer,
+  app-chat-widget {
+    display: none !important;
+  }
+
+  body {
+    background: var(--page-bg) !important;
+  }
+}

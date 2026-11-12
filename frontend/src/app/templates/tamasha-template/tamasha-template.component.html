@@ -1,0 +1,56 @@
+<div class="tm-page">
+  <!-- Backdrop -->
+  <div class="tm-backdrop">
+    <img *ngIf="eventImageUrl && !eventImgFailed" [src]="eventImageUrl" alt="" aria-hidden="true" (error)="onImgError()" />
+    <div class="tm-shade"></div>
+  </div>
+
+  <section class="tm-hero">
+    <div class="tm-info">
+      <span class="tm-kicker">{{ look.icon }} {{ look.kicker }}</span>
+      <h1 class="tm-title">{{ event?.title }}</h1>
+      <p class="tm-tagline">{{ event?.tagline || look.about }}</p>
+
+      <div class="tm-facts">
+        <div class="fact">
+          <span class="fact-label">When</span>
+          <span class="fact-value" *ngIf="!isRunning">{{ event?.date | date:'EEE, d MMM • h:mm a' }}</span>
+          <span class="fact-value" *ngIf="isRunning">Shows running now</span>
+        </div>
+        <div class="fact">
+          <span class="fact-label">Where</span>
+          <span class="fact-value">{{ event?.venue || 'Venue to be announced' }}</span>
+        </div>
+        <div class="fact" *ngIf="event?.language">
+          <span class="fact-label">Language</span>
+          <span class="fact-value">{{ event.language }}</span>
+        </div>
+        <div class="fact" *ngIf="seatsLeft !== null">
+          <span class="fact-label">Seats</span>
+          <span class="fact-value" [class.hot]="seatsLeft! < 30">{{ seatsLeft }} left</span>
+        </div>
+      </div>
+
+      <div class="tm-book">
+        <div class="tm-price">
+          <span class="price-label">Tickets</span>
+          <span class="price-value">{{ isFreeEvent ? 'FREE' : ('₹' + unitPriceRupees) }}</span>
+          <span class="price-note" *ngIf="!isFreeEvent">onwards</span>
+        </div>
+        <button type="button" class="tm-book-btn" (click)="openBooking.emit()">🎟 Book tickets</button>
+      </div>
+    </div>
+
+    <div class="tm-poster">
+      <img *ngIf="eventImageUrl && !eventImgFailed; else noPoster" [src]="eventImageUrl" [alt]="event?.title" />
+      <ng-template #noPoster>
+        <div class="tm-poster-fallback"><span>{{ look.icon }}</span>{{ event?.title }}</div>
+      </ng-template>
+    </div>
+  </section>
+
+  <section class="tm-about">
+    <h2 class="tm-section-title">About the show</h2>
+    <div class="tm-about-body" [innerHTML]="event?.description || look.about"></div>
+  </section>
+</div>

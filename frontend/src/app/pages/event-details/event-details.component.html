@@ -5,7 +5,15 @@
         <div class="details-wrap">
           <div *ngIf="loading" class="msg">Loading event...</div>
 
-          <div *ngIf="!loading && error" class="msg error">Error: {{ error }}</div>
+          <div *ngIf="!loading && error" class="load-error">
+            <div class="load-error-icon">🎭</div>
+            <h2>Couldn't load this show</h2>
+            <p>{{ error }}</p>
+            <div class="load-error-actions">
+              <button type="button" class="retry-btn" (click)="ngOnInit()">Try again</button>
+              <a routerLink="/events" class="home-link">Back to home</a>
+            </div>
+          </div>
 
           <div *ngIf="!loading && event">
             <!-- Category Templates from src/app/templates/ -->
@@ -21,37 +29,7 @@
                 (openBooking)="openBooking()"
               ></app-movie-template>
 
-              <app-concert-template
-                *ngSwitchCase="'concert'"
-                [event]="event"
-                [eventImageUrl]="eventImageUrl"
-                [eventImgFailed]="eventImgFailed"
-                [isFreeEvent]="isFreeEvent"
-                [unitPriceRupees]="unitPriceRupees"
-                (openBooking)="openBooking()"
-              ></app-concert-template>
-
-              <app-comedy-template
-                *ngSwitchCase="'comedy'"
-                [event]="event"
-                [eventImageUrl]="eventImageUrl"
-                [eventImgFailed]="eventImgFailed"
-                [isFreeEvent]="isFreeEvent"
-                [unitPriceRupees]="unitPriceRupees"
-                (openBooking)="openBooking()"
-              ></app-comedy-template>
-
-              <app-sports-template
-                *ngSwitchCase="'sports'"
-                [event]="event"
-                [eventImageUrl]="eventImageUrl"
-                [eventImgFailed]="eventImgFailed"
-                [isFreeEvent]="isFreeEvent"
-                [unitPriceRupees]="unitPriceRupees"
-                (openBooking)="openBooking()"
-              ></app-sports-template>
-
-              <app-event-template
+              <app-tamasha-template
                 *ngSwitchDefault
                 [event]="event"
                 [eventImageUrl]="eventImageUrl"
@@ -59,7 +37,7 @@
                 [isFreeEvent]="isFreeEvent"
                 [unitPriceRupees]="unitPriceRupees"
                 (openBooking)="openBooking()"
-              ></app-event-template>
+              ></app-tamasha-template>
             </ng-container>
           </div>
         </div>

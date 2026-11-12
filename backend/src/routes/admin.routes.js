@@ -144,26 +144,7 @@ router.get('/my-events', protect, authorizeRoles('creator'), async (req, res) =>
   }
 });
 
-// 🔹 Update My Event
-router.put('/events/:id', protect, authorizeRoles('creator', 'superadmin'), async (req, res) => {
-  try {
-    const event = await Event.findById(req.params.id);
-
-    if (!event) return res.status(404).json({ message: 'Event not found' });
-
-    // If creator → allow only own event
-    if (req.user.role === 'creator' && event.createdBy.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized for this event' });
-    }
-
-    Object.assign(event, req.body);
-    await event.save();
-
-    res.json({ message: 'Event updated', event });
-  } catch (err) {
-    res.status(500).json({ message: 'Update failed' });
-  }
-});
+// Event updates go through PUT /api/events/:id, which only accepts editable fields.
 
 // 🔹 Delete My Event
 router.delete('/events/:id', protect, authorizeRoles('creator', 'superadmin'), async (req, res) => {

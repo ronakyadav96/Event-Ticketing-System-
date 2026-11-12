@@ -120,182 +120,208 @@
   <!-- ================= DEFAULT HOME VIEW ================= -->
   <ng-container *ngIf="!movieSearchActive">
 
-    <!-- 1. HERO BANNER CAROUSEL -->
-    <app-hero-carousel *ngIf="categoryFilter === 'all'"></app-hero-carousel>
+    <ng-container *ngIf="categoryFilter === 'all'; else categoryView">
 
-    <div class="page-container">
+      <!-- 1. BILLBOARD -->
+      <section class="billboard" *ngIf="activeBillboard as b; else heroFallback">
+        <div class="billboard-media">
+          <img
+            *ngFor="let item of billboard; let i = index"
+            [src]="imgUrl(item)"
+            [class.active]="i === billboardIndex"
+            alt=""
+            aria-hidden="true" />
+        </div>
+        <div class="billboard-shade"></div>
 
-      <!-- 2. RECOMMENDED MOVIES SECTION (Matching media_1789325586829.png) -->
-      <section class="home-carousel-section" *ngIf="categoryFilter === 'all'">
-        <div class="section-head-bms">
-          <h2>Recommended Movies</h2>
-          <a class="see-all" routerLink="/movies">See All &rsaquo;</a>
+        <div class="billboard-content page-container">
+          <span class="billboard-kicker">✦ Tamasha Special · {{ b.category || 'Live' }}</span>
+          <h1 class="billboard-title">{{ b.title }}</h1>
+          <div class="billboard-meta">
+            <span>{{ whenLabel(b) }}</span>
+            <span>📍 {{ b.venue || 'Venue soon' }}</span>
+            <span class="gold">₹{{ b.price ?? 0 }} onwards</span>
+          </div>
+          <p class="billboard-desc" *ngIf="plainText(b.description)">{{ sentence(plainText(b.description)) }}</p>
+          <div class="billboard-actions">
+            <button type="button" class="btn-gold" (click)="openEvent(b)">🎟 Book tickets</button>
+            <button type="button" class="btn-glass" (click)="openEvent(b)">ⓘ More info</button>
+          </div>
         </div>
 
-        <div class="carousel-outer-wrap">
-          <button class="nav-arrow left" type="button" (click)="scrollRow('recMoviesTrack', -700)" aria-label="Previous movies">&#8249;</button>
-          <button class="nav-arrow right" type="button" (click)="scrollRow('recMoviesTrack', 700)" aria-label="Next movies">&#8250;</button>
-
-          <div class="carousel-track custom-horizontal-scroll" id="recMoviesTrack">
-            <!-- Movie cards -->
-            <div
-              class="movie-card-bms"
-              *ngFor="let m of (recommendedMovies.length ? recommendedMovies : movies); let i = index; trackBy: trackMovie"
-              (click)="openMovie(m)">
-              <div class="movie-poster-box">
-                <img *ngIf="m.posterUrl" [src]="m.posterUrl" alt="poster" loading="lazy" />
-                <div class="fallback-poster" *ngIf="!m.posterUrl">
-                  <span>🎬</span>
-                  <span class="fallback-title">{{ m.title }}</span>
-                </div>
-
-                <!-- Promoted badge -->
-                <span class="bms-badge promoted-pill" *ngIf="i % 4 === 0">PROMOTED</span>
-
-                <!-- Rating bar overlay at bottom of poster -->
-                <div class="poster-rating-bar">
-                  <span class="star">★</span>
-                  <span class="rating-num">{{ m.voteAverage ? m.voteAverage : '9.1' }}/10</span>
-                  <span class="votes-num">92.1K+ Votes</span>
-                </div>
-              </div>
-
-              <div class="movie-card-info">
-                <h3 class="movie-title">{{ m.title }}</h3>
-                <div class="movie-cert-row">
-                  <span class="cert-tag">UA16+</span>
-                  <span class="movie-genres">Action/Drama</span>
-                </div>
-                <div class="movie-languages">Hindi, English, Telugu</div>
-              </div>
-            </div>
-          </div>
+        <div class="billboard-dots" *ngIf="billboard.length > 1">
+          <button
+            *ngFor="let item of billboard; let i = index"
+            type="button"
+            [class.active]="i === billboardIndex"
+            (click)="showBillboard(i)"
+            [attr.aria-label]="'Show ' + item.title"></button>
         </div>
       </section>
+      <ng-template #heroFallback>
+        <div class="hero-fallback-wrap"><app-hero-carousel></app-hero-carousel></div>
+      </ng-template>
 
-    </div>
+      <div class="rows-wrap">
 
-    <!-- 3. PREMIERE DARK SECTION (Matching media_1789325586810.png) -->
-    <section class="premiere-banner-section" *ngIf="categoryFilter === 'all'">
-      <div class="page-container">
-        <!-- Premiere Branding Header -->
-        <div class="premiere-top-header">
-          <div class="premiere-badge-wrap">
-            <div class="premiere-play-circle">▶</div>
-            <div class="premiere-titles">
-              <span class="premiere-brand-title">PREMIERE</span>
-              <span class="premiere-brand-sub">Watch new movies at home, every Friday</span>
-            </div>
+        <!-- 2. CATEGORY CHIPS -->
+        <section class="mood-strip page-container">
+          <span class="mood-label">What are you in the mood for?</span>
+          <div class="mood-chips">
+            <a class="mood-chip" routerLink="/movies">🎬 Movies</a>
+            <button type="button" class="mood-chip" *ngFor="let c of eventCategories" (click)="selectCategory(c)">{{ c }}</button>
           </div>
-        </div>
+        </section>
 
-        <div class="premiere-section-title">
-          <h3>Premieres</h3>
-          <p>Brand new releases every Friday</p>
-        </div>
-
-        <!-- Horizontal Premiere Movie Carousel -->
-        <div class="carousel-outer-wrap dark-mode">
-          <button class="nav-arrow left dark" type="button" (click)="scrollRow('premiereTrack', -700)" aria-label="Previous premieres">&#8249;</button>
-          <button class="nav-arrow right dark" type="button" (click)="scrollRow('premiereTrack', 700)" aria-label="Next premieres">&#8250;</button>
-
-          <div class="carousel-track custom-horizontal-scroll" id="premiereTrack">
-            <div
-              class="premiere-card"
-              *ngFor="let m of (premiereMovies.length ? premiereMovies : recommendedMovies); trackBy: trackMovie"
-              (click)="openMovie(m)">
-              <div class="premiere-poster-box">
-                <img *ngIf="m.posterUrl" [src]="m.posterUrl" alt="premiere poster" loading="lazy" />
-                <div class="fallback-poster dark" *ngIf="!m.posterUrl">
-                  <span>🎥</span>
-                  <span class="fallback-title">{{ m.title }}</span>
+        <!-- 3. TOP 10 MOVIES -->
+        <section class="home-row" *ngIf="topMovies.length">
+          <div class="row-head page-container">
+            <h2 class="row-title">Top 10 Movies Today</h2>
+            <a class="row-link" routerLink="/movies">See all ›</a>
+          </div>
+          <div class="row-scroller">
+            <button class="row-arrow left" type="button" (click)="scrollRow('topTrack', -800)" aria-label="Previous">&#8249;</button>
+            <div class="row-track" id="topTrack">
+              <div class="top-card" *ngFor="let m of topMovies; let i = index; trackBy: trackMovie" (click)="openMovie(m)">
+                <span class="top-rank">{{ i + 1 }}</span>
+                <div class="poster">
+                  <img *ngIf="m.posterUrl" [src]="m.posterUrl" [alt]="m.title" loading="lazy" />
+                  <div class="poster-fallback" *ngIf="!m.posterUrl">{{ m.title }}</div>
                 </div>
-                <!-- Red PREMIERE badge on bottom left of poster -->
-                <span class="premiere-tag-pill">PREMIERE</span>
-              </div>
-
-              <div class="premiere-card-info">
-                <h4 class="premiere-movie-title">{{ m.title }}</h4>
-                <div class="premiere-movie-lang">English, Hindi</div>
               </div>
             </div>
+            <button class="row-arrow right" type="button" (click)="scrollRow('topTrack', 800)" aria-label="Next">&#8250;</button>
           </div>
-        </div>
+        </section>
+
+        <!-- 4. MOVIE ROW -->
+        <section class="home-row" *ngIf="recommendedMovies.length || movies.length">
+          <div class="row-head page-container">
+            <h2 class="row-title">Trending Movies</h2>
+            <a class="row-link" routerLink="/movies">See all ›</a>
+          </div>
+          <div class="row-scroller">
+            <button class="row-arrow left" type="button" (click)="scrollRow('recMoviesTrack', -800)" aria-label="Previous">&#8249;</button>
+            <div class="row-track" id="recMoviesTrack">
+              <div class="poster-card" *ngFor="let m of (recommendedMovies.length ? recommendedMovies : movies); trackBy: trackMovie" (click)="openMovie(m)">
+                <div class="poster">
+                  <img *ngIf="m.posterUrl" [src]="m.posterUrl" [alt]="m.title" loading="lazy" />
+                  <div class="poster-fallback" *ngIf="!m.posterUrl">{{ m.title }}</div>
+                  <div class="poster-hover">
+                    <span class="rating">★ {{ m.voteAverage || '—' }}</span>
+                    <span class="book-pill">Book</span>
+                  </div>
+                </div>
+                <div class="poster-title">{{ m.title }}</div>
+              </div>
+            </div>
+            <button class="row-arrow right" type="button" (click)="scrollRow('recMoviesTrack', 800)" aria-label="Next">&#8250;</button>
+          </div>
+        </section>
+
+        <!-- 5. EVENT ROWS PER CATEGORY -->
+        <section class="home-row" *ngFor="let row of homeRows">
+          <div class="row-head page-container">
+            <div>
+              <h2 class="row-title">{{ row.title }}</h2>
+              <span class="row-sub">{{ row.subtitle }}</span>
+            </div>
+            <button *ngIf="row.category" type="button" class="row-link" (click)="selectCategory(row.category)">See all ›</button>
+          </div>
+          <div class="row-scroller">
+            <button class="row-arrow left" type="button" (click)="scrollRow('row-' + row.key, -900)" aria-label="Previous">&#8249;</button>
+            <div class="row-track" [id]="'row-' + row.key">
+              <div class="wide-card" *ngFor="let e of row.items" (click)="openEvent(e)">
+                <div class="wide-media">
+                  <img *ngIf="shouldShowImg(e); else noArt" [src]="imgUrl(e)" (error)="onImgError(e)" [alt]="e.title" loading="lazy" />
+                  <ng-template #noArt><div class="wide-fallback">{{ e.category || 'Live' }}</div></ng-template>
+                  <span class="price-chip">₹{{ e.price ?? 0 }}</span>
+                  <div class="wide-shade"></div>
+                  <div class="wide-info">
+                    <span class="wide-cat">{{ e.category }}</span>
+                    <h3 class="wide-title">{{ e.title }}</h3>
+                    <span class="wide-meta">{{ whenLabel(e) }} · {{ e.venue || 'Venue soon' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button class="row-arrow right" type="button" (click)="scrollRow('row-' + row.key, 900)" aria-label="Next">&#8250;</button>
+          </div>
+        </section>
+
+        <!-- 6. PREMIERES -->
+        <section class="home-row premiere-row" *ngIf="premiereMovies.length">
+          <div class="row-head page-container">
+            <div>
+              <h2 class="row-title">Fresh Premieres Every Friday</h2>
+              <span class="row-sub">New releases, first</span>
+            </div>
+          </div>
+          <div class="row-scroller">
+            <button class="row-arrow left" type="button" (click)="scrollRow('premiereTrack', -800)" aria-label="Previous">&#8249;</button>
+            <div class="row-track" id="premiereTrack">
+              <div class="poster-card" *ngFor="let m of premiereMovies; trackBy: trackMovie" (click)="openMovie(m)">
+                <div class="poster">
+                  <img *ngIf="m.posterUrl" [src]="m.posterUrl" [alt]="m.title" loading="lazy" />
+                  <div class="poster-fallback" *ngIf="!m.posterUrl">{{ m.title }}</div>
+                  <span class="premiere-pill">PREMIERE</span>
+                </div>
+                <div class="poster-title">{{ m.title }}</div>
+              </div>
+            </div>
+            <button class="row-arrow right" type="button" (click)="scrollRow('premiereTrack', 800)" aria-label="Next">&#8250;</button>
+          </div>
+        </section>
+
+        <div class="state-indicator" *ngIf="homeRowsLoading">Loading shows...</div>
       </div>
-    </section>
+    </ng-container>
 
-    <!-- 4. LIVE EVENTS & EXPERIENCES SECTION -->
-    <div class="page-container">
-      <section class="live-events-section">
-        <div class="section-head-bms">
-          <h2>Trending Live Events</h2>
-          <div class="category-tabs-row">
+    <!-- CATEGORY VIEW: grid of events for one category -->
+    <ng-template #categoryView>
+      <div class="page-container category-page">
+        <div class="category-hero">
+          <span class="billboard-kicker">✦ Category</span>
+          <h1 class="category-title">{{ categoryFilter }}</h1>
+          <div class="mood-chips">
+            <button type="button" class="mood-chip" (click)="selectCategory('all')">← Home</button>
             <button
               type="button"
-              class="cat-filter-pill"
-              [class.active]="categoryFilter === 'all'"
-              (click)="selectCategory('all')">
-              All
-            </button>
-            <button
-              type="button"
-              class="cat-filter-pill"
+              class="mood-chip"
               *ngFor="let c of categories"
-              [class.active]="categoryFilter === c"
-              (click)="selectCategory(c)">
-              {{ c }}
-            </button>
+              [class.active]="categoryFilter.toLowerCase() === c.toLowerCase()"
+              (click)="selectCategory(c)">{{ c }}</button>
           </div>
         </div>
 
-        <!-- Events Grid -->
         <div class="state-indicator" *ngIf="loading">Loading events...</div>
         <div class="state-indicator error" *ngIf="!loading && error">{{ error }}</div>
 
-        <div class="events-catalog-grid" *ngIf="!loading && filtered.length">
-          <div class="event-card-bms" *ngFor="let e of filtered" (click)="openEvent(e)">
-            <div class="poster-container">
-              <img *ngIf="shouldShowImg(e); else noImgE" [src]="imgUrl(e)" (error)="onImgError(e)" alt="event poster" loading="lazy" />
-              <ng-template #noImgE>
-                <div class="no-poster-box" [attr.data-cat]="e.category || 'Live Event'">
-                  <span>{{ e.category || 'Live Event' }}</span>
-                </div>
-              </ng-template>
-
-              <!-- Status badge -->
-              <span class="status-badge" [ngClass]="statusOf(e).toLowerCase().replace(' ', '-')">
-                {{ statusOf(e) }}
-              </span>
-            </div>
-
-            <div class="card-details">
-              <span class="event-cat-tag">{{ e.category || 'Event' }}</span>
-              <h3 class="event-title">{{ e.title }}</h3>
-              <div class="venue-line">📍 {{ e.venue || 'Auditorium Arena' }}</div>
-              <div class="date-line">📅 {{ e.date | date:'EEE, dd MMM yyyy • h:mm a' }}</div>
-              
-              <div class="price-action-row">
-                <div class="price-block">
-                  <span class="price-label">Starts at</span>
-                  <span class="price-val">₹{{ e.price ?? 0 }}</span>
-                </div>
-                <div class="seats-left-pill" *ngIf="remainingSeats(e) > 0">
-                  {{ remainingSeats(e) }} seats left
-                </div>
-                <button class="book-now-btn" type="button">Book Now</button>
+        <div class="wide-grid" *ngIf="!loading && filtered.length">
+          <div class="wide-card" *ngFor="let e of filtered" (click)="openEvent(e)">
+            <div class="wide-media">
+              <img *ngIf="shouldShowImg(e); else noArtG" [src]="imgUrl(e)" (error)="onImgError(e)" [alt]="e.title" loading="lazy" />
+              <ng-template #noArtG><div class="wide-fallback">{{ e.category || 'Live' }}</div></ng-template>
+              <span class="price-chip">₹{{ e.price ?? 0 }}</span>
+              <span class="status-chip" *ngIf="statusOf(e) === 'Sold Out'">Housefull</span>
+              <div class="wide-shade"></div>
+              <div class="wide-info">
+                <span class="wide-cat">{{ e.category }}</span>
+                <h3 class="wide-title">{{ e.title }}</h3>
+                <span class="wide-meta">{{ whenLabel(e) }} · {{ e.venue || 'Venue soon' }}</span>
               </div>
             </div>
           </div>
         </div>
 
         <div class="empty-state-box" *ngIf="!loading && filtered.length === 0">
-          <p>No events found for this category. Check back soon for new announcements!</p>
+          <p>No shows in this category yet. New shows are coming soon!</p>
         </div>
 
-        <div *ngIf="loadingMore" class="state-indicator">Loading more events...</div>
+        <div *ngIf="loadingMore" class="state-indicator">Loading more shows...</div>
         <div *ngIf="hasMore && !loading" #sentinel class="infinite-sentinel"></div>
-      </section>
-    </div>
+      </div>
+    </ng-template>
 
   </ng-container>
 

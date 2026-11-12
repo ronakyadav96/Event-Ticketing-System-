@@ -5,6 +5,7 @@ All data comes from the Node backend. Events are normalized into a small, explic
 summary so agents and the UI only ever see authoritative fields.
 """
 
+import asyncio
 import html
 import re
 import time
@@ -14,6 +15,11 @@ from services.node_client import node_client
 
 _FACET_TTL_SECONDS = 300
 _facet_cache: Dict[str, Any] = {"at": 0.0, "value": None}
+
+# Genres offered in the "what kind?" picker, in display order; only those with movies are shown.
+MOVIE_GENRES = ["Action", "Comedy", "Drama", "Thriller", "Romance", "Sci-Fi", "Horror", "Animation", "Adventure", "Crime"]
+_GENRE_TTL_SECONDS = 600
+_genre_cache: Dict[str, Any] = {"at": 0.0, "value": None}
 
 
 def event_id_of(raw: Dict[str, Any]) -> str:
@@ -105,4 +111,24 @@ async def get_facets() -> Dict[str, Any]:
     except Exception:
         return _facet_cache["value"] or {"categories": [], "venues": []}
     _facet_cache.update(at=now, value=value)
+    return value
+
+
+async def get_movie_genres() -> List[str]:
+    """Movie genres that currently have at least one movie (cached). Empty if the backend is unavailable."""
+    now = time.monotonic()
+    if _genre_cache["value"] is not None and now - _genre_cache["at"] < _GENRE_TTL_SECONDS:
+        return _genre_cache["value"]
+
+    async def has_movies(genre: str) -> bool:
+        try:
+            body = await node_client.search_events(category="Movie", genre=genre, page=1, limit=1)
+        except Exception:
+            return False
+        return bool(body.get("total"))
+
+    flags = await asyncio.gather(*(has_movies(g) for g in MOVIE_GENRES))
+    value = [g for g, ok in zip(MOVIE_GENRES, flags) if ok]
+    if value:
+        _genre_cache.update(at=now, value=value)
     return value

@@ -1,430 +1,295 @@
-/* ================= MOVIE LISTING PAGE (BookMyShow Style) ================= */
 .movie-listing-page {
-  min-height: calc(100vh - 108px);
-  background: var(--page-bg, #f5f5f7);
-  padding: 28px 0 60px;
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 380px at 0% 0%, rgba(var(--brand-rgb), 0.1), transparent 60%),
+    var(--page-bg);
 }
 
 .listing-container {
-  max-width: 1240px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 36px 40px 70px;
 }
 
-.listing-layout {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 24px;
-  align-items: start;
+/* ---------- Heading + chips ---------- */
+.movies-head {
+  margin-bottom: 30px;
 }
 
-/* ================= LEFT SIDEBAR: FILTERS ================= */
-.filters-sidebar {
-  position: sticky;
-  top: 124px;
-}
-
-.filters-main-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #222222;
-  margin: 0 0 18px;
-}
-
-.filter-card {
-  background: #ffffff;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-}
-
-.filter-card-header {
-  padding: 14px 16px;
+.movies-head-top {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.movies-kicker {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brand-primary);
+}
+
+.catalog-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(36px, 5vw, 56px);
+  line-height: 1.05;
+  background: linear-gradient(180deg, #ffe2a3 0%, #f5a524 60%, #e2572b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.cinemas-link {
+  flex-shrink: 0;
+  padding: 10px 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 13.5px;
+  font-weight: 600;
   cursor: pointer;
-  user-select: none;
-  transition: background 0.15s ease;
 }
 
-.filter-card-header:hover {
-  background: #fafafa;
+.cinemas-link:hover {
+  border-color: rgba(var(--brand-rgb), 0.6);
 }
 
-.header-left {
+.chip-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-light);
 }
 
-.filter-toggle-arrow {
-  font-size: 9px;
-  color: #888888;
-  display: inline-block;
-  transition: transform 0.2s ease;
-}
-
-.filter-toggle-arrow:not(.open) {
-  transform: rotate(180deg);
-}
-
-.filter-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333333;
-}
-
-.filter-name.highlighted {
-  color: #f84464;
-}
-
-.filter-clear-link {
+.chip-label {
+  flex: 0 0 70px;
   font-size: 12px;
-  font-weight: 600;
-  color: #888888;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 2px 4px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
-.filter-clear-link:hover {
-  color: #f84464;
-}
-
-.filter-card-body {
-  padding: 4px 16px 16px;
-}
-
-.filter-pills-wrap {
+.chip-scroll {
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-width: 0;
 }
 
-.filter-pill-btn {
-  border: 1px solid #e0e0e4;
-  background: #ffffff;
-  border-radius: 4px;
-  padding: 6px 12px;
-  font-size: 12px;
+.chip-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  flex-shrink: 0;
+  padding: 7px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
   font-weight: 500;
-  color: #444444;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.filter-pill-btn:hover {
-  border-color: #f84464;
-  color: #f84464;
+.chip:hover {
+  color: var(--text-primary);
+  border-color: rgba(var(--brand-rgb), 0.6);
 }
 
-.filter-pill-btn.active {
-  background: rgba(248, 68, 100, 0.08);
-  border-color: #f84464;
-  color: #f84464;
-  font-weight: 600;
-}
-
-.browse-cinemas-btn {
-  width: 100%;
-  border: 1px solid #f84464;
-  color: #f84464;
-  background: #ffffff;
-  padding: 11px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: center;
-  margin-top: 8px;
-  transition: all 0.2s ease;
-}
-
-.browse-cinemas-btn:hover {
-  background: #f84464;
-  color: #ffffff;
-}
-
-/* ================= RIGHT COLUMN: MOVIES CATALOG ================= */
-.catalog-main {
-  min-width: 0;
-}
-
-.catalog-heading-row {
-  margin-bottom: 16px;
-}
-
-.catalog-title {
-  font-size: 24px;
+.chip.active {
+  border-color: transparent;
+  background: var(--brand-gradient);
+  color: var(--on-brand);
   font-weight: 700;
-  color: #222222;
-  margin: 0;
 }
 
-/* Horizontal Language Pills */
-.lang-strip-scroll {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 8px;
-  margin-bottom: 18px;
-  scrollbar-width: none;
-}
-
-.lang-strip-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.lang-pill {
-  padding: 6px 16px;
-  border-radius: 20px;
-  border: 1px solid #e0e0e4;
-  background: #ffffff;
-  color: #444444;
+.chip-clear {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--brand-primary);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease;
 }
 
-.lang-pill:hover {
-  border-color: #f84464;
-  color: #f84464;
-}
-
-.lang-pill.active {
-  background: #f84464;
-  border-color: #f84464;
-  color: #ffffff;
-}
-
-/* Coming Soon Announcement Banner */
-.coming-soon-banner {
-  background: #ffffff;
-  border: 1px solid #e5e5e8;
-  border-radius: 8px;
-  padding: 14px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-  cursor: pointer;
-  transition: border-color 0.2s ease;
-}
-
-.coming-soon-banner:hover {
-  border-color: #f84464;
-}
-
-.cs-bold {
-  font-size: 15px;
-  font-weight: 700;
-  color: #222222;
-}
-
-.cs-link {
-  font-size: 13px;
-  font-weight: 600;
-  color: #f84464;
-}
-
+/* ---------- States ---------- */
 .search-indicator-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
-  background: #ffffff;
-  border: 1px solid #e5e5e5;
-  border-radius: 20px;
-  font-size: 13px;
-  color: #333333;
   margin-bottom: 20px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(var(--brand-rgb), 0.12);
+  color: var(--text-primary);
+  font-size: 13.5px;
 }
 
 .clear-q {
-  background: #e5e5e5;
   border: none;
-  border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 12px;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 18px;
   cursor: pointer;
-  line-height: 1;
 }
 
-/* ================= RESPONSIVE COMPACT MOVIE GRID ================= */
-.movies-catalog-grid {
+.state-card {
+  padding: 40px 20px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 16px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.state-card.error {
+  color: #ff8a80;
+}
+
+/* ---------- Poster grid ---------- */
+.poster-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
-  gap: 20px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+  gap: 28px 20px;
 }
 
-.catalog-movie-card {
-  max-width: 210px;
-  width: 100%;
+.poster-tile {
+  min-width: 0;
   cursor: pointer;
-  transition: transform 0.25s ease;
 }
 
-.catalog-movie-card:hover {
-  transform: translateY(-4px);
-}
-
-.movie-poster-shell {
+.tile-poster {
   position: relative;
-  width: 100%;
   aspect-ratio: 2 / 3;
-  max-height: 275px;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  background: #e2e8f0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: var(--surface-alt);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-.movie-poster-shell img {
+.tile-poster img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.fallback-poster-shell {
-  width: 100%;
+.poster-tile:hover .tile-poster {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 0 0 2px rgba(var(--brand-rgb), 0.8), 0 20px 44px rgba(0, 0, 0, 0.7);
+}
+
+.tile-fallback {
   height: 100%;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1e293b, #0f172a);
-  color: #ffffff;
-  padding: 12px;
+  padding: 16px;
   text-align: center;
-  font-size: 28px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--brand-soft);
+  background: var(--jaali), linear-gradient(160deg, #2b2116, #160f08);
 }
 
-.title-fallback {
-  font-size: 13px;
+.tile-rating {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: rgba(13, 10, 7, 0.8);
+  color: var(--brand-soft);
+  font-size: 12px;
   font-weight: 700;
-  margin-top: 8px;
+  backdrop-filter: blur(6px);
 }
 
-.promoted-badge {
+.tile-hover {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  background: #f84464;
-  color: #ffffff;
-  font-size: 9px;
-  font-weight: 800;
-  padding: 3px 6px;
-  border-radius: 3px;
-  letter-spacing: 0.5px;
-}
-
-.poster-bottom-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #000000;
-  color: #ffffff;
-  padding: 7px 10px;
+  inset: 0;
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 14px;
+  background: linear-gradient(0deg, rgba(13, 10, 7, 0.97) 0%, rgba(13, 10, 7, 0.75) 50%, rgba(13, 10, 7, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.poster-tile:hover .tile-hover {
+  opacity: 1;
+}
+
+.tile-overview {
+  margin: 0;
   font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.poster-bottom-bar .star-glyph {
-  color: #f84464;
-  font-size: 13px;
+.tile-book {
+  align-self: flex-start;
+  padding: 7px 14px;
+  border-radius: 8px;
+  background: var(--brand-gradient);
+  color: var(--on-brand);
+  font-size: 12.5px;
+  font-weight: 800;
 }
 
-.rating-value {
-  font-weight: 700;
-}
-
-.votes-count {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.75);
-  margin-left: auto;
-}
-
-.movie-card-info {
-  padding-top: 10px;
-}
-
-.movie-title {
+.tile-title {
+  margin: 12px 0 2px;
   font-size: 15px;
-  font-weight: 700;
-  color: #222222;
-  margin: 0 0 3px;
+  font-weight: 600;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.movie-cert-badge {
-  font-size: 12px;
-  color: #666666;
-  margin-bottom: 2px;
+.tile-meta {
+  font-size: 12.5px;
+  color: var(--text-muted);
 }
 
-.movie-languages-meta {
-  font-size: 12px;
-  color: #888888;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.state-card {
-  padding: 32px;
-  background: #ffffff;
-  border-radius: 10px;
-  border: 1px solid #e5e5e5;
-  text-align: center;
-  color: #666666;
-  font-size: 14px;
-}
-
-.state-card.error {
-  color: #dc2626;
-}
-
-/* ================= RESPONSIVE ================= */
-@media (max-width: 1024px) {
-  .listing-layout {
-    grid-template-columns: 220px 1fr;
-    gap: 18px;
+@media (max-width: 900px) {
+  .listing-container {
+    padding: 24px 16px 60px;
   }
 
-  .movies-catalog-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 16px 12px;
-  }
-}
-
-@media (max-width: 768px) {
-  .listing-layout {
-    grid-template-columns: 1fr;
+  .movies-head-top {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .filters-sidebar {
-    position: static;
+  .chip-label {
+    flex-basis: 56px;
   }
 
-  .movies-catalog-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 14px 10px;
-  }
-
-  .catalog-movie-card {
-    max-width: 100%;
+  .poster-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 22px 14px;
   }
 }

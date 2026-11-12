@@ -1,16 +1,18 @@
 import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { BookingService } from '../../services/booking.service';
 import { finalize, take } from 'rxjs/operators';
 import { AuthService } from '../../auth/auth.service';
 import { PromotionService } from '../../services/promotion.service';
+import { EventService } from '../../services/event.service';
+import { BrandLogoComponent } from '../../theme/brand-logo.component';
 
 @Component({
   standalone: true,
   selector: 'app-booking-confirmation',
-  imports: [CommonModule, QRCodeComponent],
+  imports: [CommonModule, RouterLink, QRCodeComponent, BrandLogoComponent],
   templateUrl: './booking-confirmation.component.html',
   styleUrls: ['./booking-confirmation.component.css'],
 })
@@ -20,6 +22,7 @@ export class BookingConfirmationComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private auth = inject(AuthService);
   private promotionService = inject(PromotionService);
+  private es = inject(EventService);
 
   booking: any = null;
   ticketId = '';
@@ -27,6 +30,24 @@ export class BookingConfirmationComponent implements OnInit {
 
   loading = true;
   error = '';
+  posterFailed = false;
+
+  get posterUrl(): string {
+    return this.booking?.event ? this.es.getEventImageUrl(this.booking.event) : '';
+  }
+
+  get categoryLabel(): string {
+    return this.booking?.event?.category || 'Event';
+  }
+
+  /** Chip text and tone for the ticket's top-right status badge. */
+  get status(): { text: string; tone: 'ok' | 'warn' | 'bad' } {
+    const s = String(this.booking?.paymentStatus || '').toUpperCase();
+    if (s.includes('REFUND')) return { text: 'Refund in progress', tone: 'warn' };
+    if (s.includes('CANCEL')) return { text: 'Cancelled', tone: 'bad' };
+    if (s === 'PENDING') return { text: 'Payment pending', tone: 'warn' };
+    return { text: '✓ Confirmed', tone: 'ok' };
+  }
 
   get eventTitle(): string {
     return this.booking?.event?.title || this.booking?.eventTitle || 'Event Ticket';
@@ -48,8 +69,16 @@ export class BookingConfirmationComponent implements OnInit {
     return this.booking?.email || this.booking?.user?.email || '-';
   }
 
+  get ticketCount(): number {
+    return Number(this.booking?.seats ?? this.booking?.seatCount ?? 1);
+  }
+
+  /** Seat numbers when the show has a seat map, otherwise the ticket count. */
   get seatLabel(): string {
-    return String(this.booking?.seats ?? this.booking?.seatCount ?? '-');
+    const nums = this.booking?.seatNumbers;
+    if (Array.isArray(nums) && nums.length) return nums.join(', ');
+    const n = this.ticketCount;
+    return `${n} ${n === 1 ? 'Ticket' : 'Tickets'}`;
   }
 
   get paymentStatusLabel(): string {
@@ -58,8 +87,10 @@ export class BookingConfirmationComponent implements OnInit {
   }
 
   get finalAmountLabel(): string {
-    const amount = Number(this.booking?.finalAmount ?? this.booking?.amount ?? this.booking?.totalAmount ?? 0);
-    return amount > 0 ? `Rs ${amount}` : 'Free';
+    // amountPaid is stored by Stripe in paise
+    const paise = Number(this.booking?.amountPaid ?? 0);
+    const rupees = paise > 0 ? paise / 100 : Number(this.booking?.finalAmount ?? this.booking?.amount ?? 0);
+    return rupees > 0 ? `₹ ${rupees.toLocaleString('en-IN')}` : 'Free';
   }
 
   ngOnInit(): void {
@@ -154,6 +185,10 @@ export class BookingConfirmationComponent implements OnInit {
     const user = this.auth.getUser();
     if (!promotionId || !user) return;
     this.promotionService.consumePromotion(String(promotionId), user);
+  }
+
+  printTicket(): void {
+    window.print();
   }
 
   getRegistrationTemplateLabel(template: string): string {

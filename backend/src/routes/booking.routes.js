@@ -119,7 +119,7 @@ router.get('/ticket/:ticketId', protect, async (req, res) => {
     if (!ticketId) return res.status(400).json({ message: 'ticketId missing' });
 
     const booking = await Booking.findOne({ ticketId })
-      .populate('event', 'title date venue price totalSeats bookedSeats')
+      .populate('event', 'title date venue price totalSeats bookedSeats category language imageUrl imageFileId movieMeta.posterUrl')
       .populate('user', 'name email');
 
     if (!booking) return res.status(404).json({ message: 'Booking not found' });

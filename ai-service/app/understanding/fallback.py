@@ -15,6 +15,7 @@ from typing import Any, Dict, Optional
 
 from app.agents.common import fmt_date, fmt_time
 from app.graph.state import BookingStage, Intent, RefundStage
+from app.tools.catalog import MOVIE_GENRES
 from app.understanding.context import today
 
 
@@ -36,6 +37,13 @@ _BOOK_PHRASE = re.compile(r"^\s*(?:book|reserve)\s+(?:tickets?\s+(?:for|to)\s+)?
 _DETAILS_PHRASE = re.compile(r"^\s*(?:tell\s+me\s+(?:more\s+)?about|details\s+(?:of|for|about)|more\s+about)\s+(.+?)\s*[.?!]?\s*$", re.I)
 _SHOW_MORE = re.compile(r"^\s*(?:show\s+(?:me\s+)?)?more(?:\s+(?:results|options|events|movies))?\s*[.!]?\s*$", re.I)
 _SHOW_CATEGORY = re.compile(r"^\s*show\s+me\s+(.+?)\s*[.!]?\s*$", re.I)
+_GENRE_MOVIES = re.compile(r"^(.+?)\s+movies?$", re.I)
+# A greeting with nothing else in it; answered with the fixed short welcome.
+PURE_GREETING = re.compile(
+    r"^\s*(hi+|hii+|hello+|hey+|hola|namaste|namaskar|good\s+(morning|afternoon|evening)|yo|sup)"
+    r"(\s+(there|tamasha|tamasha\s+ai|bot|bhai|buddy))?\s*[!.👋🙏]*\s*$",
+    re.I,
+)
 
 
 def _known_by_title(state: Dict[str, Any], title: str) -> Optional[str]:
@@ -96,6 +104,8 @@ def fast_classify(query: str, state: Dict[str, Any], facets: Dict[str, Any]) -> 
         event_id = _known_by_title(state, m.group(1))
         if event_id:
             return result(Intent.EVENT_DETAILS, event_id=event_id)
+    if PURE_GREETING.match(query):
+        return result(Intent.SMALL_TALK)
     if _SHOW_MORE.match(query) and idle and _has_search(state):
         return result(Intent.EVENT_SEARCH, search=search_spec("MORE"))
     # Category quick replies ("Show me Comedy") name a real catalog category exactly.
@@ -105,6 +115,13 @@ def fast_classify(query: str, state: Dict[str, Any], facets: Dict[str, Any]) -> 
         category = next((c for c in facets.get("categories") or [] if c.lower() == wanted), None)
         if category:
             return result(Intent.EVENT_SEARCH, search=search_spec("NEW", category=category))
+        # Genre quick replies ("Show me Action movies") from the kind picker.
+        g = _GENRE_MOVIES.match(wanted)
+        if g:
+            genre = next((x for x in MOVIE_GENRES if x.lower() == g.group(1).strip()), None)
+            movie = next((c for c in facets.get("categories") or [] if c.lower() == "movie"), "Movie")
+            if genre:
+                return result(Intent.EVENT_SEARCH, search=search_spec("NEW", category=movie, genre=genre))
     return None
 
 

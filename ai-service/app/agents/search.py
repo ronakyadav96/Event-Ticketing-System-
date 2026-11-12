@@ -115,6 +115,15 @@ async def run_search(state: Dict[str, Any], entities: Dict[str, Any], query: str
     rejected = list(dict.fromkeys((search.get("rejected") or []) + list(spec.get("reject_event_ids") or [])))
     continuing = plan["continue"]
     filters = plan["filters"]
+
+    # "Another" once pages forward; asking again right after offers a choice of kinds instead.
+    # Once everything has been shown, the normal "seen all" answer applies instead.
+    more_streak = int(search.get("more_streak") or 0) + 1 if continuing else 0
+    has_more = int(search.get("total") or 0) > len(search.get("seen") or [])
+    if continuing and more_streak >= 2 and has_more:
+        search["more_streak"] = 0
+        return await _kind_picker(facets, has_more=True), search
+    search["more_streak"] = more_streak
     page = int(search.get("page") or 1) + 1 if continuing else 1
     seen = list(search.get("seen") or []) if continuing else []
 
@@ -145,7 +154,14 @@ async def run_search(state: Dict[str, Any], entities: Dict[str, Any], query: str
     if not events:
         search["last_results"] = []
         if continuing:
-            text = f"You've seen all {total} {label} I have. Want to search for something else?"
+            # Nothing left to page through: offer the other kinds right away.
+            exclude = filters.get("category")
+            return await _kind_picker(
+                facets,
+                has_more=False,
+                intro=f"You've seen all {total} {label} I have. What kind would you like to see next?",
+                exclude=exclude,
+            ), search
         else:
             text = f"I couldn't find any {label}. Try a different title, genre, category or venue?"
         quick = [f"Show me {c}" for c in (facets.get("categories") or []) if c not in shown_categories][:4]
@@ -175,6 +191,28 @@ async def run_search(state: Dict[str, Any], entities: Dict[str, Any], query: str
     else:
         quick += [f"Book {e['title']}" for e in events if e.get("upcoming")][:2]
     return make_reply(text, AGENT, events=events, quick_replies=quick), search
+
+
+async def _kind_picker(
+    facets: Dict[str, Any], *, has_more: bool, intro: Optional[str] = None, exclude: Optional[str] = None
+) -> Dict[str, Any]:
+    """Offer the available event categories and movie genres as one-tap choices."""
+    skip = {"movie", str(exclude or "").lower()}
+    categories = [c for c in facets.get("categories") or [] if c.lower() not in skip]
+    genres = await catalog_tools.get_movie_genres()
+    quick = [f"Show me {c}" for c in categories] + [f"Show me {g} movies" for g in genres]
+    if has_more:
+        quick.append("Show me more")
+    parts = []
+    if categories:
+        parts.append("**Events:** " + ", ".join(categories))
+    if genres:
+        parts.append("**Movies:** " + ", ".join(genres))
+    text = intro or "Not quite what you're looking for? Tell me what kind you'd like to see:"
+    if parts:
+        text += "\n\n" + "\n".join(parts)
+    # The picker is the one place that offers every kind at once.
+    return make_reply(text, AGENT, quick_replies=quick or ["Show me movies", "Show me events"], max_quick_replies=20)
 
 
 DETAILS_SYSTEM = """You describe one event for a ticket-booking chat in 2–4 sentences.

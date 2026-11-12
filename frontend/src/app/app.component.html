@@ -1,26 +1,42 @@
 <div class="app-shell">
-  <!-- DUAL-TIER GLOBAL NAVBAR -->
-  <header class="global-header" *ngIf="!isLoginPage && !isRegisterPage">
-    <!-- Tier 1: Main Search & Branding Bar -->
-    <div class="header-tier1">
-      <div class="header-tier1-inner">
-        <!-- Logo -->
-        <a class="brand-logo" routerLink="/events">
-          <div class="brand-icon">
-            <span class="icon-ticket">🎟️</span>
-          </div>
-          <span class="brand-name">EVENT TICKETING <span class="brand-accent"> SYSTEM</span></span>
-        </a>
+  <!-- GLOBAL HEADER: transparent over the home billboard, solid once scrolled -->
+  <header
+    class="global-header"
+    *ngIf="!isLoginPage && !isRegisterPage"
+    [class.scrolled]="scrolled"
+    [class.over-billboard]="isHomeBillboard">
+    <div class="header-inner" [class.has-role-nav]="canManageEvents">
+      <a class="brand-logo" routerLink="/events" aria-label="Tamasha home">
+        <app-brand-logo></app-brand-logo>
+      </a>
 
-        <!-- Search Bar  -->
-        <div class="header-search">
-          <span class="search-glyph">🔍</span>
+      <nav class="main-nav" aria-label="Primary">
+        <a class="nav-link" routerLink="/events" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active">Home</a>
+        <a class="nav-link" routerLink="/movies" routerLinkActive="active">Movies</a>
+        <a class="nav-link" routerLink="/events" [queryParams]="{ category: 'Comedy' }">Comedy</a>
+        <a class="nav-link" routerLink="/events" [queryParams]="{ category: 'Concert' }">Music</a>
+        <a class="nav-link" routerLink="/events" [queryParams]="{ category: 'Plays' }">Plays</a>
+        <a class="nav-link" routerLink="/events" [queryParams]="{ category: 'Sports' }">Sports</a>
+        <a class="nav-link" routerLink="/events" [queryParams]="{ category: 'Workshop' }">Workshops</a>
+      </nav>
+
+      <!-- Role tools: creators manage their own events, the superadmin manages everything -->
+      <nav class="role-nav" *ngIf="canManageEvents" aria-label="Manage">
+        <a class="role-link" *ngIf="isCreator" routerLink="/creator-dashboard" routerLinkActive="active">My Events</a>
+        <a class="role-link" *ngIf="isSuperAdmin" routerLink="/superadmin-dashboard" routerLinkActive="active">Admin Portal</a>
+        <a class="role-link create" routerLink="/create-event" routerLinkActive="active">+ Create Event</a>
+      </nav>
+
+      <div class="header-right">
+        <div class="header-search" [class.has-value]="!!navbarQuery">
+          <svg class="search-glyph" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           <input
             type="text"
             class="header-search-input"
             [(ngModel)]="navbarQuery"
             (ngModelChange)="onNavbarQueryChange($event)"
-            placeholder="Search for Movies, Events, Plays, Sports and Activities"
+            placeholder="Search movies, shows and events..."
+            aria-label="Search movies and events"
           />
           <button
             *ngIf="navbarQuery"
@@ -32,70 +48,34 @@
           </button>
         </div>
 
-        <!-- Right Section: City, Auth & Hamburger -->
-        <div class="header-tier1-right">
-          <!-- City Selector -->
-          <app-city-selector></app-city-selector>
+        <app-city-selector></app-city-selector>
 
-          <!-- Guest: Sign In Button -->
-          <button
-            *ngIf="!isLoggedIn"
-            class="signin-pill-btn"
-            type="button"
-            routerLink="/login">
-            Sign in
-          </button>
+        <button
+          *ngIf="!isLoggedIn"
+          class="signin-pill-btn"
+          type="button"
+          routerLink="/login">
+          Sign in
+        </button>
 
-          <!-- Logged In: User Profile Pill -->
-          <div
-            *ngIf="isLoggedIn"
-            class="user-profile-badge"
-            (click)="toggleDrawer()">
-            <div class="user-avatar-circle">
-              {{ userInitial }}
-            </div>
-            <span class="user-display-name">{{ userDisplayName }}</span>
-            <span class="user-role-badge" *ngIf="currentUser?.role && currentUser?.role !== 'user'">
-              {{ currentUser?.role }}
-            </span>
-          </div>
+        <button
+          *ngIf="isLoggedIn"
+          type="button"
+          class="user-profile-badge"
+          (click)="toggleDrawer()"
+          [attr.aria-label]="'Account menu for ' + userDisplayName">
+          <span class="user-avatar-circle">{{ userInitial }}</span>
+        </button>
 
-          <!-- Hamburger Button -->
-          <button
-            class="hamburger-btn"
-            type="button"
-            (click)="toggleDrawer()"
-            aria-label="Toggle navigation menu">
-            <span class="hamburger-bars">☰</span>
-          </button>
-        </div>
+        <button
+          class="hamburger-btn"
+          type="button"
+          (click)="toggleDrawer()"
+          aria-label="Toggle navigation menu">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </div>
-
-    <!-- Tier 2: Category Navigation & Utilities Bar -->
-    <nav class="header-tier2">
-      <div class="header-tier2-inner">
-        <!-- Left: Category Links -->
-        <div class="tier2-left">
-          <a class="tier2-link" routerLink="/movies" routerLinkActive="active">Movies</a>
-          <a class="tier2-link" routerLink="/events" [queryParams]="{ category: 'stream' }" routerLinkActive="active">Stream</a>
-          <a class="tier2-link" routerLink="/events" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active">Events</a>
-          <a class="tier2-link" routerLink="/events" [queryParams]="{ category: 'plays' }" routerLinkActive="active">Plays</a>
-          <a class="tier2-link" routerLink="/events" [queryParams]="{ category: 'sports' }" routerLinkActive="active">Sports</a>
-          <a class="tier2-link" routerLink="/events" [queryParams]="{ category: 'activities' }" routerLinkActive="active">Activities</a>
-        </div>
-
-        <!-- Right: Utility Links -->
-        <div class="tier2-right">
-          <a class="tier2-util-link" [routerLink]="canManageEvents ? (isCreator ? '/creator-dashboard' : '/superadmin-dashboard') : '/create-event'">
-            ListYourShow
-          </a>
-          <a class="tier2-util-link" routerLink="/events">Corporates</a>
-          <a class="tier2-util-link" routerLink="/coupons" routerLinkActive="active">Offers</a>
-          <a class="tier2-util-link" routerLink="/gifts" routerLinkActive="active">Gift Cards</a>
-        </div>
-      </div>
-    </nav>
   </header>
 
   <!-- NAVIGATION DRAWER BACKDROP -->
@@ -186,7 +166,7 @@
         [routerLink]="isCreator ? '/creator-dashboard' : '/superadmin-dashboard'"
         routerLinkActive="active"
         (click)="closeDrawer()">
-        <span class="d-icon">📊</span> {{ isSuperAdmin ? 'Superadmin Portal' : 'Creator Dashboard' }}
+        <span class="d-icon">📊</span> {{ isSuperAdmin ? 'Admin Portal' : 'My Events' }}
       </a>
 
       <a
@@ -220,4 +200,5 @@
 
   <!-- AI CHATBOT WIDGET -->
   <app-chat-widget *ngIf="chatEnabled && !isLoginPage && !isRegisterPage"></app-chat-widget>
+
 </div>

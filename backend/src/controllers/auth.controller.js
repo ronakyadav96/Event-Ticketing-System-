@@ -54,6 +54,12 @@ function isMailDisabled() {
   return (process.env.MAIL_DISABLED || '').toLowerCase() === 'true';
 }
 
+// With mail disabled (local development) codes are returned in the response so flows can be
+// tested; never in production, where that would let anyone take over an account.
+function exposeCodes() {
+  return isMailDisabled() && process.env.NODE_ENV !== 'production';
+}
+
 // ================= REGISTER =================
 exports.register = async (req, res) => {
   try {
@@ -133,8 +139,8 @@ exports.register = async (req, res) => {
       message: isMailDisabled()
         ? 'OTP generated. Email sending is disabled; use verifyLink or OTP.'
         : 'OTP sent to your email. Please verify to login.',
-      verifyLink: isMailDisabled() ? verifyLink : undefined,
-      otp: isMailDisabled() ? otp : undefined,
+      verifyLink: exposeCodes() ? verifyLink : undefined,
+      otp: exposeCodes() ? otp : undefined,
       user: {
         id: user._id.toString(),
         name: user.name,
@@ -294,8 +300,8 @@ exports.resendOtp = async (req, res) => {
       message: isMailDisabled()
         ? 'OTP regenerated. Email sending is disabled; use verifyLink or OTP.'
         : 'OTP resent to your email.',
-      verifyLink: isMailDisabled() ? verifyLink : undefined,
-      otp: isMailDisabled() ? otp : undefined,
+      verifyLink: exposeCodes() ? verifyLink : undefined,
+      otp: exposeCodes() ? otp : undefined,
     });
   } catch (err) {
     console.error('RESEND OTP ERROR:', err);
@@ -333,7 +339,7 @@ exports.forgotPassword = async (req, res) => {
 
     return res.json({
       message: genericMessage,
-      otp: isMailDisabled() ? otp : undefined,
+      otp: exposeCodes() ? otp : undefined,
     });
   } catch (err) {
     console.error('FORGOT PASSWORD ERROR:', err);

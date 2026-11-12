@@ -15,7 +15,7 @@
   flex-shrink: 0;
   max-width: 240px;
   padding: 7px 13px;
-  border: 1px solid rgba(248, 68, 100, 0.35);
+  border: 1px solid rgba(var(--brand-rgb), 0.35);
   border-radius: 999px;
   background: var(--c-surface);
   color: var(--c-brand);
@@ -31,4 +31,13 @@
   &:hover {
     background: var(--c-brand-soft);
   }
+}
+
+// The "what kind?" picker offers many choices: wrap them instead of one long hidden scroll.
+.chips.many {
+  flex-wrap: wrap;
+  max-height: 150px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-bottom: 6px;
 }

@@ -32,7 +32,7 @@ export class MovieTemplateComponent {
       name: 'Shravan Gupta',
       rating: '10/10',
       tags: '#SuperDirection #GreatActing #WowMusic',
-      text: 'Bahut hi zabardast movie hai! 🔥 Story aur screenplay ko jis tarah se present kiya gaya hai, woh truly inspiring aur engaging hai. Direction, visuals, music... ekdum mindblowing experience!',
+      text: 'What a fantastic movie! 🔥 The way the story and screenplay are presented is truly inspiring and engaging. Direction, visuals, music... a mind-blowing experience!',
       likes: '7.2K',
       time: '10 Days ago',
       liked: false

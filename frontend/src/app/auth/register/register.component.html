@@ -1,5 +1,7 @@
 <div class="login-box">
-  <h2>Register</h2>
+  <div class="auth-brand"><app-brand-logo></app-brand-logo></div>
+  <h2>Create your account</h2>
+  <p class="auth-sub">Discover movies, shows and live events near you</p>
 
   <ng-container *ngIf="!otpStep">
     <input placeholder="Name" [(ngModel)]="name" />
@@ -15,22 +17,30 @@
     <input type="password" placeholder="Password" [(ngModel)]="password" />
     <small class="hint">
       Password must include:
-      <span [class.ok]="hasUpper()">1 uppercase letter</span>,
-      <span [class.ok]="hasSymbol()">1 symbol</span>,
-      <span [class.ok]="hasTwoNumbers()">2 numbers</span>,
+      <span [class.ok]="hasUpper()">1 uppercase letter</span>
+      <span [class.ok]="hasSymbol()">1 symbol</span>
+      <span [class.ok]="hasTwoNumbers()">2 numbers</span>
       <span [class.ok]="password.length >= 6">min 6 characters</span>
     </small>
     <small class="error" *ngIf="submitted && !validPassword()">
       Please create a stronger password.
     </small>
 
-    <select [(ngModel)]="role">
-      <option value="">Select Role</option>
-      <option value="creator">Creator</option>
-      <option value="user">User</option>
-    </select>
+    <div class="role-label">I want to join as</div>
+    <div class="role-choice" role="radiogroup" aria-label="Account type">
+      <button type="button" class="role-card" role="radio" [attr.aria-checked]="role === 'user'" [class.selected]="role === 'user'" (click)="role = 'user'">
+        <span class="role-icon">🎟️</span>
+        <span class="role-name">User</span>
+        <span class="role-desc">Browse events and book tickets</span>
+      </button>
+      <button type="button" class="role-card" role="radio" [attr.aria-checked]="role === 'creator'" [class.selected]="role === 'creator'" (click)="role = 'creator'">
+        <span class="role-icon">🎪</span>
+        <span class="role-name">Creator</span>
+        <span class="role-desc">Create and manage your own events</span>
+      </button>
+    </div>
     <small class="error" *ngIf="submitted && !role">
-      Please select a role
+      Please choose User or Creator
     </small>
 
     <button (click)="register()" [disabled]="loading">

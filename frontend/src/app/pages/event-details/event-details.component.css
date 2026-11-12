@@ -5,8 +5,7 @@
         background-repeat: no-repeat;
         position: relative;
         background-color: #0f0c29;
-        background-image:
-          radial-gradient(ellipse at 20% 30%, rgba(120, 40, 200, 0.55) 0%, transparent 60%),
+        background-image: radial-gradient(ellipse at 20% 30%, rgba(120, 40, 200, 0.55) 0%, transparent 60%),
           radial-gradient(ellipse at 80% 10%, rgba(220, 60, 100, 0.40) 0%, transparent 55%),
           radial-gradient(ellipse at 50% 90%, rgba(30, 60, 180, 0.45) 0%, transparent 60%),
           linear-gradient(160deg, #0f0c29 0%, #1a1040 50%, #0d1b3e 100%);
@@ -18,7 +17,7 @@
         background: linear-gradient(120deg, rgba(2, 6, 23, 0.92), rgba(15, 23, 42, 0.5));
       }
       .template-editorial .overlay {
-        background: linear-gradient(140deg, rgba(17, 24, 39, 0.85), rgba(2, 6, 23, 0.7));
+        background: linear-gradient(140deg, rgba(13, 10, 7, 0.85), rgba(13, 10, 7, 0.7));
       }
       .overlay {
         position: absolute;
@@ -95,8 +94,7 @@
       .movie-mini-poster {
         min-height: 180px;
         border-radius: 16px;
-        background:
-          linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
           linear-gradient(180deg, rgba(249, 115, 22, 0.18), rgba(15, 23, 42, 0.7));
         background-size: cover;
         background-position: center;
@@ -159,8 +157,8 @@
         cursor: pointer;
       }
       .quick-chip.active {
-        background: rgba(248, 68, 100, 0.18);
-        border-color: rgba(248, 68, 100, 0.4);
+        background: rgba(var(--brand-rgb), 0.18);
+        border-color: rgba(var(--brand-rgb), 0.4);
       }
       .event-page-title {
         margin: 0;
@@ -259,7 +257,7 @@
       }
 
       .kicker.glow {
-        color: #fda4af;
+        color: var(--brand-soft);
         border-color: rgba(253, 164, 175, 0.4);
       }
 
@@ -409,7 +407,7 @@
 
       .card-title {
         margin: 0 0 10px;
-        color: #0b0f17;
+        color: var(--on-brand);
         font-weight: 800;
       }
 
@@ -539,7 +537,7 @@
       .offer-code {
         font-size: 11px;
         font-weight: 800;
-        color: #fda4af;
+        color: var(--brand-soft);
         letter-spacing: 1px;
       }
 
@@ -566,8 +564,8 @@
       }
 
       .claim-btn {
-        background: #f84464;
-        color: #fff;
+        background: var(--brand-primary);
+        color: var(--on-brand);
       }
 
       .clear-offer-btn {
@@ -638,7 +636,7 @@
         gap: 16px;
         padding: 16px;
         border-radius: 20px;
-        background: rgba(17, 24, 39, 0.6);
+        background: rgba(0, 0, 0, 0.6);
         border: 1px solid rgba(250, 204, 21, 0.35);
       }
       .comedy-right {
@@ -834,16 +832,16 @@
   transform: scale(1.08);
 }
 .cal-cell.today {
-  background: rgba(99,102,241,0.25);
+  background: rgba(var(--brand-rgb),0.25);
   color: #a5b4fc;
   font-weight: 700;
-  border: 1px solid rgba(99,102,241,0.45);
+  border: 1px solid rgba(var(--brand-rgb),0.45);
 }
 .cal-cell.selected {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff;
+  background: var(--brand-gradient);
+  color: var(--on-brand);
   font-weight: 700;
-  box-shadow: 0 2px 12px rgba(99,102,241,0.5);
+  box-shadow: 0 2px 12px rgba(var(--brand-rgb),0.5);
   transform: scale(1.10);
 }
 
@@ -873,7 +871,7 @@
   appearance: none;
   text-align: center;
 }
-.cal-time-select:focus { outline: none; border-color: #6366f1; }
+.cal-time-select:focus { outline: none; border-color: var(--brand-primary); }
 .cal-time-select option { background: #1e1b4b; color: #f1f5f9; }
 
 .cal-time-sep {
@@ -884,8 +882,8 @@
 
 .cal-ampm {
   margin-left: 4px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff;
+  background: var(--brand-gradient);
+  color: var(--on-brand);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -900,8 +898,8 @@
 /* ---- Summary pill ---- */
 .cal-selected-summary {
   margin-top: 12px;
-  background: rgba(99,102,241,0.15);
-  border: 1px solid rgba(99,102,241,0.30);
+  background: rgba(var(--brand-rgb),0.15);
+  border: 1px solid rgba(var(--brand-rgb),0.30);
   border-radius: 10px;
   padding: 10px 14px;
   font-size: 13px;
@@ -909,4 +907,86 @@
   color: #c7d2fe;
   text-align: center;
   letter-spacing: 0.02em;
+}
+
+/* Tamasha: the details templates draw their own backdrop; the wrapper is just the page. */
+.event-bg {
+  background: var(--page-bg) !important;
+  min-height: 100vh;
+}
+
+.event-bg .overlay {
+  display: none;
+}
+
+.event-bg .content {
+  display: block;
+  min-height: 0;
+  padding: 0;
+}
+
+.event-bg .details-wrap {
+  max-width: none;
+  color: var(--text-primary);
+}
+
+.event-bg .details-wrap > .msg {
+  max-width: 600px;
+  margin: 40px auto;
+}
+
+/* Friendly load error with a retry */
+.load-error {
+  max-width: 460px;
+  margin: 80px auto;
+  padding: 32px 24px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--card-bg);
+  text-align: center;
+}
+
+.load-error-icon {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+
+.load-error h2 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  color: var(--text-primary);
+}
+
+.load-error p {
+  margin: 0 0 20px;
+  color: var(--text-muted);
+}
+
+.load-error-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+
+.retry-btn {
+  padding: 10px 22px;
+  border: none;
+  border-radius: 12px;
+  background: var(--brand-gradient);
+  color: var(--on-brand);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.home-link {
+  color: var(--brand-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  .load-error {
+    margin: 40px 16px;
+  }
 }

@@ -11,11 +11,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from app.agents.common import first_name, language_instruction, make_reply
 from app.llm import LLMUnavailable, generate
+from app.understanding.fallback import PURE_GREETING
 
 AGENT = "guardrail_agent"
 
 OUT_OF_DOMAIN_RESPONSE = (
-    "I’m your Event AI 🎬 I’m here to assist you with movies, events, bookings, and related questions. "
+    "I’m Tamasha AI 🎬 I’m here to assist you with movies, events, bookings, and related questions. "
     "I’m not able to help with that."
 )
 
@@ -57,7 +58,7 @@ def out_of_domain_reply() -> Dict[str, Any]:
     return make_reply(OUT_OF_DOMAIN_RESPONSE, AGENT, quick_replies=SUGGESTIONS)
 
 
-SMALL_TALK_SYSTEM = """You are "Event AI", the friendly assistant of an event and movie ticket booking platform.
+SMALL_TALK_SYSTEM = """You are "Tamasha AI", the friendly assistant of Tamasha, an event and movie ticket booking platform.
 You help people discover movies and live events, book tickets, check bookings, cancellations, refunds and policies.
 Reply to the user's small talk naturally and briefly (1–2 sentences), matching what they actually said
 (greeting, how are you, thanks, goodbye, what can you do...). Use their first name only if one is provided.
@@ -85,9 +86,16 @@ def _fallback_small_talk(query: str, name: str) -> str:
     return f"Hi{who}! 👋 How can I help you with movies and events today?"
 
 
+GREETING_REPLY = "Hi, I'm Tamasha AI. How can I help you?"
+
+
+
 async def small_talk_reply(
     query: str, user_name: Optional[str], recent: List[Tuple[str, str]], language: Optional[str] = None
 ) -> Dict[str, Any]:
+    # A plain greeting gets the short, fixed welcome.
+    if PURE_GREETING.match(query or ""):
+        return make_reply(GREETING_REPLY, AGENT, quick_replies=SUGGESTIONS)
     name = first_name(user_name)
     convo = "\n".join(f"{role}: {text}" for role, text in recent[-4:])
     prompt = f"User first name: {name or '(not provided)'}\nRecent conversation:\n{convo or '(none)'}\n\nUser says: {query}"

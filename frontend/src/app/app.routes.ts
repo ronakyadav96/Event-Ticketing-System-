@@ -31,13 +31,13 @@ export const routes: Routes = [
   { path: 'forgot-password', component: ForgotPasswordComponent, canActivate: [guestGuard] },
 
   // ---------- USER ----------
-  { path: 'events', component: EventsComponent },
+  // Everything past login requires an account: visitors are sent to /login first.
+  { path: 'events', component: EventsComponent, canActivate: [authGuard] },
   { path: 'book/:eventId', component: BookingPageComponent, canActivate: [authGuard] },
-  { path: 'movies', component: MovieRecommendationsComponent },
-  { path: 'movies/search', component: MovieRecommendationsComponent },
-  { path: 'movies/:movieId', component: MovieDetailsComponent },
-  // Anyone can browse details; booking (/book/:eventId) requires sign-in.
-  { path: 'events/:id', component: EventDetailsComponent },
+  { path: 'movies', component: MovieRecommendationsComponent, canActivate: [authGuard] },
+  { path: 'movies/search', component: MovieRecommendationsComponent, canActivate: [authGuard] },
+  { path: 'movies/:movieId', component: MovieDetailsComponent, canActivate: [authGuard] },
+  { path: 'events/:id', component: EventDetailsComponent, canActivate: [authGuard] },
   { path: 'history', component: BookingHistoryComponent, canActivate: [authGuard] },
   { path: 'gifts', component: PromotionsComponent, canActivate: [authGuard], data: { kind: 'gift' } },
   { path: 'coupons', component: PromotionsComponent, canActivate: [authGuard], data: { kind: 'coupon' } },

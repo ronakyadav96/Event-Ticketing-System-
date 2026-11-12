@@ -50,9 +50,11 @@ router.get('/:id/availability', eventController.getSeatAvailability);
 
 // Stream event image
 // Browser caching (10 min) is set here so images are not re-downloaded on every page visit.
+const IMAGE_TYPES = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif', '.avif': 'image/avif' };
+
 router.get('/:id/image', async (req, res) => {
   try {
-    const ev = await Event.findById(req.params.id);
+    const ev = await Event.findById(req.params.id).select('imageFileId imageUrl').lean();
     if (!ev) return res.status(404).send('Event not found');
 
     // Allow browsers and CDNs to cache event images for 10 minutes
@@ -66,9 +68,9 @@ router.get('/:id/image', async (req, res) => {
       try {
         const files = await gfsBucket.find({ _id: fileId }).toArray();
         const file = files?.[0];
-        if (file?.contentType) {
-          res.set('Content-Type', file.contentType);
-        }
+        // mongodb driver 7 keeps the type in metadata; older files only have a filename extension.
+        const type = file?.contentType || file?.metadata?.contentType || IMAGE_TYPES[path.extname(file?.filename || '').toLowerCase()];
+        if (type) res.set('Content-Type', type);
       } catch {}
 
       const stream = gfsBucket.openDownloadStream(fileId);

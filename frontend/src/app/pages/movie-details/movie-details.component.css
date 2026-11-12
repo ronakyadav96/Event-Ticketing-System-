@@ -1,7 +1,7 @@
 /* ================= MOVIE DETAILS PAGE (BookMyShow Style) ================= */
 .movie-detail-wrapper {
-  background: #ffffff;
-  color: #222222;
+  background: var(--card-bg);
+  color: var(--text-primary);
   min-height: 100vh;
 }
 
@@ -10,8 +10,8 @@
   position: sticky;
   top: 106px;
   z-index: 90;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e5e8;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-subtle);
   padding: 12px 0;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
@@ -28,25 +28,25 @@
 .sticky-title {
   font-size: 22px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .book-tickets-btn {
-  background: #f84464;
-  color: #ffffff;
+  background: var(--brand-primary);
+  color: var(--on-brand);
   padding: 10px 32px;
   border-radius: 8px;
   font-size: 15px;
   font-weight: 700;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(248, 68, 100, 0.35);
+  box-shadow: 0 4px 12px rgba(var(--brand-rgb), 0.35);
   transition: all 0.2s ease;
 }
 
 .book-tickets-btn:hover {
-  background: #e11d48;
+  background: var(--brand-primary-hover);
   transform: translateY(-1px);
 }
 
@@ -84,7 +84,7 @@
   overflow: hidden;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
   flex-shrink: 0;
-  background: #1e293b;
+  background: var(--surface-inverse);
 }
 
 .hero-poster-shell img {
@@ -127,7 +127,7 @@
 }
 
 .star-icon {
-  color: #f84464;
+  color: var(--brand-primary);
   font-size: 18px;
 }
 
@@ -165,20 +165,20 @@
 }
 
 .hero-book-btn {
-  background: #f84464;
-  color: #ffffff;
+  background: var(--brand-primary);
+  color: var(--on-brand);
   padding: 14px 44px;
   border-radius: 8px;
   font-size: 16px;
   font-weight: 700;
   border: none;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(248, 68, 100, 0.45);
+  box-shadow: 0 6px 20px rgba(var(--brand-rgb), 0.45);
   transition: all 0.2s ease;
 }
 
 .hero-book-btn:hover {
-  background: #e11d48;
+  background: var(--brand-primary-hover);
   transform: translateY(-2px);
 }
 
@@ -192,7 +192,7 @@
 .body-section-title {
   font-size: 22px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
   margin: 0 0 14px;
 }
 
@@ -203,7 +203,7 @@
 .movie-overview-text {
   font-size: 15px;
   line-height: 1.7;
-  color: #555555;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -219,8 +219,8 @@
 }
 
 .show-event-card {
-  background: #fafafc;
-  border: 1px solid #e5e5e8;
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   padding: 16px;
   display: flex;
@@ -231,35 +231,35 @@
 }
 
 .show-event-card:hover {
-  border-color: #f84464;
-  background: #ffffff;
+  border-color: var(--brand-primary);
+  background: var(--card-bg);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
 }
 
 .show-hall-name {
   font-size: 16px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
   margin: 0 0 4px;
 }
 
 .show-venue, .show-timing {
   font-size: 12.5px;
-  color: #666666;
+  color: var(--text-secondary);
 }
 
 .show-price {
   font-size: 18px;
   font-weight: 800;
-  color: #f84464;
+  color: var(--brand-primary);
   display: block;
   text-align: right;
   margin-bottom: 6px;
 }
 
 .select-show-btn {
-  background: #f84464;
-  color: #ffffff;
+  background: var(--brand-primary);
+  color: var(--on-brand);
   border: none;
   border-radius: 6px;
   padding: 6px 14px;
@@ -283,17 +283,17 @@
 .reviews-main-title {
   font-size: 24px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
   margin: 0 0 4px;
 }
 
 .reviews-sub-note {
   font-size: 13px;
-  color: #777777;
+  color: var(--text-muted);
 }
 
 .all-reviews-link {
-  color: #f84464;
+  color: var(--brand-primary);
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
@@ -316,32 +316,32 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid #e2e2e6;
+  border: 1px solid var(--border-subtle);
   border-radius: 20px;
   padding: 6px 14px;
-  background: #ffffff;
+  background: var(--card-bg);
   white-space: nowrap;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .hashtag-pill:hover {
-  border-color: #f84464;
+  border-color: var(--brand-primary);
 }
 
 .tag-name {
-  color: #f84464;
+  color: var(--brand-primary);
   font-weight: 600;
   font-size: 13px;
 }
 
 .tag-counter {
-  background: #f0f0f4;
+  background: var(--surface-alt);
   border-radius: 12px;
   padding: 2px 8px;
   font-size: 11px;
   font-weight: 700;
-  color: #555555;
+  color: var(--text-secondary);
 }
 
 .reviews-cards-scroll {
@@ -359,10 +359,10 @@
 .review-bms-card {
   flex: 0 0 340px;
   max-width: 340px;
-  border: 1px solid #e5e5e8;
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
   padding: 18px;
-  background: #ffffff;
+  background: var(--card-bg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
@@ -385,7 +385,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #f0f0f4;
+  background: var(--surface-alt);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -395,17 +395,17 @@
 .user-name {
   font-size: 14px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
   display: block;
 }
 
 .verified-tag {
   font-size: 11px;
-  color: #888888;
+  color: var(--text-muted);
 }
 
 .brand-sub {
-  color: #f84464;
+  color: var(--brand-primary);
   font-weight: 700;
 }
 
@@ -415,20 +415,20 @@
   gap: 4px;
   font-size: 14px;
   font-weight: 700;
-  color: #f84464;
+  color: var(--brand-primary);
 }
 
 .review-tags-line {
   font-size: 13px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .review-text-content {
   font-size: 13.5px;
   line-height: 1.6;
-  color: #444444;
+  color: var(--text-secondary);
   margin: 0 0 16px;
   flex: 1;
 }
@@ -438,7 +438,7 @@
   align-items: center;
   justify-content: space-between;
   padding-top: 12px;
-  border-top: 1px solid #f0f0f4;
+  border-top: 1px solid var(--border-light);
 }
 
 .reactions-group {
@@ -450,7 +450,7 @@
 .thumb-btn {
   background: transparent;
   border: none;
-  color: #666666;
+  color: var(--text-secondary);
   font-size: 12.5px;
   font-weight: 600;
   display: inline-flex;
@@ -461,7 +461,7 @@
 }
 
 .thumb-btn.active {
-  color: #f84464;
+  color: var(--brand-primary);
 }
 
 .time-share-group {
@@ -472,7 +472,7 @@
 
 .review-time {
   font-size: 12px;
-  color: #888888;
+  color: var(--text-muted);
 }
 
 .share-btn {
@@ -515,7 +515,7 @@
   aspect-ratio: 2 / 3;
   border-radius: 8px;
   overflow: hidden;
-  background: #e2e8f0;
+  background: var(--surface-sunken);
 }
 
 .reco-poster-box img {
@@ -531,13 +531,13 @@
   align-items: center;
   justify-content: center;
   font-size: 32px;
-  background: #1e293b;
+  background: var(--surface-inverse);
 }
 
 .reco-title {
   font-size: 14px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
   margin: 8px 0 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -546,7 +546,7 @@
 
 .reco-year {
   font-size: 12px;
-  color: #888888;
+  color: var(--text-muted);
 }
 
 /* Responsive */

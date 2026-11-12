@@ -1,33 +1,10 @@
+@import './themes.css';
+
+/* Theme-independent tokens. Colors, fonts, radii and shadows live in themes.css. */
 :root {
-  /* BookMyShow / Premium Ticketing Brand Palette */
-  --brand-primary: #f84464;
-  --brand-primary-hover: #e11d48;
-  --brand-primary-light: rgba(248, 68, 100, 0.1);
-  --brand-primary-glow: rgba(248, 68, 100, 0.25);
-
-  /* Page Canvas & Surfaces */
-  --app-bg: #f5f5f7;
-  --page-bg: #f5f5f7;
-  --card-bg: #ffffff;
-  --surface-white: #ffffff;
-  --surface-alt: #f9fafb;
-
-  /* Premiere / Streaming Section (Dark Theme) */
-  --stream-dark: #2b3148;
-  --stream-dark-deep: #1e2334;
-  --stream-card-bg: #1a2238;
+  --brand-primary-light: rgba(var(--brand-rgb), 0.1);
+  --brand-primary-glow: rgba(var(--brand-rgb), 0.25);
   --stream-text-muted: rgba(255, 255, 255, 0.72);
-
-  /* Typography */
-  --text-primary: #222222;
-  --text-secondary: #555555;
-  --text-muted: #888888;
-  --text-inverse: #ffffff;
-
-  /* Borders & Dividers */
-  --border-subtle: #e5e5e5;
-  --border-light: #f0f0f0;
-  --border-focus: #f84464;
 
   /* Status Colors */
   --showtime-available: #10b981;
@@ -41,17 +18,6 @@
   --app-nav-height: 64px;
   --app-subnav-height: 44px;
 
-  /* Elevations */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.12);
-  --shadow-card-hover: 0 12px 28px rgba(0, 0, 0, 0.12);
-
-  /* Border Radii */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
   --radius-full: 9999px;
 }
 
@@ -67,7 +33,7 @@ body {
   margin: 0;
   background: var(--page-bg);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-family: var(--font-body), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -113,7 +79,7 @@ button {
   padding: 10px 24px;
   border-radius: var(--radius-sm);
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(248, 68, 100, 0.3);
+  box-shadow: 0 2px 8px rgba(var(--brand-rgb), 0.3);
   text-decoration: none;
   cursor: pointer;
 }
@@ -121,7 +87,7 @@ button {
 .btn-primary-bms:hover {
   background: var(--brand-primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(248, 68, 100, 0.4);
+  box-shadow: 0 4px 14px rgba(var(--brand-rgb), 0.4);
   color: #ffffff;
 }
 
@@ -206,7 +172,7 @@ button {
 }
 
 .bms-badge.cert {
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(var(--ink-rgb), 0.08);
   color: var(--text-secondary);
   border: 1px solid var(--border-subtle);
 }
@@ -248,7 +214,7 @@ button {
 }
 
 .shimmer {
-  background: linear-gradient(90deg, #f0f0f2 25%, #e6e6ea 37%, #f0f0f2 63%);
+  background: linear-gradient(90deg, var(--surface-alt) 25%, var(--surface-sunken) 37%, var(--surface-alt) 63%);
   background-size: 400% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: var(--radius-sm);
@@ -259,7 +225,7 @@ button {
   display: flex;
   overflow-x: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  scrollbar-color: rgba(var(--ink-rgb), 0.2) transparent;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
@@ -269,7 +235,7 @@ button {
 }
 
 .custom-horizontal-scroll::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(var(--ink-rgb), 0.2);
   border-radius: 10px;
 }
 

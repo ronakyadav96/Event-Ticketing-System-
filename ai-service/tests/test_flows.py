@@ -18,17 +18,23 @@ def search(**kw):
 async def test_out_of_domain_gets_fixed_response(graph, fake_node, model):
     model.on("what is the capital of france", intent="OUT_OF_DOMAIN")
     out = await Chat(graph).say("what is the capital of france")
-    assert out["reply"]["text"].startswith("I’m your Event AI 🎬")
+    assert out["reply"]["text"].startswith("I’m Tamasha AI 🎬")
     assert out["reply"]["events"] == []
 
 
 async def test_small_talk_is_contextual_not_one_canned_reply(graph, fake_node, model):
-    model.on("good morning", intent="SMALL_TALK")
+    model.on("thanks a lot!", intent="SMALL_TALK")
     model.on("how are you?", intent="SMALL_TALK")
     chat = Chat(graph)
-    a = (await chat.say("good morning"))["reply"]["text"]
+    a = (await chat.say("thanks a lot!"))["reply"]["text"]
     b = (await chat.say("how are you?"))["reply"]["text"]
     assert a != b and "Asha" in a
+
+
+async def test_plain_greeting_gets_short_fixed_welcome_without_the_model(graph, fake_node, model):
+    out = await Chat(graph).say("hi")
+    assert out["reply"]["text"] == "Hi, I'm Tamasha AI. How can I help you?"
+    assert model.contexts == []
 
 
 async def test_prompt_injection_never_reaches_classifier(graph, fake_node, model):
@@ -301,9 +307,13 @@ async def test_repeated_more_pages_through_all_matches_without_repeats(graph, fa
     model.on("more", **search(action="MORE"))
     model.on("another one", **search(category="Comedy", action="MORE"))  # model repeating filters
     shown = []
-    for msg in ["comedy", "more", "another one"]:
+    # "another" twice in a row offers a choice of kinds; asking again after that keeps paging.
+    for msg in ["comedy", "more", "another one", "more"]:
         out = await chat.say(msg)
         ids = [e["id"] for e in out["reply"]["events"]]
+        if msg == "another one":
+            assert ids == [] and "Show me more" in out["reply"]["quick_replies"]
+            continue
         assert ids and not set(ids) & set(shown)
         shown += ids
     comedy_total = sum(1 for e in fake_node.events.values() if e["category"] == "Comedy")
@@ -314,6 +324,27 @@ async def test_repeated_more_pages_through_all_matches_without_repeats(graph, fa
     model.on("details of the very first", intent="EVENT_DETAILS", event_id=shown[0])
     out = await chat.say("details of the very first")
     assert out["search"]["focus"] == shown[0]
+
+
+async def test_second_another_in_a_row_offers_categories_and_genres(graph, fake_node, model):
+    chat = Chat(graph)
+    model.on("show me comedy", **search(category="Comedy"))
+    model.on("show me another", **search(action="MORE"))
+    await chat.say("show me comedy")
+    first_more = await chat.say("show me another")
+    assert first_more["reply"]["events"]
+    picker = await chat.say("show me another")
+    reply = picker["reply"]
+    assert reply["events"] == [] and "what kind" in reply["text"].lower()
+    assert "Show me Concert" in reply["quick_replies"] and "Show me Comedy" in reply["quick_replies"]
+    assert not any(q == "Show me Movie" for q in reply["quick_replies"])
+
+
+async def test_genre_quick_reply_searches_movies_of_that_genre_without_the_model(graph, fake_node, model):
+    fake_node.events["e_scifi1"]["description"] = "An action packed science fiction epic"
+    out = await Chat(graph).say("Show me Action movies")
+    assert model.contexts == []
+    assert [e["id"] for e in out["reply"]["events"]] == ["e_scifi1"]
 
 
 async def test_new_criteria_start_a_fresh_search(graph, fake_node, model):
@@ -495,7 +526,7 @@ async def test_out_of_domain_rewrite_skips_the_tracker(graph, fake_node, model):
     tracked = len(model.contexts)
     model.rewrite("python me loop kaise likhte hai", "How do I write a loop in Python?", scope="out_of_domain", language="hinglish")
     out = await chat.say("python me loop kaise likhte hai")
-    assert out["reply"]["text"].startswith("I’m your Event AI 🎬")
+    assert out["reply"]["text"].startswith("I’m Tamasha AI 🎬")
     assert len(model.contexts) == tracked
 
 

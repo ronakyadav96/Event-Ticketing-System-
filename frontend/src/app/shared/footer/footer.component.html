@@ -65,11 +65,10 @@
   <div class="bottom-bar">
     <div class="footer-inner bottom-inner">
       <div class="brand-line">
-        <span class="brand-icon">🎟️</span>
-        <span class="brand-text">Ticket<span class="brand-red">Pulse</span></span>
+        <app-brand-logo [compact]="true" [showTagline]="false"></app-brand-logo>
       </div>
       <div class="copy-text">
-        Copyright &copy; {{ year }} TicketPulse Entertainment Pvt. Ltd. All Rights Reserved.
+        Copyright &copy; {{ year }} {{ brand.name }} Entertainment Pvt. Ltd. All Rights Reserved.
       </div>
     </div>
   </div>

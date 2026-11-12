@@ -1,4 +1,4 @@
-# Event AI Service
+# Tamasha AI Service
 
 Conversational layer for the event/movie ticketing platform. It understands requests and
 orchestrates the conversation; the Node/Express backend remains the only authority for

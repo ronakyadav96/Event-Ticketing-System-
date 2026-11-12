@@ -13,11 +13,8 @@ import { AuthService } from '../../auth/auth.service';
 import { PromotionRecord, PromotionService } from '../../services/promotion.service';
 import { MovieService } from '../../services/movie.service';
 import { MovieRecommendationItem } from '../../models/movie.model';
+import { TamashaTemplateComponent } from '../../templates/tamasha-template/tamasha-template.component';
 import { MovieTemplateComponent } from '../../templates/movie-template/movie-template.component';
-import { ConcertTemplateComponent } from '../../templates/concert-template/concert-template.component';
-import { ComedyTemplateComponent } from '../../templates/comedy-template/comedy-template.component';
-import { SportsTemplateComponent } from '../../templates/sports-template/sports-template.component';
-import { EventTemplateComponent } from '../../templates/event-template/event-template.component';
 import { SeatPickerComponent } from '../../shared/seat-picker/seat-picker.component';
 
 @Component({
@@ -28,10 +25,7 @@ import { SeatPickerComponent } from '../../shared/seat-picker/seat-picker.compon
     RouterModule,
     FormsModule,
     MovieTemplateComponent,
-    ConcertTemplateComponent,
-    ComedyTemplateComponent,
-    SportsTemplateComponent,
-    EventTemplateComponent,
+    TamashaTemplateComponent,
   ],
   templateUrl: './event-details.component.html',
   styleUrls: ['./event-details.component.css'],

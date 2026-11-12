@@ -93,6 +93,7 @@ def empty_search() -> Dict[str, Any]:
         "last_results": [],  # ids of the most recent result list, in display order
         "catalog": {},       # id -> event summary for every event shown in this conversation
         "focus": None,       # id of the event the user explicitly asked about (details)
+        "more_streak": 0,    # consecutive "another" requests; the second one offers a choice of kinds
     }
 
 

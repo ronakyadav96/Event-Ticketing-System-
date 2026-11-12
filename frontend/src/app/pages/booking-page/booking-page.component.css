@@ -1,15 +1,15 @@
 /* ================= BOOKING PAGE (BookMyShow Style) ================= */
 .booking-page-wrap {
   min-height: calc(100vh - 108px);
-  background: var(--page-bg, #f5f5f7);
-  color: #222222;
+  background: var(--page-bg, var(--surface-alt));
+  color: var(--text-primary);
   padding-bottom: 60px;
 }
 
 /* Stepper Header Bar */
 .stepper-header {
-  background: #ffffff;
-  border-bottom: 1px solid #e5e5e8;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-subtle);
   padding: 14px 20px;
   position: sticky;
   top: 106px;
@@ -29,7 +29,7 @@
 .back-link {
   background: transparent;
   border: none;
-  color: #555555;
+  color: var(--text-secondary);
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
@@ -40,19 +40,19 @@
 }
 
 .back-link:hover {
-  color: #f84464;
+  color: var(--brand-primary);
 }
 
 .stepper-title-block h2 {
   margin: 0;
   font-size: 17px;
   font-weight: 800;
-  color: #222222;
+  color: var(--text-primary);
 }
 
 .stepper-sub {
   font-size: 12px;
-  color: #777777;
+  color: var(--text-muted);
 }
 
 .stepper-steps {
@@ -78,20 +78,20 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: #f0f0f4;
-  border: 1px solid #e0e0e4;
+  background: var(--surface-alt);
+  border: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
   font-weight: 700;
-  color: #555555;
+  color: var(--text-secondary);
 }
 
 .step-item.active .step-num {
-  background: #f84464;
-  border-color: #f84464;
-  color: #ffffff;
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: var(--on-brand);
 }
 
 .step-item.completed .step-num {
@@ -103,13 +103,13 @@
 .step-label {
   font-size: 13px;
   font-weight: 600;
-  color: #333333;
+  color: var(--text-primary);
 }
 
 .step-sep {
   width: 18px;
   height: 1px;
-  background: #d4d4d8;
+  background: var(--border-strong);
 }
 
 /* Layout */
@@ -131,8 +131,8 @@
 }
 
 .step-panel {
-  background: #ffffff;
-  border: 1px solid #e5e5e8;
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
   padding: 28px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -145,13 +145,13 @@
 .panel-head h3 {
   font-size: 20px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
   margin: 0 0 6px;
 }
 
 .panel-head p {
   font-size: 13.5px;
-  color: #666666;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -162,7 +162,7 @@
   gap: 14px;
   margin-top: 28px;
   padding-top: 20px;
-  border-top: 1px solid #f0f0f4;
+  border-top: 1px solid var(--border-light);
 }
 
 /* F&B Grid */
@@ -173,19 +173,19 @@
 }
 
 .fnb-card {
-  border: 1px solid #e2e2e6;
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   padding: 16px;
   display: flex;
   align-items: center;
   gap: 14px;
-  background: #fafafc;
+  background: var(--card-bg);
   transition: all 0.15s ease;
 }
 
 .fnb-card:hover {
-  border-color: #f84464;
-  background: #ffffff;
+  border-color: var(--brand-primary);
+  background: var(--card-bg);
 }
 
 .fnb-icon-box {
@@ -195,9 +195,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
+  background: var(--card-bg);
   border-radius: 8px;
-  border: 1px solid #ececee;
+  border: 1px solid var(--border-light);
 }
 
 .fnb-info {
@@ -207,22 +207,22 @@
 .fnb-name {
   font-size: 13.5px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
   margin-bottom: 2px;
 }
 
 .fnb-price {
   font-size: 14px;
   font-weight: 800;
-  color: #f84464;
+  color: var(--brand-primary);
 }
 
 .fnb-qty-controls {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #ffffff;
-  border: 1px solid #e0e0e4;
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: 3px 8px;
 }
@@ -232,7 +232,7 @@
   border: none;
   font-size: 16px;
   font-weight: 800;
-  color: #f84464;
+  color: var(--brand-primary);
   cursor: pointer;
   width: 20px;
   height: 20px;
@@ -244,7 +244,7 @@
 .qty-val {
   font-size: 13px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
   min-width: 14px;
   text-align: center;
 }
@@ -259,7 +259,7 @@
 .form-group label {
   font-size: 13px;
   font-weight: 700;
-  color: #333333;
+  color: var(--text-primary);
   margin-bottom: 6px;
   display: block;
 }
@@ -268,24 +268,24 @@
   width: 100%;
   padding: 12px 16px;
   border-radius: 8px;
-  border: 1px solid #e0e0e4;
-  background: #fbfbfc;
+  border: 1px solid var(--border-subtle);
+  background: var(--card-bg);
   font-size: 14px;
-  color: #222222;
+  color: var(--text-primary);
   outline: none;
   transition: all 0.2s;
 }
 
 .form-control-bms:focus {
-  background: #ffffff;
-  border-color: #f84464;
-  box-shadow: 0 0 0 3px rgba(248, 68, 100, 0.12);
+  background: var(--card-bg);
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(var(--brand-rgb), 0.12);
 }
 
 .offer-box {
   margin-top: 10px;
-  background: #fafafc;
-  border: 1px solid #e5e5e8;
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   padding: 16px;
 }
@@ -293,7 +293,7 @@
 .offer-heading {
   font-size: 13.5px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
   margin-bottom: 12px;
 }
 
@@ -308,8 +308,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: #ffffff;
-  border: 1px solid #e5e5e8;
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
 }
 
@@ -320,8 +320,8 @@
 }
 
 .offer-card-item.selected {
-  border-color: #f84464;
-  background: rgba(248, 68, 100, 0.05);
+  border-color: var(--brand-primary);
+  background: rgba(var(--brand-rgb), 0.05);
 }
 
 .offer-meta {
@@ -333,16 +333,16 @@
 .offer-code-tag {
   font-size: 12px;
   font-weight: 800;
-  color: #f84464;
+  color: var(--brand-primary);
 }
 
 .offer-title {
   font-size: 12px;
-  color: #666666;
+  color: var(--text-secondary);
 }
 
 .claim-promo-btn {
-  background: #222222;
+  background: var(--surface-inverse);
   color: #ffffff;
   border: none;
   border-radius: 4px;
@@ -359,9 +359,9 @@
 
 .msg-box {
   padding: 12px;
-  background: #fef2f2;
-  border: 1px solid #fca5a5;
-  color: #b91c1c;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: var(--danger-fg);
   border-radius: 8px;
   font-size: 13px;
 }
@@ -373,8 +373,8 @@
 }
 
 .summary-card-bms {
-  background: #ffffff;
-  border: 1px solid #e5e5e8;
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
@@ -383,7 +383,7 @@
 .summary-heading {
   font-size: 18px;
   font-weight: 800;
-  color: #222222;
+  color: var(--text-primary);
   margin: 0 0 16px;
 }
 
@@ -394,19 +394,19 @@
 .sm-title {
   font-size: 16px;
   font-weight: 800;
-  color: #222222;
+  color: var(--text-primary);
   margin: 0 0 4px;
 }
 
 .sm-venue, .sm-date {
   font-size: 12.5px;
-  color: #666666;
+  color: var(--text-secondary);
   margin-bottom: 2px;
 }
 
 .summary-divider {
   height: 1px;
-  background: #f0f0f4;
+  background: var(--surface-alt);
   margin: 16px 0;
 }
 
@@ -415,7 +415,7 @@
   align-items: center;
   justify-content: space-between;
   font-size: 13.5px;
-  color: #555555;
+  color: var(--text-secondary);
   margin-bottom: 10px;
 }
 
@@ -440,43 +440,43 @@
   margin-top: 14px;
   font-size: 15px;
   font-weight: 700;
-  color: #222222;
+  color: var(--text-primary);
 }
 
 .total-price-val {
   font-size: 24px;
   font-weight: 900;
-  color: #f84464;
+  color: var(--brand-primary);
 }
 
 .summary-continue-btn {
   width: 100%;
   margin-top: 20px;
   padding: 12px 20px;
-  background: #f84464;
-  color: #ffffff;
+  background: var(--brand-primary);
+  color: var(--on-brand);
   border: none;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(248, 68, 100, 0.35);
+  box-shadow: 0 4px 10px rgba(var(--brand-rgb), 0.35);
   transition: all 0.2s ease;
 }
 
 .summary-continue-btn:hover {
-  background: #e11d48;
+  background: var(--brand-primary-hover);
 }
 
 .state-box {
   max-width: 1240px;
   margin: 40px auto;
   padding: 24px;
-  background: #ffffff;
-  border: 1px solid #e5e5e8;
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
   text-align: center;
-  color: #555555;
+  color: var(--text-secondary);
 }
 
 .state-box.error {

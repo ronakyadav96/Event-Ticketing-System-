@@ -2,7 +2,7 @@
   max-width: 1240px;
   margin: 0 auto;
   padding: 20px 20px 44px;
-  color: #111827;
+  color: var(--text-primary);
   background: transparent;
   min-height: calc(100vh - var(--app-nav-height, 60px));
 }
@@ -18,13 +18,13 @@
 .history-head h2 {
   margin: 0;
   font-size: 24px;
-  color: #111827;
+  color: var(--text-primary);
   font-weight: 700;
 }
 
 .sub {
   margin: 6px 0 0;
-  color: rgba(17, 24, 39, 0.68);
+  color: rgba(var(--ink-rgb), 0.68);
   font-size: 13px;
   font-weight: 600;
 }
@@ -35,8 +35,8 @@
 }
 
 .ticket-card {
-  background: #ffffff;
-  border: 1px solid rgba(17, 24, 39, 0.12);
+  background: var(--card-bg);
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
   border-radius: 16px;
   padding: 16px;
   display: grid;
@@ -49,7 +49,7 @@
 .title {
   font-size: 16px;
   font-weight: 800;
-  color: #111827;
+  color: var(--text-primary);
 }
 
 .meta {
@@ -57,7 +57,7 @@
   gap: 6px;
   margin-top: 8px;
   font-size: 13px;
-  color: rgba(17, 24, 39, 0.72);
+  color: rgba(var(--ink-rgb), 0.72);
 }
 
 .meta span {
@@ -67,7 +67,7 @@
 .ticket-id {
   margin-top: 8px;
   font-size: 13px;
-  color: rgba(17, 24, 39, 0.80);
+  color: rgba(var(--ink-rgb), 0.80);
   font-weight: 700;
 }
 
@@ -76,14 +76,14 @@
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px dashed rgba(148,163,184,0.35);
-  background: rgba(17, 24, 39, 0.02);
+  background: rgba(var(--ink-rgb), 0.02);
   display: grid;
   gap: 6px;
 }
 
 .reg-title {
   font-size: 12px;
-  color: rgba(17, 24, 39, 0.72);
+  color: rgba(var(--ink-rgb), 0.72);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -91,14 +91,14 @@
 
 .reg-item {
   font-size: 12px;
-  color: rgba(17, 24, 39, 0.80);
+  color: rgba(var(--ink-rgb), 0.80);
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
 }
 
 .reg-label {
-  color: rgba(17, 24, 39, 0.60);
+  color: rgba(var(--ink-rgb), 0.60);
   font-weight: 700;
 }
 
@@ -109,11 +109,11 @@
 }
 
 .card {
-  background: rgba(17, 24, 39, 0.02);
-  border: 1px solid rgba(17, 24, 39, 0.10);
+  background: rgba(var(--ink-rgb), 0.02);
+  border: 1px solid rgba(var(--ink-rgb), 0.10);
   border-radius: 12px;
   padding: 16px;
-  color: rgba(17, 24, 39, 0.78);
+  color: rgba(var(--ink-rgb), 0.78);
 }
 
 .card.error {
@@ -129,18 +129,18 @@
 
 .btn {
   padding: 8px 12px;
-  border: 1px solid rgba(17, 24, 39, 0.12);
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
   border-radius: 10px;
-  background: #ffffff;
-  color: rgba(17, 24, 39, 0.82);
+  background: var(--card-bg);
+  color: rgba(var(--ink-rgb), 0.82);
   cursor: pointer;
   text-decoration: none;
 }
 
 .btn.ghost {
-  background: rgba(17, 24, 39, 0.03);
-  border: 1px solid rgba(17, 24, 39, 0.12);
-  color: rgba(17, 24, 39, 0.80);
+  background: rgba(var(--ink-rgb), 0.03);
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
+  color: rgba(var(--ink-rgb), 0.80);
 }
 
 .btn.small {
@@ -149,9 +149,9 @@
 }
 
 .btn.danger {
-  color: #b91c1c;
-  border-color: rgba(185, 28, 28, 0.35);
-  background: rgba(185, 28, 28, 0.04);
+  color: var(--danger-fg);
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
 }
 
 .btn:disabled {
@@ -166,8 +166,8 @@
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
-  color: #92400e;
-  background: #fef3c7;
+  color: var(--warn-fg);
+  background: var(--warn-bg);
 }
 
 .cancel-row {
@@ -180,7 +180,7 @@
 
 .cancel-msg {
   font-size: 13px;
-  color: rgba(17, 24, 39, 0.75);
+  color: rgba(var(--ink-rgb), 0.75);
 }
 
 .infinite-sentinel {

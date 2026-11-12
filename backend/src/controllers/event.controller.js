@@ -167,6 +167,7 @@ async function uploadBufferToGridFS(file) {
   return await new Promise((resolve, reject) => {
     const uploadStream = bucket.openUploadStream(filename, {
       contentType: file.mimetype,
+      metadata: { contentType: file.mimetype },
     });
 
     uploadStream.on('error', reject);
