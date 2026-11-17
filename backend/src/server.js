@@ -93,6 +93,12 @@ app.use('/api', (req, res, next) => {
   // page loads instant, and stale-while-revalidate keeps them fast while refreshing.
   if (req.method === 'GET' && PUBLIC_CATALOG.test(req.path)) {
     res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=120, stale-while-revalidate=600');
+    // Errors (e.g. 503 while the database reconnects) must never be cached.
+    const writeHead = res.writeHead;
+    res.writeHead = function (statusCode, ...rest) {
+      if (statusCode >= 400) res.setHeader('Cache-Control', 'no-store');
+      return writeHead.call(this, statusCode, ...rest);
+    };
     return next();
   }
 
