@@ -192,6 +192,11 @@
   <app-footer *ngIf="!isLoginPage && !isRegisterPage"></app-footer>
 
   <!-- AI CHATBOT WIDGET -->
-  <app-chat-widget *ngIf="chatEnabled && !isLoginPage && !isRegisterPage"></app-chat-widget>
+  <!-- Loaded once the page is idle, so it never delays the first render. -->
+  @if (chatEnabled && !isLoginPage && !isRegisterPage) {
+    @defer (on idle) {
+      <app-chat-widget></app-chat-widget>
+    }
+  }
 
 </div>

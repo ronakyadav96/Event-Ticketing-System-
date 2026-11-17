@@ -35,13 +35,30 @@ def search_spec(action: str = "NEW", **filters: Any) -> Dict[str, Any]:
 
 _BOOK_PHRASE = re.compile(r"^\s*(?:book|reserve)\s+(?:tickets?\s+(?:for|to)\s+)?(.+?)\s*[.!]?\s*$", re.I)
 _DETAILS_PHRASE = re.compile(r"^\s*(?:tell\s+me\s+(?:more\s+)?about|details\s+(?:of|for|about)|more\s+about)\s+(.+?)\s*[.?!]?\s*$", re.I)
-_SHOW_MORE = re.compile(r"^\s*(?:show\s+(?:me\s+)?)?more(?:\s+(?:results|options|events|movies))?\s*[.!]?\s*$", re.I)
+_SHOW_MORE = re.compile(
+    r"^\s*(?:(?:show\s+(?:me\s+)?)?more(?:\s+(?:results|options|events|movies|shows))?(?:\s+please)?|next|next\s+page|"
+    r"(?:kuch\s+)?aur(?:\s+(?:dikhao|dikha\s+do|dikhaiye|batao|bataiye|chahiye))?(?:\s+(?:bhai|yaar|please|na))?)\s*[.!]?\s*$",
+    re.I,
+)
 _SHOW_CATEGORY = re.compile(r"^\s*show\s+me\s+(.+?)\s*[.!]?\s*$", re.I)
 _GENRE_MOVIES = re.compile(r"^(.+?)\s+movies?$", re.I)
 # A greeting with nothing else in it; answered with the fixed short welcome.
 PURE_GREETING = re.compile(
     r"^\s*(hi+|hii+|hello+|hey+|hola|namaste|namaskar|good\s+(morning|afternoon|evening)|yo|sup)"
     r"(\s+(there|tamasha|tamasha\s+ai|bot|bhai|buddy))?\s*[!.👋🙏]*\s*$",
+    re.I,
+)
+
+
+# Everyday small talk with one obvious answer; answered with a fixed reply, no model call.
+COMMON_SMALL_TALK = re.compile(
+    r"^\s*(?:(?:hi|hey|hello)\s+)?("
+    r"thanks?(\s+(a\s+lot|so\s+much|you))?|thank\s+you(\s+so\s+much)?|thx|ty|shukriya|dhanyavaa?d|"
+    r"bye|goodbye|good\s+bye|see\s+you|alvida|ok\s+bye|"
+    r"how\s+are\s+you|how\s+r\s+u|kaise\s+ho|kaisa\s+hai|kya\s+haal\s+hai|"
+    r"who\s+are\s+you|what\s+are\s+you|tum\s+kaun\s+ho|aap\s+kaun\s+ho|"
+    r"what\s+can\s+you\s+do|how\s+can\s+you\s+help(\s+me)?|tum\s+kya\s+kar\s+sakte\s+ho|aap\s+kya\s+kar\s+sakte\s+ho"
+    r")(\s+(bhai|yaar|buddy|tamasha|bot))?\s*[!.?😊🙏👍]*\s*$",
     re.I,
 )
 
@@ -104,7 +121,7 @@ def fast_classify(query: str, state: Dict[str, Any], facets: Dict[str, Any]) -> 
         event_id = _known_by_title(state, m.group(1))
         if event_id:
             return result(Intent.EVENT_DETAILS, event_id=event_id)
-    if PURE_GREETING.match(query):
+    if PURE_GREETING.match(query) or COMMON_SMALL_TALK.match(query):
         return result(Intent.SMALL_TALK)
     if _SHOW_MORE.match(query) and idle and _has_search(state):
         return result(Intent.EVENT_SEARCH, search=search_spec("MORE"))
@@ -142,7 +159,7 @@ _GENRES = (
 )
 # Sentences that are conversation, not a name: never treated as a title search in degraded mode.
 _CHATTY = re.compile(r"\b(tell|story|joke|why|how|who|explain|write|meaning|weather|news|poem|recipe|kahani|kyun|kaise)\b", re.I)
-_FILLER = {
+FILLER_WORDS = {
     # English
     "a", "an", "the", "me", "my", "i", "want", "wanna", "to", "watch", "see", "go", "for", "of", "some", "any",
     "please", "pls", "plz", "can", "you", "could", "would", "like", "show", "shows", "find", "search", "browse",
@@ -158,6 +175,9 @@ _FILLER = {
     "accha", "acha", "achha", "badhiya", "bro", "bhai", "yaar", "na", "toh", "to", "kal", "aaj", "abhi",
     "picture", "filmein", "tarah", "naya", "nayi", "naye", "sab", "saare", "sare", "liye", "dekhna", "dekhni",
     "dekhne", "kar", "karo", "sakta", "sakte", "milega", "milegi", "raha", "rahi", "rahe", "hoga", "hogi",
+    # Quality words: "kuch acchi movies", "best events" ask for recommendations, not a title.
+    "achi", "acchi", "achhi", "ache", "acche", "achhe", "badiya", "mast", "nice", "great", "top", "popular",
+    "famous", "hit", "superhit", "trending", "cool", "awesome", "interesting", "recommend", "suggest",
 }
 
 
@@ -306,7 +326,7 @@ def degraded_classify(query: str, state: Dict[str, Any], facets: Optional[Dict[s
         genre = None  # "comedy events": Comedy is the category itself
     # Whatever is left after removing filler, category and genre words is a title / name / topic.
     used = set(re.findall(r"[a-z]+", (genre or "") + " " + (category or "").lower()))
-    leftover = [w for w in re.findall(r"[a-z0-9']+", ql_terms) if w not in _FILLER and w not in used and w not in _DATE_WORDS
+    leftover = [w for w in re.findall(r"[a-z0-9']+", ql_terms) if w not in FILLER_WORDS and w not in used and w not in _DATE_WORDS
                 and not (category and w.rstrip("s") == category.lower().rstrip("s"))]
     text = " ".join(leftover) if leftover else None
 

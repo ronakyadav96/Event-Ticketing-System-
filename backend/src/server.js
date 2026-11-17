@@ -78,6 +78,8 @@ app.disable('etag');
    - Non-API routes (uploads, health): no restriction
 ====================================================== */
 
+const PUBLIC_CATALOG = /^\/(events\/(categories|facets)|movies(\/(search|recommendations|poster|omdb|\d+))?)\/?$/;
+
 app.use('/api', (req, res, next) => {
   // Allow event images to be cached by the browser for 10 minutes.
   // Without this, the global no-store header forces a full re-download
@@ -87,7 +89,14 @@ app.use('/api', (req, res, next) => {
     return next();
   }
 
-  // All other API responses (event lists, bookings, auth, etc.) must never be cached.
+  // Public catalog reads are the same for everyone: a short browser/CDN cache makes repeat
+  // page loads instant, and stale-while-revalidate keeps them fast while refreshing.
+  if (req.method === 'GET' && PUBLIC_CATALOG.test(req.path)) {
+    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=120, stale-while-revalidate=600');
+    return next();
+  }
+
+  // All other API responses (event details, seats, bookings, auth, etc.) must never be cached.
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');

@@ -74,7 +74,7 @@
       <div class="search-group-block" *ngIf="!searchLoading && matchedEvents.length">
         <h3 class="sub-section-title">Events, Shows & Activities</h3>
         <div class="events-catalog-grid">
-          <div class="event-card-bms" *ngFor="let e of matchedEvents" (click)="openEvent(e)">
+          <div class="event-card-bms" *ngFor="let e of matchedEvents; trackBy: trackEvent" (click)="openEvent(e)">
             <div class="poster-container">
               <img *ngIf="shouldShowImg(e); else noImgM" [src]="imgUrl(e)" (error)="onImgError(e)" alt="Event poster" loading="lazy" />
               <ng-template #noImgM>
@@ -230,7 +230,7 @@
         </section>
 
         <!-- 5. EVENT ROWS PER CATEGORY -->
-        <section class="home-row" *ngFor="let row of homeRows">
+        <section class="home-row" *ngFor="let row of homeRows; trackBy: trackRow">
           <div class="row-head page-container">
             <div>
               <h2 class="row-title">{{ row.title }}</h2>
@@ -241,7 +241,7 @@
           <div class="row-scroller">
             <button class="row-arrow left" type="button" (click)="scrollRow('row-' + row.key, -900)" aria-label="Previous">&#8249;</button>
             <div class="row-track" [id]="'row-' + row.key">
-              <div class="wide-card" *ngFor="let e of row.items" (click)="openEvent(e)">
+              <div class="wide-card" *ngFor="let e of row.items; trackBy: trackEvent" (click)="openEvent(e)">
                 <div class="wide-media">
                   <img *ngIf="shouldShowImg(e); else noArt" [src]="imgUrl(e)" (error)="onImgError(e)" [alt]="e.title" loading="lazy" />
                   <ng-template #noArt><div class="wide-fallback">{{ e.category || 'Live' }}</div></ng-template>
@@ -308,7 +308,7 @@
         <div class="state-indicator error" *ngIf="!loading && error">{{ error }}</div>
 
         <div class="wide-grid" *ngIf="!loading && filtered.length">
-          <div class="wide-card" *ngFor="let e of filtered" (click)="openEvent(e)">
+          <div class="wide-card" *ngFor="let e of filtered; trackBy: trackEvent" (click)="openEvent(e)">
             <div class="wide-media">
               <img *ngIf="shouldShowImg(e); else noArtG" [src]="imgUrl(e)" (error)="onImgError(e)" [alt]="e.title" loading="lazy" />
               <ng-template #noArtG><div class="wide-fallback">{{ e.category || 'Live' }}</div></ng-template>

@@ -54,7 +54,7 @@ async def run_refund(
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     refund = copy.deepcopy(state.get("refund") or empty_refund())
     if not token:
-        return login_required_reply(AGENT), empty_refund()
+        return login_required_reply(AGENT, language=entities.get("_language")), empty_refund()
     try:
         if intent == Intent.REFUND_STATUS.value:
             return await _status(refund, entities, token)

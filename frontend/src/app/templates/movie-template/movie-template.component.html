@@ -134,7 +134,7 @@
       <div class="reco-grid">
         <div class="reco-card" *ngFor="let m of movieRecommendations" (click)="openMovie.emit(m)">
           <div class="reco-poster">
-            <img *ngIf="m.posterUrl" [src]="m.posterUrl" alt="poster" />
+            <img *ngIf="m.posterUrl" [src]="m.posterUrl" [alt]="m.title" loading="lazy" decoding="async" />
             <span *ngIf="!m.posterUrl">Movie</span>
           </div>
           <div class="reco-title">{{ m.title }}</div>

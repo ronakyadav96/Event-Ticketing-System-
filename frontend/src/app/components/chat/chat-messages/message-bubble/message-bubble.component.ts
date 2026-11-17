@@ -21,10 +21,20 @@ export class MessageBubbleComponent {
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
-  get formattedContent(): SafeHtml {
-    if (!this.message || !this.message.text) return '';
-    const text = this.message.text;
+  // The template reads this on every change detection: parse each message's Markdown only once.
+  private renderedText: string | null = null;
+  private renderedHtml: SafeHtml = '';
 
+  get formattedContent(): SafeHtml {
+    const text = this.message?.text || '';
+    if (text !== this.renderedText) {
+      this.renderedText = text;
+      this.renderedHtml = text ? this.render(text) : '';
+    }
+    return this.renderedHtml;
+  }
+
+  private render(text: string): SafeHtml {
     // Simple, resilient Markdown parser
     let html = text
       // Escape raw HTML entities
@@ -35,16 +45,16 @@ export class MessageBubbleComponent {
       .replace(/^### (.*$)/gim, '<h4 class="md-h4">$1</h4>')
       .replace(/^## (.*$)/gim, '<h3 class="md-h3">$1</h3>')
       .replace(/^# (.*$)/gim, '<h2 class="md-h2">$1</h2>')
+      // Bullet lists ("- ", "• " or "* "), before italics so a leading "*" is not taken for one
+      .replace(/^[ \t]*[-•*][ \t]+(.*$)/gim, '<li class="md-list-item">$1</li>')
       // Bold
       .replace(/\*\*(.*?)\*\*/gim, '<strong class="md-bold">$1</strong>')
       // Italic
-      .replace(/\*(.*?)\*/gim, '<em class="md-italic">$1</em>')
+      .replace(/\*([^*\n]+)\*/gim, '<em class="md-italic">$1</em>')
       // Inline code / tags
       .replace(/`([^`]+)`/gim, '<code class="md-code">$1</code>')
-      // Bullet lists
-      .replace(/^\s*[-•]\s+(.*$)/gim, '<li class="md-list-item">$1</li>')
       // Numbered lists
-      .replace(/^\s*(\d+)\.\s+(.*$)/gim, '<li class="md-ordered-item"><span class="md-num">$1.</span> $2</li>')
+      .replace(/^[ \t]*(\d+)\.[ \t]+(.*$)/gim, '<li class="md-ordered-item"><span class="md-num">$1.</span> $2</li>')
       // Line breaks
       .replace(/\n\n/g, '<div class="md-p-gap"></div>')
       .replace(/\n/g, '<br/>');
@@ -60,4 +70,3 @@ export class MessageBubbleComponent {
     return this.sanitizer.bypassSecurityTrustHtml(sanitized);
   }
 }
-

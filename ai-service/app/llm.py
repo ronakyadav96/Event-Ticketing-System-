@@ -29,9 +29,11 @@ class LLMUnavailable(Exception):
 
 
 # Circuit breaker: a model that just failed is skipped for a cool-down period, so users get the
-# instant fallback instead of waiting for every timeout. Exhausted quota (429) lasts about a
-# minute; overload (503) and timeouts are usually brief.
+# next model (or the instant fallback) instead of waiting for every timeout. Exhausted quota
+# (429) lasts about a minute and a model too slow for our timeout stays slow for a while;
+# overload (503) is usually brief.
 _COOLDOWN_SECONDS = 60.0
+_SLOW_COOLDOWN_SECONDS = 120.0
 _TRANSIENT_COOLDOWN_SECONDS = 15.0
 _cooling_until: Dict[str, float] = {}
 
@@ -42,14 +44,25 @@ def _available(model_name: str) -> bool:
 
 def _trip(model_name: str, exc: Exception) -> None:
     text = repr(exc)
-    quota = "429" in text or "RESOURCE_EXHAUSTED" in text
-    seconds = _COOLDOWN_SECONDS if quota else _TRANSIENT_COOLDOWN_SECONDS
+    if "429" in text or "RESOURCE_EXHAUSTED" in text:
+        seconds = _COOLDOWN_SECONDS
+    elif isinstance(exc, asyncio.TimeoutError):
+        seconds = _SLOW_COOLDOWN_SECONDS
+    else:
+        seconds = _TRANSIENT_COOLDOWN_SECONDS
     _cooling_until[model_name] = time.monotonic() + seconds
     logger.warning("Gemini model %s unavailable (%s); skipping it for %ds", model_name, text[:300], seconds)
 
 
 def reset_circuit() -> None:
     _cooling_until.clear()
+
+
+def _chain(first: str) -> List[str]:
+    """`first`, then one other configured model (each has its own free-tier quota); two
+    attempts at most keep the worst-case latency bounded."""
+    names = [first, settings.GEMINI_MODEL_REWRITE, settings.GEMINI_MODEL_INTENT, settings.GEMINI_MODEL_GENERATION]
+    return list(dict.fromkeys(n for n in names if n))[:2]
 
 
 @lru_cache(maxsize=8)
@@ -81,13 +94,11 @@ async def extract(
 ) -> T:
     """Model 1: structured extraction into `schema`.
 
-    By default a failed/slow call is retried once on the generation model before the caller
+    By default a failed/slow call is retried on the other configured models before the caller
     falls back to degraded mode. Callers with their own fallback pass a single model.
     """
     if models is None:
-        models = [settings.GEMINI_MODEL_INTENT]
-        if settings.GEMINI_MODEL_GENERATION not in models:
-            models.append(settings.GEMINI_MODEL_GENERATION)
+        models = _chain(settings.GEMINI_MODEL_INTENT)
     timeout = timeout or settings.GEMINI_INTENT_TIMEOUT_SECONDS
     last_error: Exception = LLMUnavailable("all models cooling down")
     for name in models:
@@ -104,26 +115,31 @@ async def extract(
 
 
 async def generate(system: str, user: str, *, temperature: float = 0.4) -> str:
-    """Model 2: free-text generation."""
-    name = settings.GEMINI_MODEL_GENERATION
-    if not _available(name):
-        raise LLMUnavailable(f"{name} is cooling down")
-    try:
-        model = _chat_model(name, temperature)
-        message = await asyncio.wait_for(
-            model.ainvoke([("system", system), ("human", user)]),
-            timeout=settings.GEMINI_TIMEOUT_SECONDS,
-        )
-    except LLMUnavailable:
-        raise
-    except Exception as exc:
-        _trip(name, exc)
-        raise LLMUnavailable(str(exc)) from exc
+    """Model 2: free-text generation, falling back to the other configured models."""
+    last_error: Exception = LLMUnavailable("all models cooling down")
+    for name in _chain(settings.GEMINI_MODEL_GENERATION):
+        if not _available(name):
+            continue
+        try:
+            model = _chat_model(name, temperature)
+            message = await asyncio.wait_for(
+                model.ainvoke([("system", system), ("human", user)]),
+                timeout=settings.GEMINI_TIMEOUT_SECONDS,
+            )
+        except LLMUnavailable:
+            raise
+        except Exception as exc:
+            last_error = exc
+            _trip(name, exc)
+            continue
+        text = _text(message.content)
+        if text:
+            return text
+        last_error = LLMUnavailable(f"{name} returned an empty response")
+    raise LLMUnavailable(str(last_error)) from last_error
 
-    content = message.content
-    if isinstance(content, list):  # some Gemini versions return content parts
+
+def _text(content) -> str:
+    if isinstance(content, list):  # Gemini 3 returns content parts
         content = "".join(part.get("text", "") if isinstance(part, dict) else str(part) for part in content)
-    text = str(content or "").strip()
-    if not text:
-        raise LLMUnavailable("Model 2 returned an empty response")
-    return text
+    return str(content or "").strip()

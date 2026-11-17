@@ -7,12 +7,14 @@ from zoneinfo import ZoneInfo
 from config import settings
 from services.node_client import NodeAPIError, NodeUnavailable
 
-BACKEND_UNAVAILABLE = (
-    "I can't reach the booking system right now, so I can't give you reliable information. "
-    "Please try again in a moment."
-)
-LOGIN_REQUIRED = "Please log in to your account first — I can only access bookings, payments and refunds for signed-in users."
-LOGIN_TO_BOOK = "🔒 Please log in to book tickets — it only takes a moment, and I'll bring you straight back to this booking."
+BACKEND_UNAVAILABLE = "I can't reach the booking system right now. Please try again in a minute."
+LOGIN_REQUIRED = "Please sign in first — your bookings, payments and refunds are only visible on your own account."
+LOGIN_TO_BOOK = "🔒 Please sign in to book tickets. It takes a moment, and I'll bring you right back to this booking."
+
+
+def say(language: Optional[str], english: str, hinglish: str) -> str:
+    """A fixed reply in the language the user wrote in (English or Hinglish)."""
+    return hinglish if language == "hinglish" else english
 
 
 def language_instruction(language: Optional[str]) -> str:
@@ -22,8 +24,13 @@ def language_instruction(language: Optional[str]) -> str:
     return "\nReply in English."
 
 
-def login_required_reply(agent: str, text: str = LOGIN_REQUIRED) -> Dict[str, Any]:
+LOGIN_REQUIRED_HI = "Pehle sign in kar lijiye — aapki bookings, payments aur refunds sirf aapke account par dikhte hain."
+LOGIN_TO_BOOK_HI = "🔒 Tickets book karne ke liye sign in kijiye. Bas ek minute lagega, phir main aapko isi booking par wapas le aaunga."
+
+
+def login_required_reply(agent: str, *, to_book: bool = False, language: Optional[str] = None) -> Dict[str, Any]:
     """The UI shows a sign-in button for replies carrying the LOGIN_REQUIRED code."""
+    text = say(language, LOGIN_TO_BOOK, LOGIN_TO_BOOK_HI) if to_book else say(language, LOGIN_REQUIRED, LOGIN_REQUIRED_HI)
     return make_reply(text, agent, error="LOGIN_REQUIRED")
 
 
@@ -49,12 +56,10 @@ def make_reply(
     }
 
 
-def backend_error_text(exc: Exception) -> str:
+def backend_error_text(exc: Exception, language: Optional[str] = None) -> str:
     if isinstance(exc, NodeAPIError):
         return exc.message
-    if isinstance(exc, NodeUnavailable):
-        return BACKEND_UNAVAILABLE
-    return BACKEND_UNAVAILABLE
+    return say(language, BACKEND_UNAVAILABLE, "Abhi booking system se connect nahi ho pa raha. Ek minute baad phir try kijiye.")
 
 
 def rupees(amount: Any) -> str:

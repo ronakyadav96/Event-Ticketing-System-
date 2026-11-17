@@ -58,9 +58,9 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: Optional[str] = None
     GEMINI_MODEL_REWRITE: str = "gemini-3.1-flash-lite"
     GEMINI_MODEL_INTENT: str = "gemini-3.5-flash-lite"
-    GEMINI_MODEL_GENERATION: str = "gemini-flash-lite-latest"
-    GEMINI_TIMEOUT_SECONDS: float = 8.0          # Model 2 (wording has deterministic fallbacks)
-    GEMINI_INTENT_TIMEOUT_SECONDS: float = 15.0  # Model 1 (understanding is required to act)
+    GEMINI_MODEL_GENERATION: str = "gemini-3.1-flash-lite-preview"
+    GEMINI_TIMEOUT_SECONDS: float = 6.0          # Model 2, per model tried (wording has deterministic fallbacks)
+    GEMINI_INTENT_TIMEOUT_SECONDS: float = 10.0  # Model 1, per model tried (understanding is required to act)
 
     # Time zone the Node backend uses for show dates/times (must match Node's EVENT_TIMEZONE).
     EVENT_TIMEZONE: str = "Asia/Kolkata"

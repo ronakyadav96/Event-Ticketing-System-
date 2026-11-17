@@ -485,5 +485,5 @@ module.exports = {
   getRecommendations,
 };
 
-// Fail fast on startup and keep the first request warm.
-loadIndex();
+// The index (~16 MB of JSON) is loaded on the first movie request, not at startup: on
+// serverless every cold start would otherwise pay for it, even for unrelated routes.

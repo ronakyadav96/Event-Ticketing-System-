@@ -30,6 +30,7 @@ from app.graph.state import (
 )
 from app.tools import catalog as catalog_tools
 from app.understanding import understand
+from app.understanding.rewrite import guess_language
 
 logger = logging.getLogger(__name__)
 
@@ -89,13 +90,15 @@ async def classify_node(state: AgentState) -> Dict[str, Any]:
     query = _latest_user_text(state)
     violation = guardrail.check_input(query)
     if violation:
-        return {"intent": Intent.OUT_OF_DOMAIN.value, "confidence": 1.0, "entities": {"guard": violation}}
+        entities = {"guard": violation, "_language": guess_language(query)}
+        return {"intent": Intent.OUT_OF_DOMAIN.value, "confidence": 1.0, "entities": entities}
 
     facets = await catalog_tools.get_facets()
     result = await understand(query, state, facets)
     entities = dict(result["entities"])
     entities["_source"] = result["source"]
     entities["_language"] = result["language"]
+    entities["_standalone"] = result["standalone"]
     logger.info("Intent %s (%.2f, %s)", result["intent"], result["confidence"], result["source"])
     return {"intent": result["intent"], "confidence": result["confidence"], "entities": entities}
 
@@ -129,16 +132,17 @@ def pick_route(state: AgentState) -> str:
 async def guardrail_node(state: AgentState) -> Dict[str, Any]:
     entities = state.get("entities") or {}
     intent = state.get("intent")
+    language = entities.get("_language")
     if entities.get("guard"):
-        reply = guardrail.safety_reply(entities["guard"])
+        reply = guardrail.safety_reply(entities["guard"], language)
     elif intent == Intent.SMALL_TALK.value:
         reply = await guardrail.small_talk_reply(
-            _latest_user_text(state), state.get("user_name"), _recent_pairs(state), entities.get("_language")
+            _latest_user_text(state), state.get("user_name"), _recent_pairs(state), language
         )
     elif intent == Intent.OUT_OF_DOMAIN.value:
-        reply = guardrail.out_of_domain_reply()
+        reply = guardrail.out_of_domain_reply(language)
     else:
-        reply = guardrail.unknown_reply(degraded=entities.get("_source") == "degraded")
+        reply = guardrail.unknown_reply(degraded=entities.get("_source") == "degraded", language=language)
     return {"reply": reply}
 
 
@@ -172,7 +176,10 @@ async def refund_node(state: AgentState, config: RunnableConfig) -> Dict[str, An
 
 
 async def faq_node(state: AgentState) -> Dict[str, Any]:
-    return {"reply": await faq_agent.run_faq(_latest_user_text(state))}
+    entities = state.get("entities") or {}
+    # Retrieval works on the English standalone request (the policy documents are in English).
+    query = entities.get("_standalone") or _latest_user_text(state)
+    return {"reply": await faq_agent.run_faq(query, entities.get("_language"))}
 
 
 async def validate_node(state: AgentState) -> Dict[str, Any]:

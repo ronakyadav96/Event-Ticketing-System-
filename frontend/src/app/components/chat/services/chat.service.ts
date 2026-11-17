@@ -163,7 +163,7 @@ export class ChatService {
     return {
       id: 'welcome',
       role: 'assistant',
-      text: "Hi, I'm Tamasha AI. How can I help you?",
+      text: "Hi! I'm Tamasha AI 👋 Looking for a movie, a show, or help with a booking?",
       timestamp: new Date(),
     };
   }
@@ -226,7 +226,7 @@ export class ChatService {
         },
         error: (err: HttpErrorResponse) => {
           // 404: new (not yet created) or not ours — either way start clean.
-          if (epoch === this.epoch && err.status !== 404) this.appendError('Could not load this conversation.');
+          if (epoch === this.epoch && err.status !== 404) this.appendError("Couldn't load this chat. Please try again.");
         },
       });
   }
@@ -333,15 +333,15 @@ export class ChatService {
           if (epoch !== this.epoch) return;
           this.isSending.set(false);
           if (err.status === 401) {
-            this.appendError('Your session has expired. Please log in again.');
+            this.appendError('Your session has expired. Please sign in again.');
           } else if (err.status === 429) {
-            this.appendError("You're sending messages too quickly. Please wait a minute and try again.");
+            this.appendError("You're sending messages a bit fast — please wait a moment and try again.");
           } else if (err.status === 409) {
-            this.appendError('Still working on your previous message — please wait a moment.');
+            this.appendError('Still working on your last message — one moment please.');
           } else if (err.status === 0) {
-            this.appendError('⚠️ Unable to reach the Tamasha AI service. Please check that it is running.');
+            this.appendError("⚠️ Can't reach Tamasha AI right now. Please check your internet connection and try again.");
           } else {
-            this.appendError(err.error?.detail || 'Something went wrong. Please try again.');
+            this.appendError(typeof err.error?.detail === 'string' ? err.error.detail : 'Something went wrong. Please try again.');
           }
         },
       });

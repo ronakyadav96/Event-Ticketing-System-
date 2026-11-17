@@ -16,7 +16,8 @@ understood WITHOUT the conversation. Users write in English or Hinglish (Hindi i
 HOW TO REWRITE
 - Translate Hinglish to English: "dikhao" = show, "aur" = more, "koi/kuch" = any/some, "wala" = the one / kind,
   "doosra/dusra" = second or another, "pehla" = first, "kal" = tomorrow (or yesterday from context), "aaj" = today,
-  "sasta" = cheap, "batao" = tell me, "chahiye" = I want, "nahi" = not, "alag" = different, "type ka" = kind of.
+  "sasta" = cheap, "batao" = tell me, "chahiye" = I want, "nahi" = not, "alag" = different, "type ka" = kind of,
+  "acchi/badhiya/mast" = good.
 - Resolve references with CONTEXT and RECENT_TURNS:
   * "another / more / aur dikhao / kuch aur" right after a result list → "Show more results of the same search
     (<what was searched>), not the ones already shown."
@@ -41,6 +42,7 @@ EXAMPLES (context abbreviated)
 - last search: all events, shown_categories [Movie] | "show me another" → "Show more events from the same search, not the ones already shown." (events)
 - shown_categories [Movie] | "kuch alag type ka dikhao" → "Show events of a different kind than Movie." (events, hinglish)
 - "koi movie dikhao" → "Show me some movies." (events, hinglish)
+- "kuch acchi movies dikhao" → "Show me some good movies." (events, hinglish)
 - "comedy wala kuch hai?" → "Are there any comedy events?" (events, hinglish)
 - last_results [1 Minions, 2 Interstellar] | "doosre wale ke baare me batao" → "Tell me about Interstellar." (events, hinglish)
 - last search comedy | "sirf kal wale" → "Show comedy events happening tomorrow." (events, hinglish)
@@ -53,7 +55,8 @@ EXAMPLES (context abbreviated)
 
 _HINGLISH = re.compile(
     r"\b(hai|hain|kya|koi|kuch|dikhao|dikha|batao|chahiye|mujhe|wala|wali|wale|nahi|nahin|aur|kal|aaj|kaise|kab|"
-    r"bhai|yaar|accha|acha|theek|haan|karo|kar do|dena|milega|sasta|abhi)\b",
+    r"bhai|yaar|accha|acha|theek|haan|karo|kar do|dena|milega|sasta|abhi|mera|mere|meri|kitne|kitna|kaun|"
+    r"shukriya|dhanyavaa?d|alvida|haal)\b",
     re.I,
 )
 

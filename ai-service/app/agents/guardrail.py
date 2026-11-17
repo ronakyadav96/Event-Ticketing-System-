@@ -9,15 +9,19 @@ Guardrail agent: small talk, out-of-domain, unsafe input and "could not understa
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.agents.common import first_name, language_instruction, make_reply
+from app.agents.common import first_name, language_instruction, make_reply, say
 from app.llm import LLMUnavailable, generate
-from app.understanding.fallback import PURE_GREETING
+from app.understanding.fallback import COMMON_SMALL_TALK, PURE_GREETING
 
 AGENT = "guardrail_agent"
 
 OUT_OF_DOMAIN_RESPONSE = (
-    "I’m Tamasha AI 🎬 I’m here to assist you with movies, events, bookings, and related questions. "
-    "I’m not able to help with that."
+    "That's outside what I can help with 🙂 I'm Tamasha AI — I can find movies and events, "
+    "book tickets, and help with your bookings, cancellations and refunds."
+)
+OUT_OF_DOMAIN_RESPONSE_HI = (
+    "Is cheez mein main help nahi kar paunga 🙂 Main Tamasha AI hoon — movies aur events dhoondh sakta hoon, "
+    "tickets book kar sakta hoon, aur bookings, cancellation ya refund mein madad kar sakta hoon."
 )
 
 SUGGESTIONS = ["Show me movies", "Upcoming events", "My bookings", "Cancellation policy"]
@@ -43,78 +47,108 @@ def check_input(query: str) -> Optional[str]:
     return None
 
 
-def safety_reply(kind: str) -> Dict[str, Any]:
+def safety_reply(kind: str, language: Optional[str] = None) -> Dict[str, Any]:
     if kind == "SENSITIVE_DATA":
-        text = (
-            "🔒 Please don't share card numbers or other payment details in chat. "
-            "Payments are only taken on the secure Stripe checkout page."
+        text = say(
+            language,
+            "🔒 Please don't share card numbers or payment details in chat. "
+            "Payment is only ever taken on the secure Stripe checkout page.",
+            "🔒 Chat mein card number ya payment details share mat kijiye. "
+            "Payment sirf secure Stripe checkout page par hi hota hai.",
         )
     else:
-        text = "I can only help with events, movies, bookings and related questions. What would you like to do?"
+        text = say(
+            language,
+            "I can only help with movies, events and your bookings. What would you like to do?",
+            "Main sirf movies, events aur aapki bookings mein help kar sakta hoon. Bataiye kya karna hai?",
+        )
     return make_reply(text, AGENT, quick_replies=SUGGESTIONS)
 
 
-def out_of_domain_reply() -> Dict[str, Any]:
-    return make_reply(OUT_OF_DOMAIN_RESPONSE, AGENT, quick_replies=SUGGESTIONS)
+def out_of_domain_reply(language: Optional[str] = None) -> Dict[str, Any]:
+    return make_reply(say(language, OUT_OF_DOMAIN_RESPONSE, OUT_OF_DOMAIN_RESPONSE_HI), AGENT, quick_replies=SUGGESTIONS)
 
 
-SMALL_TALK_SYSTEM = """You are "Tamasha AI", the friendly assistant of Tamasha, an event and movie ticket booking platform.
-You help people discover movies and live events, book tickets, check bookings, cancellations, refunds and policies.
-Reply to the user's small talk naturally and briefly (1–2 sentences), matching what they actually said
-(greeting, how are you, thanks, goodbye, what can you do...). Use their first name only if one is provided.
-You may gently offer help with events or movies. Do not mention specific events, prices, dates or availability,
-and do not answer anything outside this platform's scope."""
+SMALL_TALK_SYSTEM = """You are "Tamasha AI", the friendly assistant of Tamasha, a movie and live-event ticket booking website.
+You can: find movies and events (comedy, concerts, plays, sports, workshops...), book tickets and seats,
+show the user's bookings, cancel bookings, check refunds, and answer policy questions.
+Reply to the user's small talk naturally and briefly (1–2 short sentences) — greeting, how are you, thanks,
+goodbye, who are you, what can you do. Use their first name only if one is provided.
+End with a light offer to help with movies or events when it fits (not after a goodbye).
+Never mention specific events, prices, dates or availability, and do not answer anything outside this platform."""
 
 
-def _fallback_small_talk(query: str, name: str) -> str:
+def _fallback_small_talk(query: str, name: str, language: Optional[str]) -> str:
     q = query.lower()
     who = f" {name}" if name else ""
+    hi = language == "hinglish"
     if re.search(r"good\s+morning", q):
-        return f"Good morning{who}! ☀️ What would you like to watch or attend?"
+        return f"Good morning{who}! ☀️ " + ("Aaj kya dekhna hai?" if hi else "What would you like to watch today?")
     if re.search(r"good\s+(evening|night)", q):
-        return f"Good evening{who}! 🌙 Looking for something to watch tonight?"
+        return f"Good evening{who}! 🌙 " + ("Aaj raat ke liye kuch dhoondhein?" if hi else "Looking for something to do tonight?")
     if re.search(r"good\s+afternoon", q):
-        return f"Good afternoon{who}! What can I find for you today?"
-    if re.search(r"how\s+are\s+you", q):
-        return f"I'm doing well{who}, thanks for asking! 😊 Want to explore some movies or events?"
-    if re.search(r"\b(thanks|thank\s+you|thx)\b", q):
-        return f"You're welcome{who}! Let me know if you need anything else."
-    if re.search(r"\b(bye|goodbye|see\s+you)\b", q):
-        return f"Goodbye{who}! Enjoy the show 🎬"
-    if re.search(r"what\s+can\s+you\s+do|help", q):
-        return "I can find movies and events, walk you through booking seats, and help with booking status, cancellations, refunds and policies."
-    return f"Hi{who}! 👋 How can I help you with movies and events today?"
+        return f"Good afternoon{who}! " + ("Bataiye kya dhoondhun?" if hi else "What can I find for you?")
+    if re.search(r"how\s+are\s+you|kaise\s+ho|kya\s+haal", q):
+        return (f"Main badhiya hoon{who}, poochne ke liye shukriya! 😊 Koi movie ya event dekhein?" if hi
+                else f"I'm doing well{who}, thanks for asking! 😊 Want to explore some movies or events?")
+    if re.search(r"\b(thanks|thank\s+you|thx|shukriya|dhanyavaad)\b", q):
+        return f"Koi baat nahi{who}! Aur kuch chahiye toh bataiye." if hi else f"You're welcome{who}! Let me know if you need anything else."
+    if re.search(r"\b(bye|goodbye|see\s+you|alvida)\b", q):
+        return f"Bye{who}! Show enjoy kijiye 🎬" if hi else f"Goodbye{who}! Enjoy the show 🎬"
+    if re.search(r"who\s+are\s+you|what\s+are\s+you|kaun\s+ho", q):
+        return (
+            "Main Tamasha AI hoon 🎬 — movies aur events dhoondhne, tickets book karne, aur bookings, "
+            "cancellation ya refund mein aapki madad karta hoon."
+            if hi else
+            "I'm Tamasha AI 🎬 — I help you find movies and events, book tickets, and sort out bookings, "
+            "cancellations and refunds."
+        )
+    if re.search(r"what\s+can\s+you\s+do|how\s+can\s+you\s+help|help|kya\s+kar\s+sakte", q):
+        return (
+            "Main movies aur events dhoondh sakta hoon, seats ke saath tickets book kar sakta hoon, "
+            "aur aapki bookings, cancellation, refund aur policies mein help kar sakta hoon."
+            if hi else
+            "I can find movies and events, book tickets with seats, and help with your bookings, "
+            "cancellations, refunds and policies."
+        )
+    return f"Hi{who}! 👋 " + ("Movies ya events mein kaise help karun?" if hi else "How can I help you with movies and events today?")
 
 
-GREETING_REPLY = "Hi, I'm Tamasha AI. How can I help you?"
-
+GREETING_REPLY = "Hi! I'm Tamasha AI 👋 Looking for a movie, a show, or help with a booking?"
+GREETING_REPLY_HI = "Hi! Main Tamasha AI hoon 👋 Koi movie, show ya booking mein help chahiye?"
 
 
 async def small_talk_reply(
     query: str, user_name: Optional[str], recent: List[Tuple[str, str]], language: Optional[str] = None
 ) -> Dict[str, Any]:
-    # A plain greeting gets the short, fixed welcome.
+    # A plain greeting gets the short, fixed welcome; everyday small talk a fixed, instant reply.
     if PURE_GREETING.match(query or ""):
-        return make_reply(GREETING_REPLY, AGENT, quick_replies=SUGGESTIONS)
+        return make_reply(say(language, GREETING_REPLY, GREETING_REPLY_HI), AGENT, quick_replies=SUGGESTIONS)
     name = first_name(user_name)
+    if COMMON_SMALL_TALK.match(query or ""):
+        return make_reply(_fallback_small_talk(query, name, language), AGENT, quick_replies=SUGGESTIONS)
     convo = "\n".join(f"{role}: {text}" for role, text in recent[-4:])
     prompt = f"User first name: {name or '(not provided)'}\nRecent conversation:\n{convo or '(none)'}\n\nUser says: {query}"
     try:
         text = await generate(SMALL_TALK_SYSTEM + language_instruction(language), prompt, temperature=0.7)
     except LLMUnavailable:
-        text = _fallback_small_talk(query, name)
+        text = _fallback_small_talk(query, name, language)
     return make_reply(text, AGENT, quick_replies=SUGGESTIONS)
 
 
-def unknown_reply(degraded: bool) -> Dict[str, Any]:
+def unknown_reply(degraded: bool, language: Optional[str] = None) -> Dict[str, Any]:
     if degraded:
-        text = (
-            "I'm having trouble understanding requests right now. Please try again in a moment — "
-            "you can also browse events and manage bookings from the website meanwhile."
+        text = say(
+            language,
+            "I'm having a little trouble understanding right now 😅 Try one of the options below, "
+            "or type a movie, event or artist name.",
+            "Abhi samajhne mein thodi dikkat ho rahi hai 😅 Neeche diye options try kijiye, "
+            "ya kisi movie, event ya artist ka naam likhiye.",
         )
         return make_reply(text, AGENT, quick_replies=SUGGESTIONS, error="LLM_UNAVAILABLE")
-    return make_reply(
-        "Sorry, I didn't quite get that. Could you rephrase? I can help with movies, events, bookings and refunds.",
-        AGENT,
-        quick_replies=SUGGESTIONS,
+    text = say(
+        language,
+        "Sorry, I didn't quite get that. You can ask for a movie, an event, your bookings or a refund.",
+        "Sorry, samajh nahi aaya. Aap koi movie, event, apni bookings ya refund ke baare mein pooch sakte hain.",
     )
+    return make_reply(text, AGENT, quick_replies=SUGGESTIONS)

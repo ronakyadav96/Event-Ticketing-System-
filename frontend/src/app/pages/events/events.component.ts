@@ -369,7 +369,20 @@ export class EventsComponent implements OnInit, OnDestroy {
     return 'Upcoming';
   }
 
+  // `filtered` is read on every change detection: recompute only when its inputs change.
+  private filteredCache: { events: any[]; key: string; list: any[] } | null = null;
+
   get filtered(): any[] {
+    const key = [this.q, this.status, this.sort, this.categoryFilter].join('\u0000');
+    if (this.filteredCache && this.filteredCache.events === this.events && this.filteredCache.key === key) {
+      return this.filteredCache.list;
+    }
+    const list = this.computeFiltered();
+    this.filteredCache = { events: this.events, key, list };
+    return list;
+  }
+
+  private computeFiltered(): any[] {
     const text = this.q.trim().toLowerCase();
 
     let list = this.events.filter((e) => {
@@ -504,6 +517,14 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   trackMovie(_: number, movie: MovieRecommendationItem): string {
     return movie.movieId || movie.title;
+  }
+
+  trackEvent(_: number, event: any): string {
+    return event?._id || event?.id || event?.title;
+  }
+
+  trackRow(_: number, row: HomeRow): string {
+    return row.key;
   }
 
   moviePosterStyle(movie: MovieRecommendationItem): Record<string, string> {

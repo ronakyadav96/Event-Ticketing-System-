@@ -20,7 +20,7 @@ async def understand(query: str, state: Dict[str, Any], facets: Dict[str, Any]) 
     """
     fast = fast_classify(query, state, facets)
     if fast:
-        return {**fast, "standalone": query, "language": "english"}
+        return {**fast, "standalone": query, "language": guess_language(query)}
 
     standalone, language = query, guess_language(query)
     if needs_rewrite(state):

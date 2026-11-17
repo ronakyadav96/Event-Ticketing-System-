@@ -1,4 +1,4 @@
-import { Component, HostListener, inject, OnDestroy } from '@angular/core';
+import { Component, inject, NgZone, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   Router,
@@ -52,8 +52,16 @@ export class AppComponent implements OnDestroy {
   navbarQuery = '';
 
   private search$ = new Subject<string>();
+  private zone = inject(NgZone);
+  private readonly onScroll = () => {
+    const scrolled = window.scrollY > 24;
+    // Scroll fires dozens of times a second: only re-render when the header state flips.
+    if (scrolled !== this.scrolled) this.zone.run(() => (this.scrolled = scrolled));
+  };
 
   constructor() {
+    this.zone.runOutsideAngular(() => window.addEventListener('scroll', this.onScroll, { passive: true }));
+
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
@@ -146,11 +154,6 @@ export class AppComponent implements OnDestroy {
     }
   }
 
-  @HostListener('window:scroll')
-  onWindowScroll(): void {
-    this.scrolled = window.scrollY > 24;
-  }
-
   toggleDrawer(): void {
     this.isDrawerOpen = !this.isDrawerOpen;
   }
@@ -173,6 +176,7 @@ export class AppComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    window.removeEventListener('scroll', this.onScroll);
     this.destroy$.next();
     this.destroy$.complete();
   }

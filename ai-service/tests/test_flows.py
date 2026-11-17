@@ -2,6 +2,7 @@
 
 import pytest
 
+from app.agents import guardrail
 from app.graph.state import BookingStage
 from services.node_client import NodeAPIError
 from tests.conftest import Chat
@@ -18,7 +19,7 @@ def search(**kw):
 async def test_out_of_domain_gets_fixed_response(graph, fake_node, model):
     model.on("what is the capital of france", intent="OUT_OF_DOMAIN")
     out = await Chat(graph).say("what is the capital of france")
-    assert out["reply"]["text"].startswith("I’m Tamasha AI 🎬")
+    assert out["reply"]["text"] == guardrail.OUT_OF_DOMAIN_RESPONSE
     assert out["reply"]["events"] == []
 
 
@@ -33,7 +34,7 @@ async def test_small_talk_is_contextual_not_one_canned_reply(graph, fake_node, m
 
 async def test_plain_greeting_gets_short_fixed_welcome_without_the_model(graph, fake_node, model):
     out = await Chat(graph).say("hi")
-    assert out["reply"]["text"] == "Hi, I'm Tamasha AI. How can I help you?"
+    assert out["reply"]["text"] == guardrail.GREETING_REPLY
     assert model.contexts == []
 
 
@@ -136,7 +137,7 @@ async def test_guest_is_asked_to_log_in_before_booking(graph, fake_node, model):
     shown = (await chat.say("show me comedy"))["reply"]["events"]
     out = await chat.say(f"Book {shown[0]['title']}")
     assert out["booking"]["stage"] == BookingStage.IDLE.value
-    assert out["reply"]["error"] == "LOGIN_REQUIRED" and "log in" in out["reply"]["text"]
+    assert out["reply"]["error"] == "LOGIN_REQUIRED" and "sign in" in out["reply"]["text"]
     assert not any(c.startswith("checkout") for c in fake_node.calls)
 
 
@@ -335,7 +336,7 @@ async def test_second_another_in_a_row_offers_categories_and_genres(graph, fake_
     assert first_more["reply"]["events"]
     picker = await chat.say("show me another")
     reply = picker["reply"]
-    assert reply["events"] == [] and "what kind" in reply["text"].lower()
+    assert reply["events"] == [] and "pick what you'd like" in reply["text"].lower()
     assert "Show me Concert" in reply["quick_replies"] and "Show me Comedy" in reply["quick_replies"]
     assert not any(q == "Show me Movie" for q in reply["quick_replies"])
 
@@ -526,7 +527,7 @@ async def test_out_of_domain_rewrite_skips_the_tracker(graph, fake_node, model):
     tracked = len(model.contexts)
     model.rewrite("python me loop kaise likhte hai", "How do I write a loop in Python?", scope="out_of_domain", language="hinglish")
     out = await chat.say("python me loop kaise likhte hai")
-    assert out["reply"]["text"].startswith("I’m Tamasha AI 🎬")
+    assert out["reply"]["text"] == guardrail.OUT_OF_DOMAIN_RESPONSE_HI
     assert len(model.contexts) == tracked
 
 
@@ -547,8 +548,8 @@ async def test_first_message_skips_the_rewrite_call(graph, fake_node, model):
         model.on("koi comedy dikhao", **search(category="Comedy"))
         first = await chat.say("koi comedy dikhao")
         assert calls == ["StateUpdate"] and first["entities"]["_language"] == "hinglish"
-        model.on("aur dikhao", **search(action="MORE"))
-        await chat.say("aur dikhao")
+        model.on("sirf sasti wali", **search(action="REFINE", max_price=300))
+        await chat.say("sirf sasti wali")
         assert calls == ["StateUpdate", "Rewrite", "StateUpdate"]
     finally:
         mp.undo()
@@ -584,3 +585,47 @@ async def test_degraded_mode_understands_positions_dates_and_prices(graph, fake_
     out = await chat.say("sirf kal wale")
     assert out["search"]["filters"]["category"] == "Comedy"
     assert out["search"]["filters"]["date_from"] == out["search"]["filters"]["date_to"]
+
+
+# ── Wording ──────────────────────────────────────────────────────────────────
+
+async def test_quality_words_are_not_searched_as_a_title(graph, fake_node, model):
+    model.on("kuch acchi movies dikhao", **search(category="Movie", text="acchi"))
+    out = await Chat(graph).say("kuch acchi movies dikhao")
+    assert {e["id"] for e in out["reply"]["events"]} == {"e_scifi1", "e_scifi2"}
+    assert "acchi" not in out["reply"]["text"]
+
+
+async def test_hinglish_message_gets_hinglish_fixed_replies(graph, fake_node, model):
+    model.on("comedy wale dikhao", **search(category="Comedy"))
+    out = await Chat(graph).say("comedy wale dikhao")
+    assert out["reply"]["text"].startswith("Aapke liye 11 comedy shows")
+    model.on("mere bookings dikhao", intent="BOOKING_STATUS")
+    guest = await Chat(graph, user_id="g1", authenticated=False).say("mere bookings dikhao")
+    assert guest["reply"]["error"] == "LOGIN_REQUIRED" and "sign in kar lijiye" in guest["reply"]["text"]
+
+
+async def test_one_more_result_reads_naturally(graph, fake_node, model):
+    model.on("show me movies", **search(category="Movie"))
+    model.on("show more", **search(action="MORE"))
+    chat = Chat(graph)
+    await chat.say("show me movies")
+    assert (await chat.say("show more"))["reply"]["text"].startswith("That's everything")
+
+
+async def test_common_small_talk_is_instant_and_in_the_users_language(graph, fake_node, model):
+    chat = Chat(graph)
+    assert "Main badhiya hoon" in (await chat.say("kaise ho"))["reply"]["text"]
+    assert (await chat.say("who are you?"))["reply"]["text"].startswith("I'm Tamasha AI")
+    assert (await chat.say("shukriya bhai"))["reply"]["text"].startswith("Koi baat nahi")
+    assert model.contexts == []
+
+
+async def test_hinglish_more_pages_forward_without_the_model(graph, fake_node, model):
+    model.on("show me comedy", **search(category="Comedy"))
+    chat = Chat(graph)
+    first = {e["id"] for e in (await chat.say("show me comedy"))["reply"]["events"]}
+    calls = len(model.contexts)
+    more = await chat.say("aur dikhao")
+    assert len(model.contexts) == calls
+    assert more["reply"]["text"].startswith("Yeh rahe") and not first & {e["id"] for e in more["reply"]["events"]}

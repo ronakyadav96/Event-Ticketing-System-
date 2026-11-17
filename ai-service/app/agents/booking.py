@@ -16,8 +16,6 @@ import logging
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.agents.common import (
-    LOGIN_REQUIRED,
-    LOGIN_TO_BOOK,
     login_required_reply,
     backend_error_text,
     fmt_date,
@@ -247,7 +245,7 @@ async def _advance(booking, search, entities, *, token, is_authenticated) -> Dic
     # 1. A checkout is open: Stripe/Node decide what happens next, not the conversation.
     if stage == S.PAYMENT_PENDING:
         if not token:
-            raise _Halt(login_required_reply(AGENT))
+            raise _Halt(login_required_reply(AGENT, language=entities.get("_language")))
         if entities.get("cancel_draft"):
             order = booking.get("order") or {}
             result = await transactions.cancel_order(token, order["session_id"])
@@ -292,7 +290,7 @@ async def _advance(booking, search, entities, *, token, is_authenticated) -> Dic
     # 4. Guests sign in before choosing seats: signing in later switches identity and would
     #    discard every step they had already completed.
     if not is_authenticated and stage == S.IDLE:
-        raise _Halt(login_required_reply(AGENT, LOGIN_TO_BOOK))
+        raise _Halt(login_required_reply(AGENT, to_book=True, language=entities.get("_language")))
 
     # 5. Which event?
     await _select_event(booking, search, entities, notes)
@@ -533,7 +531,7 @@ def _set_next_stage(booking) -> None:
 
 async def _start_checkout(booking, availability, *, token, is_authenticated) -> Dict[str, Any]:
     if not is_authenticated or not token:
-        reply = _prompt(booking, [LOGIN_REQUIRED], availability)
+        reply = _prompt(booking, ["Your session has expired. Please sign in again to continue."], availability)
         reply["error"] = "LOGIN_REQUIRED"
         return reply
     try:
@@ -598,7 +596,7 @@ def _booking_line(b: Dict[str, Any]) -> str:
 async def run_booking_status(state: Dict[str, Any], entities: Dict[str, Any], *, token: Optional[str]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     booking = copy.deepcopy(state.get("booking") or empty_booking())
     if not token:
-        return login_required_reply(AGENT), booking
+        return login_required_reply(AGENT, language=entities.get("_language")), booking
     notes: List[str] = []
     try:
         if booking.get("stage") == S.PAYMENT_PENDING.value:

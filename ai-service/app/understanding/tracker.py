@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 
 from app import llm
 from app.understanding.context import recent_turns, tracker_context
+from app.understanding.fallback import FILLER_WORDS
 from app.understanding.schemas import StateUpdate
 
 logger = logging.getLogger(__name__)
@@ -41,8 +42,8 @@ SEARCH ACTIONS (search.action, only for EVENT_SEARCH)
 FILTER RULES
 - category must be copied exactly from CONTEXT.catalog_categories (Movie, Comedy, Concert, ...). A genre such as
   horror or science fiction goes in genre, not category. "comedy show" → category Comedy.
-- text holds only a title, performer or topic. Never put request words ("show", "another", "other type", "any")
-  or category/genre words in text.
+- text holds only a title, performer or topic. Never put request words ("show", "another", "other type", "any"),
+  quality words ("good", "best", "acchi", "badhiya", "popular") or category/genre words in text.
 - Dates relative to CONTEXT.today. "tomorrow" → date_from = date_to = tomorrow. "this weekend" → Saturday..Sunday.
 
 OTHER RULES
@@ -91,6 +92,10 @@ def validate(update: StateUpdate, context: Dict[str, Any], query: str) -> Dict[s
                 # Not a catalog category (e.g. "horror"): keep it as a genre instead of matching nothing.
                 spec["genre"] = spec.get("genre") or spec["category"]
                 spec["category"] = None
+        # "kuch acchi movies" / "best events": no title in there, only request and quality words.
+        words = re.findall(r"[a-z0-9']+", str(spec.get("text") or "").lower())
+        if spec.get("text") and all(w in FILLER_WORDS for w in words):
+            spec["text"] = None
         spec["exclude_categories"] = [c for c in (_match_category(x, categories) for x in spec.get("exclude_categories") or []) if c]
         for key in ("date_from", "date_to"):
             if spec.get(key) and not _DATE.match(spec[key]):

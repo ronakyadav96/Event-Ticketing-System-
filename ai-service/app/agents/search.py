@@ -12,7 +12,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.agents.common import backend_error_text, fmt_date, fmt_time, language_instruction, make_reply, rupees
+from app.agents.common import backend_error_text, fmt_date, fmt_time, language_instruction, make_reply, rupees, say
 from app.agents.resolve import remember_events, resolve_event_reference
 from app.graph.state import empty_search
 from app.llm import LLMUnavailable, generate
@@ -26,13 +26,17 @@ AGENT = "event_search_agent"
 PAGE_SIZE = 5
 
 
+# How each catalog category reads in a sentence ("4 comedy shows", "2 concerts").
+_NOUNS = {
+    "movie": "movies", "comedy": "comedy shows", "concert": "concerts", "plays": "plays", "play": "plays",
+    "sports": "sports events", "workshop": "workshops", "seminar": "seminars", "activities": "activities",
+}
+
+
 def _describe_filters(filters: Dict[str, Any]) -> str:
-    parts = []
-    if filters.get("genre"):
-        parts.append(str(filters["genre"]))
-    if filters.get("category"):
-        parts.append(str(filters["category"]).lower())
-    label = f"{' '.join(parts)} events" if parts else "events"
+    category = str(filters.get("category") or "")
+    noun = _NOUNS.get(category.lower(), f"{category.lower()} events" if category else "events")
+    label = f"{filters['genre']} {noun}" if filters.get("genre") else noun
     if filters.get("text"):
         label += f" matching “{filters['text']}”"
     if filters.get("venue"):
@@ -57,15 +61,20 @@ def _result_lines(events: List[Dict[str, Any]], start: int = 1) -> str:
     return "\n".join(lines)
 
 
-def _intro(label: str, shown_from: int, shown_to: int, total: int, continuing: bool) -> str:
+def _intro(label: str, shown_from: int, shown_to: int, total: int, continuing: bool, language: Optional[str]) -> str:
     """Deterministic, instant intro. The events themselves are rendered as cards by the UI."""
+    count = shown_to - shown_from + 1
     if continuing:
-        return f"Here are {shown_to - shown_from + 1} more {label} ({shown_from}–{shown_to} of {total}) 👇"
+        if count == 1:
+            return say(language, f"Here's one more ({shown_to} of {total}) 👇", f"Yeh raha ek aur ({shown_to} of {total}) 👇")
+        return say(language, f"Here are {count} more ({shown_from}–{shown_to} of {total}) 👇",
+                   f"Yeh rahe {count} aur ({shown_from}–{shown_to} of {total}) 👇")
     if total == 1:
-        return f"I found 1 {label.replace('events', 'event', 1)} 👇"
+        return say(language, f"I found 1 match for {label} 👇", f"Aapke liye 1 result — {label} 👇")
     if total <= shown_to:
-        return f"I found {total} {label} 👇"
-    return f"I found {total} {label} — here are the top {shown_to} 👇"
+        return say(language, f"I found {total} {label} 👇", f"Aapke liye {total} {label} 👇")
+    return say(language, f"I found {total} {label} — here are the top {shown_to} 👇",
+               f"Aapke liye {total} {label} — yeh rahe top {shown_to} 👇")
 
 
 async def _fetch_filtered(filters: Dict[str, Any], rejected: List[str], page: int, seen: List[str]) -> Tuple[List[Dict[str, Any]], int, int]:
@@ -106,6 +115,7 @@ async def run_search(state: Dict[str, Any], entities: Dict[str, Any], query: str
     always excluded, and every event ever shown stays in search["catalog"] (selectable by id).
     """
     search = copy.deepcopy(state.get("search") or empty_search())
+    language = entities.get("_language")
     spec = dict(entities.get("search") or {})
     if not requested_filters(spec) and entities.get("event_title"):
         spec["text"] = entities["event_title"]
@@ -122,7 +132,7 @@ async def run_search(state: Dict[str, Any], entities: Dict[str, Any], query: str
     has_more = int(search.get("total") or 0) > len(search.get("seen") or [])
     if continuing and more_streak >= 2 and has_more:
         search["more_streak"] = 0
-        return await _kind_picker(facets, has_more=True), search
+        return await _kind_picker(facets, has_more=True, language=language), search
     search["more_streak"] = more_streak
     page = int(search.get("page") or 1) + 1 if continuing else 1
     seen = list(search.get("seen") or []) if continuing else []
@@ -138,7 +148,7 @@ async def run_search(state: Dict[str, Any], entities: Dict[str, Any], query: str
         else:
             events, total, page = await _fetch_filtered(filters, rejected, page, seen)
     except (NodeUnavailable, NodeAPIError) as exc:
-        return make_reply(backend_error_text(exc), AGENT, error="BACKEND_UNAVAILABLE"), search
+        return make_reply(backend_error_text(exc, language), AGENT, error="BACKEND_UNAVAILABLE"), search
 
     shown_categories = list(search.get("shown_categories") or []) if plan["keep_shown_categories"] else []
     search.update(
@@ -159,11 +169,20 @@ async def run_search(state: Dict[str, Any], entities: Dict[str, Any], query: str
             return await _kind_picker(
                 facets,
                 has_more=False,
-                intro=f"You've seen all {total} {label} I have. What kind would you like to see next?",
+                intro=say(
+                    language,
+                    f"That's everything — you've seen all {total} {label}. What would you like to see next?",
+                    f"Bas itne hi the — aapne saare {total} {label} dekh liye. Ab kya dekhna chahenge?",
+                ),
                 exclude=exclude,
+                language=language,
             ), search
         else:
-            text = f"I couldn't find any {label}. Try a different title, genre, category or venue?"
+            text = say(
+                language,
+                f"I couldn't find any {label} right now. Try another title, genre or date?",
+                f"Abhi koi {label} nahi mile. Koi aur naam, genre ya date try karein?",
+            )
         quick = [f"Show me {c}" for c in (facets.get("categories") or []) if c not in shown_categories][:4]
         return make_reply(text, AGENT, quick_replies=quick or ["Show me movies", "Show me events"]), search
 
@@ -175,13 +194,15 @@ async def run_search(state: Dict[str, Any], entities: Dict[str, Any], query: str
 
     if plan["kind"] == "mix" and not continuing:
         kinds = ", ".join(dict.fromkeys(new_categories))
-        text = f"Here's something different — {kinds} 👇"
+        text = say(language, f"Here's something different — {kinds} 👇", f"Kuch alag dekhiye — {kinds} 👇")
     else:
-        text = _intro(label, shown_to - len(events) + 1, shown_to, total, continuing)
+        text = _intro(label, shown_to - len(events) + 1, shown_to, total, continuing, language)
     if not any(e.get("upcoming") for e in events):
-        text += "\n\nNone of these currently have upcoming shows to book."
+        text += say(language, "\n\nNone of these have upcoming shows to book right now.",
+                    "\n\nInmein se kisi ka abhi koi upcoming show book karne ke liye nahi hai.")
     else:
-        text += "\nTap **Book** on any card to pick your show and seats."
+        text += say(language, "\nTap **Book** on a card to choose your show and seats.",
+                    "\nKisi bhi card par **Book** dabaiye aur apna show aur seats chuniye.")
 
     quick = []
     if shown_to < total:
@@ -194,7 +215,8 @@ async def run_search(state: Dict[str, Any], entities: Dict[str, Any], query: str
 
 
 async def _kind_picker(
-    facets: Dict[str, Any], *, has_more: bool, intro: Optional[str] = None, exclude: Optional[str] = None
+    facets: Dict[str, Any], *, has_more: bool, intro: Optional[str] = None, exclude: Optional[str] = None,
+    language: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Offer the available event categories and movie genres as one-tap choices."""
     skip = {"movie", str(exclude or "").lower()}
@@ -208,7 +230,8 @@ async def _kind_picker(
         parts.append("**Events:** " + ", ".join(categories))
     if genres:
         parts.append("**Movies:** " + ", ".join(genres))
-    text = intro or "Not quite what you're looking for? Tell me what kind you'd like to see:"
+    text = intro or say(language, "Not quite what you're looking for? Pick what you'd like to see:",
+                        "Jo chahiye woh nahi mila? Bataiye kya dekhna hai:")
     if parts:
         text += "\n\n" + "\n".join(parts)
     # The picker is the one place that offers every kind at once.
@@ -244,49 +267,58 @@ def _facts_block(event: Dict[str, Any], schedule: Optional[Dict[str, Any]]) -> s
 
 async def run_details(state: Dict[str, Any], entities: Dict[str, Any], query: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     search = copy.deepcopy(state.get("search") or empty_search())
+    language = entities.get("_language")
     last = search.get("last_results") or []
     fallback = search.get("focus") or (last[0] if len(last) == 1 else None)
 
     try:
         outcome, value = await resolve_event_reference(search, entities, fallback_id=fallback)
     except (NodeUnavailable, NodeAPIError) as exc:
-        return make_reply(backend_error_text(exc), AGENT, error="BACKEND_UNAVAILABLE"), search
+        return make_reply(backend_error_text(exc, language), AGENT, error="BACKEND_UNAVAILABLE"), search
 
     if outcome == "ambiguous":
         remember_events(search, value, as_last_results=True)
-        text = "I found a few events that could match. Which one did you mean?\n\n" + _result_lines(value)
+        text = say(language, "A few events could match. Which one did you mean?", "Kuch events match ho rahe hain. Aapka matlab kaunsa tha?")
+        text += "\n\n" + _result_lines(value)
         return make_reply(text, AGENT, events=value, quick_replies=[f"Tell me about {e['title']}" for e in value[:4]]), search
     if outcome == "none":
         named = entities.get("event_title")
-        text = (
-            f"I couldn't find an event called “{named}”." if named else "Which event would you like to know more about?"
-        )
+        if named:
+            text = say(language, f"I couldn't find an event called “{named}”. Check the spelling, or try searching by category?",
+                       f"“{named}” naam ka koi event nahi mila. Spelling check karein, ya category se search karein?")
+        else:
+            text = say(language, "Which event would you like to know more about?", "Kis event ke baare mein jaanna hai?")
         return make_reply(text, AGENT, quick_replies=["Show me movies", "Upcoming events"]), search
 
     try:
         event = await catalog_tools.get_event(value["id"])
     except NodeAPIError:
-        return make_reply("That event is no longer available.", AGENT), search
+        return make_reply(say(language, "That event is no longer available.", "Yeh event ab available nahi hai."), AGENT), search
     except NodeUnavailable as exc:
-        return make_reply(backend_error_text(exc), AGENT, error="BACKEND_UNAVAILABLE"), search
-
-    try:
-        schedule = await catalog_tools.get_schedule(event["id"])
-    except (NodeUnavailable, NodeAPIError):
-        schedule = None
+        return make_reply(backend_error_text(exc, language), AGENT, error="BACKEND_UNAVAILABLE"), search
 
     remember_events(search, [event], as_last_results=False)
     search["focus"] = event["id"]
 
-    about_data = {k: event.get(k) for k in ("title", "category", "description", "rating", "release_date")}
-    try:
-        about = await generate(
-            DETAILS_SYSTEM + language_instruction(entities.get("_language")),
-            json.dumps(about_data, ensure_ascii=False),
-            temperature=0.4,
-        )
-    except LLMUnavailable:
-        about = event.get("description") or f"{event.get('title')} is a {str(event.get('category') or 'live').lower()} event."
+    async def schedule_or_none() -> Optional[Dict[str, Any]]:
+        try:
+            return await catalog_tools.get_schedule(event["id"])
+        except (NodeUnavailable, NodeAPIError):
+            return None
+
+    async def about_text() -> str:
+        about_data = {k: event.get(k) for k in ("title", "category", "description", "rating", "release_date")}
+        try:
+            return await generate(
+                DETAILS_SYSTEM + language_instruction(language),
+                json.dumps(about_data, ensure_ascii=False),
+                temperature=0.4,
+            )
+        except LLMUnavailable:
+            return event.get("description") or f"{event.get('title')} is a {str(event.get('category') or 'live').lower()} event."
+
+    # The showtimes lookup and the description are independent: fetch both at once.
+    schedule, about = await asyncio.gather(schedule_or_none(), about_text())
 
     text = f"**{event['title']}**\n\n{about}\n\n{_facts_block(event, schedule)}"
     quick = [f"Book {event['title']}", "Show me something else"]
