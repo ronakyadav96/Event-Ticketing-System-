@@ -36,7 +36,8 @@ SCOPE
 - events: anything about events, movies, shows, tickets, seats, bookings, payments, cancellations, refunds,
   platform policies, or this assistant's abilities — including short follow-ups in an ongoing conversation.
 - small_talk: only greetings, thanks, goodbyes, "how are you" — with no request in it.
-- out_of_domain: anything else (general knowledge, coding, homework, news, personal advice, ...), even if polite.
+- out_of_domain: anything else (general knowledge, coding, homework, news, personal advice, jokes, stories,
+  poems, shayari, riddles, ...), even if polite.
 
 EXAMPLES (context abbreviated)
 - last search: all events, shown_categories [Movie] | "show me another" → "Show more events from the same search, not the ones already shown." (events)
@@ -49,6 +50,7 @@ EXAMPLES (context abbreviated)
 - focus Interstellar | "iske 2 ticket book karo" → "Book 2 tickets for Interstellar." (events, hinglish)
 - "mera refund kab aayega" → "What is the status of my refund?" (events, hinglish)
 - "thanks bhai" → "Thanks." (small_talk, hinglish)
+- "tell me a joke" / "ek joke sunao" → "Tell me a joke." (out_of_domain)
 - "python me loop kaise likhte hai" → "How do I write a loop in Python?" (out_of_domain, hinglish)
 """
 

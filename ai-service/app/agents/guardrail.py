@@ -75,7 +75,8 @@ show the user's bookings, cancel bookings, check refunds, and answer policy ques
 Reply to the user's small talk naturally and briefly (1–2 short sentences) — greeting, how are you, thanks,
 goodbye, who are you, what can you do. Use their first name only if one is provided.
 End with a light offer to help with movies or events when it fits (not after a goodbye).
-Never mention specific events, prices, dates or availability, and do not answer anything outside this platform."""
+Never mention specific events, prices, dates or availability, and do not answer anything outside this platform.
+Never tell jokes, stories, poems or facts: if asked, say briefly that you only help with movies, events and bookings."""
 
 
 def _fallback_small_talk(query: str, name: str, language: Optional[str]) -> str:
