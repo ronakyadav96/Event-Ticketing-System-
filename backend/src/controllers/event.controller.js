@@ -65,6 +65,9 @@ function getReadableSaveError(error) {
 
   if (error.name === 'ValidationError' && error.errors) {
     const firstError = Object.values(error.errors)[0];
+    if (firstError?.kind === 'maxlength') {
+      return `${firstError.path} is too long (max ${firstError.properties?.maxlength} characters).`;
+    }
     return firstError?.message || error.message || 'Validation failed';
   }
 
@@ -180,6 +183,17 @@ async function uploadBufferToGridFS(file) {
 // =======================
 // CREATE EVENT
 // =======================
+// Optional public-page details; only the ones present in the request are returned.
+const PROFILE_FIELDS = ['tagline', 'language', 'ageRestriction', 'meetingLink'];
+
+function eventProfileFields(body) {
+  const out = {};
+  for (const key of PROFILE_FIELDS) {
+    if (body?.[key] != null) out[key] = String(body[key]).trim();
+  }
+  return out;
+}
+
 exports.createEvent = async (req, res) => {
   try {
     if (!req.user || !['creator', 'superadmin'].includes(req.user.role)) {
@@ -204,6 +218,7 @@ exports.createEvent = async (req, res) => {
       designConfig,
       customFields,
     } = req.body;
+    const profile = eventProfileFields(req.body);
 
     if (!title || !venue || price == null || totalSeats == null || !category) {
       return res.status(400).json({ message: 'All fields are required' });
@@ -267,6 +282,7 @@ exports.createEvent = async (req, res) => {
       imagePreset: imagePreset || 'preset-a',
       designConfig: parsedDesignConfig,
       customFields: parsedCustomFields,
+      ...profile,
     });
 
     if (imageFileId) {
@@ -277,6 +293,7 @@ exports.createEvent = async (req, res) => {
     return res.status(201).json(event);
 
   } catch (error) {
+    if (error?.name === 'ValidationError') return res.status(400).json({ message: getReadableSaveError(error) });
     console.error('CREATE EVENT ERROR ❌', error);
     return res.status(500).json({ message: 'Server error while creating event' });
   }
@@ -701,6 +718,7 @@ exports.updateEvent = async (req, res) => {
     if (req.body.imagePreset != null) updates.imagePreset = String(req.body.imagePreset);
     if (req.body.designConfig != null) updates.designConfig = parseJsonObject(req.body.designConfig);
     if (req.body.customFields != null) updates.customFields = parseCustomFields(req.body.customFields);
+    Object.assign(updates, eventProfileFields(req.body));
     if (req.file) {
       const newId = await uploadBufferToGridFS(req.file);
       updates.imageFileId = newId;

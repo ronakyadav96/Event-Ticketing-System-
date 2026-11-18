@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -6,8 +6,24 @@ import { EventService } from '../../services/event.service';
 import { AuthService } from '../../auth/auth.service';
 import { environment } from '../../../environments/environment';
 
-type CustomFieldType = 'text' | 'email' | 'phone' | 'number' | 'textarea' | 'select' | 'checkbox';
-type CreateEventStep = 'basic' | 'datetime' | 'design' | 'tickets' | 'customize' | 'seo' | 'settings';
+type CreateEventStep = 'basics' | 'schedule' | 'tickets' | 'publish';
+type LocationMode = 'Offline' | 'Online';
+
+interface StepDef {
+  key: CreateEventStep;
+  title: string;
+  hint: string;
+}
+
+const DRAFT_KEY = 'tamasha_create_event_draft';
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/** Fields kept in the local draft (everything except the poster file). */
+const DRAFT_FIELDS = [
+  'title', 'tagline', 'description', 'category', 'customCategory', 'language', 'ageRestriction',
+  'locationMode', 'venue', 'meetingLink', 'multiDay', 'startDate', 'endDate', 'showTimes',
+  'isFree', 'price', 'totalSeats', 'themeColor',
+] as const;
 
 @Component({
   standalone: true,
@@ -16,312 +32,105 @@ type CreateEventStep = 'basic' | 'datetime' | 'design' | 'tickets' | 'customize'
   templateUrl: './create-event.component.html',
   styleUrls: ['./create-event.component.css'],
 })
-export class CreateEventComponent implements OnInit, AfterViewInit {
-  private readonly customFieldTypes: CustomFieldType[] = ['text', 'email', 'phone', 'number', 'textarea', 'select', 'checkbox'];
-
+export class CreateEventComponent implements OnInit, AfterViewInit, OnDestroy {
   private es = inject(EventService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private auth = inject(AuthService);
 
+  readonly steps: StepDef[] = [
+    { key: 'basics', title: 'Basics', hint: 'Name, category & story' },
+    { key: 'schedule', title: 'When & where', hint: 'Dates, shows & venue' },
+    { key: 'tickets', title: 'Tickets', hint: 'Price & seats' },
+    { key: 'publish', title: 'Poster & publish', hint: 'Banner & final check' },
+  ];
+  step: CreateEventStep = 'basics';
+  /** Steps the creator tried to leave: their missing fields are highlighted from then on. */
+  private attempted = new Set<CreateEventStep>();
+  /** Steps the creator has opened; only those get a ✓ in the stepper. */
+  private visited = new Set<CreateEventStep>(['basics']);
+
   isEdit = false;
   eventId: string | null = null;
 
+  // ── Basics ──
   title = '';
   tagline = '';
   description = '';
-  // Legacy single datetime (kept for backward compatibility; computed from schedule on submit)
-  date = '';
+  category = '';
+  customCategory = '';
+  readonly customCategoryValue = '__custom__';
+  categories: string[] = [];
+  private readonly defaultCategories = ['Comedy', 'Concert', 'Plays', 'Sports', 'Workshop', 'Seminar', 'Activities'];
+  private readonly categoryEmoji: Record<string, string> = {
+    comedy: '😂', concert: '🎵', plays: '🎭', sports: '🏟️', workshop: '🛠️', seminar: '🎤',
+    activities: '🎯', movie: '🎬', conference: '💼', webinar: '💻',
+  };
+  readonly languages = ['English', 'Hindi', 'Hinglish', 'Marathi', 'Tamil', 'Telugu', 'Kannada', 'Bengali', 'Other'];
+  language = 'English';
+  readonly ageOptions = ['All Ages', '5+', '12+', '16+', '18+', '21+'];
+  ageRestriction = 'All Ages';
 
-  // New: schedule (BookMyShow-style)
+  // ── When & where ──
+  locationMode: LocationMode = 'Offline';
+  venue = '';
+  meetingLink = '';
+  multiDay = false;
   startDate = '';
   endDate = '';
   showTimes: string[] = ['19:00'];
-  venue = '';
-  meetingLink = '';
-  price = 0;
-  totalSeats = 1;
-  category = '';
-  customCategory = '';
-  locationType = '';
-  language = 'English';
-  ageRestriction = 'All Ages';
-  timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
-  isMultiDate = false;
-  mapQuery = '';
-  registrationTemplate = 'standard';
-  designTemplate = 'clean-hero';
-  imagePreset = 'preset-a';
-  bannerFile: File | null = null;
-  thumbnailFile: File | null = null;
-  readonly customCategoryValue = '__custom__';
-  categories: string[] = [];
-  private readonly defaultCategories = ['Conference', 'Workshop', 'Seminar', 'Concert', 'Webinar', 'Movie', 'Comedy', 'Sports'];
-  readonly fontOptions = ['Inter', 'Playfair Display', 'Georgia', 'Arial'];
-  readonly fontSizes = [10,12, 14, 16, 18, 20, 24, 28];
-  selectedFont = 'Inter';
-  selectedFontSize = 16;
-  selectedColor = '#e5e7eb';
-  designConfig = {
-    badgeText: 'Book Now',
-    heroKicker: 'Live Event',
-    ctaText: 'Book Tickets',
-    themeColor: '#d6b67a',
-    overlayColor: '#0a0a0b',
-    overlayOpacity: 55,
-    gradientOverlay: true,
-    textAlign: 'left' as 'left' | 'center' | 'right',
-    buttonStyle: 'solid' as 'solid' | 'outline' | 'rounded',
-    darkMode: false,
-    showLogo: false,
-    showWatermark: false,
-  };
-  previewMode: 'desktop' | 'mobile' = 'desktop';
-  ticketMode: 'free' | 'paid' | 'donation' = 'paid';
-  earlyBirdEnabled = false;
-  discountCodesEnabled = false;
-  tieredPricingEnabled = false;
-  speakersEnabled = true;
-  agendaEnabled = true;
-  faqsEnabled = true;
-  sponsorsEnabled = false;
-  customSections: Array<{ title: string; body: string }> = [];
-  customSectionDraft = { title: '', body: '' };
-  slug = '';
-  metaTitle = '';
-  metaDescription = '';
-  socialPreviewImage = '';
-  visibility: 'Public' | 'Private' | 'Unlisted' = 'Public';
-  approvalRequired = false;
-  refundPolicy = '';
-  termsText = '';
-  customFields: Array<{
-    label: string;
-    type: CustomFieldType;
-    required: boolean;
-    options?: string[];
-  }> = [];
-  customFieldDraft = {
-    label: '',
-    type: 'text' as CustomFieldType,
-    required: false,
-    optionsText: '',
-  };
-  customFieldError = '';
+  newTime = '';
+  readonly timePresets = ['11:00', '14:00', '17:00', '19:00', '20:30', '22:00'];
 
+  // ── Tickets ──
+  isFree = false;
+  price: number | null = 499;
+  readonly pricePresets = [199, 299, 499, 799, 999];
+  totalSeats: number | null = 100;
+  readonly seatPresets = [50, 100, 200, 500];
+
+  // ── Poster ──
+  themeColor = '#d6b67a';
+  readonly themeColors = ['#d6b67a', '#e5484d', '#7c5cff', '#18a0fb', '#10b981', '#f97316'];
   selectedFile: File | null = null;
   imagePreviewUrl: string | null = null;
   existingImageUrl: string | null = null;
-  selectedCreateStep: CreateEventStep = 'basic';
+  dragOver = false;
+  private readonly maxImageBytes = 5 * 1024 * 1024;
+
+  // Fields the form does not edit, carried through unchanged when updating an event.
+  private designConfig: Record<string, any> = {};
+  private customFields: any[] = [];
+
   @ViewChild('descEditor') descEditor?: ElementRef<HTMLDivElement>;
   loading = false;
+  saving = false;
   successMessage = '';
   errorMessage = '';
-  private readonly maxImageBytes = 5 * 1024 * 1024;
-  private readonly imageWidth = 1200;
-  private readonly imageHeight = 800;
+  draftRestored = false;
+  private draftTimer: ReturnType<typeof setTimeout> | null = null;
 
-  private get dashboardRoute(): string {
+  get dashboardRoute(): string {
     return this.auth.isSuperAdmin() ? '/superadmin-dashboard' : '/creator-dashboard';
   }
 
-  // =============================
-  // INIT
-  // =============================
+  // ═════════════════════════════════ Lifecycle ═════════════════════════════════
+
   ngOnInit(): void {
-
-    this.loadCategories();
-
     if (!this.auth.isCreator() && !this.auth.isSuperAdmin()) {
       this.router.navigate(['/events']);
       return;
     }
+    this.loadCategories();
 
-    const id =
-      this.route.snapshot.paramMap.get('id') ||
-      this.route.snapshot.queryParamMap.get('id');
+    const id = this.route.snapshot.paramMap.get('id') || this.route.snapshot.queryParamMap.get('id');
     if (id) {
       this.isEdit = true;
       this.eventId = id;
       this.loadEvent(id);
-    }
-  }
-
-    // =============================
-  // CATEGORIES
-  // =============================
-  loadCategories() {
-    this.es.getCategories().subscribe({
-      next: (list: string[]) => {
-        this.categories = Array.isArray(list) && list.length ? list : [...this.defaultCategories];
-      },
-      error: () => {
-        this.categories = [...this.defaultCategories];
-      }
-    });
-  }
-  // =============================
-  // IMAGE URL FIX (for prod/local)
-  // =============================
-  getImageUrl(path: string | null): string {
-    if (!path) return '';
-    if (path.startsWith('http')) return path;
-
-    const clean = path.startsWith('/') ? path.substring(1) : path;
-    return `${environment.apiUrl}/${clean}`;
-  }
-
-  // =============================
-  // MIN DATE (Schedule)
-  // =============================
-  get minDateLocal(): string {
-    const d = new Date();
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  }
-
-  // =============================
-  // SCHEDULE PREVIEW
-  // =============================
-  get schedulePreview(): { rangeText: string; timesText: string } | null {
-    if (!this.startDate || !this.endDate || !this.showTimes?.length) return null;
-
-    const s = new Date(`${this.startDate}T00:00:00`);
-    const e = new Date(`${this.endDate}T00:00:00`);
-    if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return null;
-
-    const fmt = new Intl.DateTimeFormat('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
-
-    const rangeText =
-      this.startDate === this.endDate
-        ? fmt.format(s)
-        : `${fmt.format(s)} - ${fmt.format(e)}`;
-
-    const timesText = this.showTimes
-      .map((t) => String(t || '').trim())
-      .filter(Boolean)
-      .join(', ');
-
-    return timesText ? { rangeText, timesText } : null;
-  }
-
-  // Legacy preview helper used by existing preview UI (derived from schedule)
-  get datePreview(): { dateText: string; timeText: string } | null {
-    const iso = this.buildLegacyDateIso() || (this.date ? new Date(this.date).toISOString() : '');
-    if (!iso) return null;
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return null;
-
-    const dateText = new Intl.DateTimeFormat('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    }).format(d);
-
-    const timeText = new Intl.DateTimeFormat('en-GB', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }).format(d);
-
-    return { dateText, timeText };
-  }
-
-  private buildLegacyDateIso(): string {
-    const firstTime = String(this.showTimes?.[0] || '').trim();
-    if (!this.startDate || !firstTime) return '';
-    // Local date + time -> ISO (keeps correct moment for current user timezone)
-    const d = new Date(`${this.startDate}T${firstTime}:00`);
-    if (Number.isNaN(d.getTime())) return '';
-    return d.toISOString();
-  }
-
-  addShowTime() {
-    this.showTimes = [...(this.showTimes || []), '19:00'];
-  }
-
-  removeShowTime(index: number) {
-    const next = [...(this.showTimes || [])];
-    next.splice(index, 1);
-    this.showTimes = next.length ? next : ['19:00'];
-  }
-
-  // =============================
-  // FILE SELECT
-  // =============================
-  onFileSelected(evt: Event): void {
-    const input = evt.target as HTMLInputElement;
-    const file = input?.files?.[0];
-
-    if (!file) return;
-
-    this.errorMessage = '';
-
-    if (!file.type.startsWith('image/')) {
-      this.errorMessage = 'Only image files are allowed.';
-      input.value = '';
-      return;
-    }
-
-    if (file.size > this.maxImageBytes) {
-      this.errorMessage = 'Image size must be under 5MB.';
-      input.value = '';
-      return;
-    }
-
-    this.resizeImage(file, this.imageWidth, this.imageHeight)
-      .then(({ resizedFile, previewUrl }) => {
-        this.selectedFile = resizedFile;
-        this.imagePreviewUrl = previewUrl;
-      })
-      .catch(() => {
-        this.errorMessage = 'Failed to process image.';
-        input.value = '';
-      });
-  }
-
-  readonly createSteps: Array<{ key: CreateEventStep; title: string; meta: string }> = [
-    { key: 'basic', title: 'Basic', meta: 'Identity and copy' },
-    { key: 'datetime', title: 'Date', meta: 'Time and location' },
-    { key: 'design', title: 'Design', meta: 'Banner and visuals' },
-    { key: 'tickets', title: 'Tickets', meta: 'Pricing and limits' },
-    { key: 'customize', title: 'Customize', meta: 'Sections and content' },
-    { key: 'seo', title: 'SEO', meta: 'Slug and sharing' },
-    { key: 'settings', title: 'Settings', meta: 'Visibility and rules' },
-  ];
-
-  selectCreateStep(key: CreateEventStep) {
-    if (!this.canOpenStep(key)) return;
-    this.selectedCreateStep = key;
-  }
-
-  goNextStep() {
-    if (this.selectedCreateStep === 'basic' && this.canProceedBasic) {
-      this.selectedCreateStep = 'datetime';
-      return;
-    }
-    if (this.selectedCreateStep === 'datetime' && this.canProceedDateTime) {
-      this.selectedCreateStep = 'design';
-      return;
-    }
-    if (this.selectedCreateStep === 'design' && this.canProceedDesign) {
-      this.selectedCreateStep = 'tickets';
-      return;
-    }
-    if (this.selectedCreateStep === 'tickets' && this.canProceedTickets) {
-      this.selectedCreateStep = 'customize';
-      return;
-    }
-    if (this.selectedCreateStep === 'customize' && this.canProceedCustomize) {
-      this.selectedCreateStep = 'seo';
-      return;
-    }
-    if (this.selectedCreateStep === 'seo' && this.canProceedSeo) {
-      this.selectedCreateStep = 'settings';
+    } else {
+      this.startDate = this.endDate = this.isoDay(0);
+      this.restoreDraft();
     }
   }
 
@@ -329,501 +138,554 @@ export class CreateEventComponent implements OnInit, AfterViewInit {
     this.syncEditorFromDescription();
   }
 
-  goPrevStep() {
-    if (this.selectedCreateStep === 'settings') { this.selectedCreateStep = 'seo'; return; }
-    if (this.selectedCreateStep === 'seo') { this.selectedCreateStep = 'customize'; return; }
-    if (this.selectedCreateStep === 'customize') { this.selectedCreateStep = 'tickets'; return; }
-    if (this.selectedCreateStep === 'tickets') { this.selectedCreateStep = 'design'; return; }
-    if (this.selectedCreateStep === 'design') { this.selectedCreateStep = 'datetime'; return; }
-    if (this.selectedCreateStep === 'datetime') { this.selectedCreateStep = 'basic'; return; }
+  ngOnDestroy(): void {
+    if (this.draftTimer) clearTimeout(this.draftTimer);
   }
 
-  get canProceedBasic(): boolean {
-    return !!(this.title.trim() && this.resolvedCategory && this.language && this.ageRestriction);
+  // ═════════════════════════════════ Categories ═════════════════════════════════
+
+  loadCategories(): void {
+    this.es.getCategories().subscribe({
+      next: (list: string[]) => {
+        const real = (Array.isArray(list) ? list : []).filter((c) => c.toLowerCase() !== 'movie');
+        this.categories = real.length ? real : [...this.defaultCategories];
+        this.applyCategory(this.resolvedCategory);
+      },
+      error: () => (this.categories = [...this.defaultCategories]),
+    });
   }
 
-  get canProceedDateTime(): boolean {
-    return !!(
-      this.startDate &&
-      this.endDate &&
-      this.showTimes?.length &&
-      this.showTimes.some((time) => String(time || '').trim()) &&
-      this.locationType &&
-      ((this.locationType === 'Online' && this.meetingLink.trim()) || (this.locationType !== 'Online' && this.venue.trim()))
-    );
+  emojiFor(category: string): string {
+    return this.categoryEmoji[category.toLowerCase()] || '✨';
   }
 
-  get canProceedTickets(): boolean {
-    return !!(this.totalSeats >= 1 && this.price >= 0 && this.registrationTemplate && this.ticketMode);
+  pickCategory(value: string): void {
+    this.category = value;
+    this.changed();
   }
 
-  get canProceedDesign(): boolean {
-    return !!(this.designTemplate && (this.selectedFile || this.existingImageUrl));
+  get resolvedCategory(): string {
+    return this.category === this.customCategoryValue ? this.customCategory.trim() : this.category;
   }
 
-  get canProceedCustomize(): boolean {
-    return true;
+  private applyCategory(value: string): void {
+    if (!value) return;
+    if (this.categories.some((c) => c.toLowerCase() === value.toLowerCase())) {
+      this.category = this.categories.find((c) => c.toLowerCase() === value.toLowerCase())!;
+      this.customCategory = '';
+    } else if (this.categories.length) {
+      this.category = this.customCategoryValue;
+      this.customCategory = value;
+    }
   }
 
-  get canProceedSeo(): boolean {
-    return !!(this.slug.trim() || this.title.trim());
+  // ═════════════════════════════════ Steps & validation ═════════════════════════════════
+
+  /** Missing or invalid fields per step, in the order they appear on screen. */
+  problems(step: CreateEventStep): string[] {
+    const out: string[] = [];
+    if (step === 'basics') {
+      if (!this.title.trim()) out.push('Add an event name');
+      if (!this.resolvedCategory) out.push('Pick a category');
+    }
+    if (step === 'schedule') {
+      if (this.locationMode === 'Offline' && !this.venue.trim()) out.push('Add the venue');
+      if (this.locationMode === 'Online' && !/^https?:\/\/\S+$/i.test(this.meetingLink.trim())) out.push('Add a valid meeting link (https://…)');
+      if (!this.startDate) out.push('Pick a date');
+      if (this.multiDay && (!this.endDate || this.endDate < this.startDate)) out.push('End date must be on or after the start date');
+      if (!this.validTimes.length) out.push('Add at least one show time');
+      else if (this.startDate === this.isoDay(0) && !this.multiDay && this.validTimes.every((t) => t <= this.nowHHmm())) {
+        out.push('All of today’s show times have passed — add a later time');
+      }
+    }
+    if (step === 'tickets') {
+      if (!this.isFree && !(Number(this.price) > 0)) out.push('Set a ticket price (or make it free)');
+      if (!(Number(this.totalSeats) >= 1) || Number(this.totalSeats) > 2000) out.push('Seats per show must be between 1 and 2000');
+    }
+    if (step === 'publish') {
+      if (!this.selectedFile && !this.existingImageUrl) out.push('Upload a poster or banner');
+    }
+    return out;
   }
 
-  get canPublish(): boolean {
-    return this.canProceedBasic && this.canProceedDateTime && this.canProceedDesign && this.canProceedTickets && this.canProceedCustomize && this.canProceedSeo;
+  isComplete(step: CreateEventStep): boolean {
+    return this.problems(step).length === 0;
   }
 
-  canOpenStep(step: CreateEventStep): boolean {
-    if (step === 'basic') return true;
-    if (step === 'datetime') return this.canProceedBasic;
-    if (step === 'design') return this.canProceedBasic && this.canProceedDateTime;
-    if (step === 'tickets') return this.canProceedBasic && this.canProceedDateTime && this.canProceedDesign;
-    if (step === 'customize') return this.canProceedBasic && this.canProceedDateTime && this.canProceedDesign && this.canProceedTickets;
-    if (step === 'seo') return this.canProceedBasic && this.canProceedDateTime && this.canProceedDesign && this.canProceedTickets && this.canProceedCustomize;
-    return this.canPublish;
+  showProblems(step: CreateEventStep): boolean {
+    return this.attempted.has(step) && !this.isComplete(step);
   }
 
-  isStepComplete(step: CreateEventStep): boolean {
-    if (step === 'basic') return this.canProceedBasic;
-    if (step === 'datetime') return this.canProceedDateTime;
-    if (step === 'design') return this.canProceedDesign;
-    if (step === 'tickets') return this.canProceedTickets;
-    if (step === 'customize') return this.canProceedCustomize;
-    if (step === 'seo') return this.canProceedSeo;
-    return this.canPublish;
+  /** Highlight a field once the creator has tried to move past its step. */
+  invalid(step: CreateEventStep, check: boolean): boolean {
+    return this.attempted.has(step) && check;
   }
 
-  get currentStepIndex(): number {
-    return this.createSteps.findIndex((step) => step.key === this.selectedCreateStep);
+  get stepIndex(): number {
+    return this.steps.findIndex((s) => s.key === this.step);
   }
 
-  get completionCount(): number {
-    return this.createSteps.filter((step) => this.isStepComplete(step.key)).length;
+  get readyToPublish(): boolean {
+    return this.steps.every((s) => this.isComplete(s.key));
   }
 
-  get completionPercent(): number {
-    return Math.round((this.completionCount / this.createSteps.length) * 100);
+  get completion(): number {
+    return Math.round((this.steps.filter((s) => this.isComplete(s.key)).length / this.steps.length) * 100);
+  }
+
+  goTo(step: CreateEventStep): void {
+    // Going back is always allowed; going forward needs every earlier step to be complete.
+    const target = this.steps.findIndex((s) => s.key === step);
+    for (let i = 0; i < target; i++) {
+      if (!this.isComplete(this.steps[i].key)) {
+        this.attempted.add(this.steps[i].key);
+        this.setStep(this.steps[i].key);
+        return;
+      }
+    }
+    this.setStep(step);
+  }
+
+  next(): void {
+    this.attempted.add(this.step);
+    if (!this.isComplete(this.step)) return;
+    const nextStep = this.steps[this.stepIndex + 1];
+    if (nextStep) this.setStep(nextStep.key);
+  }
+
+  back(): void {
+    const prev = this.steps[this.stepIndex - 1];
+    if (prev) this.setStep(prev.key);
+  }
+
+  /** ✓ in the stepper: complete, and either opened already or (when editing) prefilled. */
+  isDone(step: CreateEventStep): boolean {
+    return this.isComplete(step) && (this.visited.has(step) || this.isEdit);
+  }
+
+  private setStep(step: CreateEventStep): void {
+    this.step = step;
+    this.visited.add(step);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ═════════════════════════════════ Dates & show times ═════════════════════════════════
+
+  get today(): string {
+    return this.isoDay(0);
+  }
+
+  private isoDay(offset: number, from?: Date): string {
+    const d = from ? new Date(from) : new Date();
+    d.setDate(d.getDate() + offset);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  private nowHHmm(): string {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+
+  quickDate(kind: 'today' | 'tomorrow' | 'weekend' | 'week'): void {
+    if (kind === 'today' || kind === 'tomorrow') {
+      this.multiDay = false;
+      this.startDate = this.endDate = this.isoDay(kind === 'today' ? 0 : 1);
+    } else if (kind === 'weekend') {
+      const now = new Date();
+      const toSat = (6 - now.getDay() + 7) % 7;
+      this.multiDay = true;
+      this.startDate = this.isoDay(toSat);
+      this.endDate = this.isoDay(toSat + 1);
+    } else {
+      this.multiDay = true;
+      this.startDate = this.isoDay(0);
+      this.endDate = this.isoDay(6);
+    }
+    this.changed();
+  }
+
+  setMultiDay(value: boolean): void {
+    this.multiDay = value;
+    if (!value) this.endDate = this.startDate;
+    else if (!this.endDate || this.endDate <= this.startDate) this.endDate = this.startDate ? this.isoDay(1, new Date(`${this.startDate}T00:00:00`)) : '';
+    this.changed();
+  }
+
+  onStartDateChange(): void {
+    if (!this.multiDay || !this.endDate || this.endDate < this.startDate) this.endDate = this.startDate;
+    this.changed();
+  }
+
+  get validTimes(): string[] {
+    return [...new Set(this.showTimes.filter((t) => TIME_RE.test(t)))].sort();
+  }
+
+  hasTime(t: string): boolean {
+    return this.showTimes.includes(t);
+  }
+
+  toggleTime(t: string): void {
+    this.showTimes = this.hasTime(t) ? this.showTimes.filter((x) => x !== t) : [...this.showTimes, t].sort();
+    this.changed();
+  }
+
+  addCustomTime(): void {
+    const t = (this.newTime || '').trim();
+    if (!TIME_RE.test(t)) return;
+    if (!this.hasTime(t)) this.showTimes = [...this.showTimes, t].sort();
+    this.newTime = '';
+    this.changed();
+  }
+
+  removeTime(t: string): void {
+    this.showTimes = this.showTimes.filter((x) => x !== t);
+    this.changed();
+  }
+
+  formatTime(hhmm: string): string {
+    const [h, m] = hhmm.split(':').map(Number);
+    return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+  }
+
+  private formatDay(iso: string, withYear = false): string {
+    const d = new Date(`${iso}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', ...(withYear ? { year: 'numeric' } : {}) });
+  }
+
+  get dayCount(): number {
+    if (!this.startDate) return 0;
+    if (!this.multiDay || !this.endDate) return 1;
+    const ms = new Date(`${this.endDate}T00:00:00`).getTime() - new Date(`${this.startDate}T00:00:00`).getTime();
+    return ms >= 0 ? Math.round(ms / 86400000) + 1 : 0;
+  }
+
+  get dateLabel(): string {
+    if (!this.startDate) return 'Date';
+    if (!this.multiDay || this.endDate === this.startDate) return this.formatDay(this.startDate, true);
+    return `${this.formatDay(this.startDate)} – ${this.formatDay(this.endDate, true)}`;
+  }
+
+  get timesLabel(): string {
+    return this.validTimes.map((t) => this.formatTime(t)).join(' · ') || 'Show time';
+  }
+
+  get totalShows(): number {
+    return this.dayCount * this.validTimes.length;
+  }
+
+  // ═════════════════════════════════ Tickets ═════════════════════════════════
+
+  setFree(value: boolean): void {
+    this.isFree = value;
+    if (!value && !(Number(this.price) > 0)) this.price = 499;
+    this.changed();
   }
 
   get priceLabel(): string {
-    return Number(this.price || 0) === 0 ? 'Free' : `₹${this.price}`;
+    return this.isFree ? 'Free' : `₹${Number(this.price || 0).toLocaleString('en-IN')}`;
   }
 
-  get imageStatusLabel(): string {
-    return this.selectedFile ? this.selectedFile.name : (this.existingImageUrl ? 'Current cover ready' : 'No cover selected');
+  /** Same layout rule as the backend's seat map (seat-map.util.js). */
+  get seatLayout(): { rows: number; perRow: number } {
+    const total = Math.max(0, Number(this.totalSeats) || 0);
+    const perRow = total <= 60 ? 10 : total <= 200 ? 15 : 20;
+    return { rows: Math.ceil(total / perRow), perRow };
   }
 
-  get previewVenue(): string {
-    if (this.locationType === 'Online') return this.meetingLink || 'Online event link';
-    return this.venue || 'Venue will appear here';
+  get revenuePerShow(): string {
+    if (this.isFree) return '₹0';
+    const value = Number(this.price || 0) * Number(this.totalSeats || 0);
+    return `₹${value.toLocaleString('en-IN')}`;
   }
 
-  get ticketSummary(): string {
-    if (this.ticketMode === 'free') return 'Free entry';
-    if (this.ticketMode === 'donation') return 'Donation based';
-    return this.priceLabel;
+  // ═════════════════════════════════ Poster ═════════════════════════════════
+
+  getImageUrl(path: string | null): string {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+    const clean = path.startsWith('/') ? path.substring(1) : path;
+    return `${environment.apiUrl}/${clean}`;
   }
 
-  // =============================
-  // LOAD EVENT (EDIT MODE)
-  // =============================
-  loadEvent(id: string) {
+  get posterUrl(): string {
+    return this.imagePreviewUrl || this.getImageUrl(this.existingImageUrl);
+  }
+
+  onFileSelected(evt: Event): void {
+    const input = evt.target as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (file) this.useFile(file);
+    if (input) input.value = '';
+  }
+
+  onDrop(evt: DragEvent): void {
+    evt.preventDefault();
+    this.dragOver = false;
+    const file = evt.dataTransfer?.files?.[0];
+    if (file) this.useFile(file);
+  }
+
+  onDragOver(evt: DragEvent): void {
+    evt.preventDefault();
+    this.dragOver = true;
+  }
+
+  removePoster(): void {
+    this.selectedFile = null;
+    this.imagePreviewUrl = null;
+  }
+
+  private useFile(file: File): void {
+    this.errorMessage = '';
+    if (!/^image\/(png|jpe?g|webp)$/.test(file.type)) {
+      this.errorMessage = 'Please upload a JPG, PNG or WebP image.';
+      return;
+    }
+    if (file.size > this.maxImageBytes) {
+      this.errorMessage = 'The image must be under 5 MB.';
+      return;
+    }
+    this.resizeImage(file, 1200, 800)
+      .then(({ resizedFile, previewUrl }) => {
+        this.selectedFile = resizedFile;
+        this.imagePreviewUrl = previewUrl;
+      })
+      .catch(() => (this.errorMessage = 'Could not read that image. Please try another one.'));
+  }
+
+  /** Crop to a 3:2 banner and compress, so uploads stay small and posters look consistent. */
+  private resizeImage(file: File, targetW: number, targetH: number): Promise<{ resizedFile: File; previewUrl: string }> {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          reject(new Error('Canvas not supported'));
+          return;
+        }
+        const scale = Math.max(targetW / img.width, targetH / img.height);
+        const w = img.width * scale;
+        const h = img.height * scale;
+        ctx.drawImage(img, (targetW - w) / 2, (targetH - h) / 2, w, h);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return reject(new Error('Blob failed'));
+            const name = `${file.name.replace(/\.[^/.]+$/, '')}-1200x800.jpg`;
+            resolve({ resizedFile: new File([blob], name, { type: 'image/jpeg' }), previewUrl: canvas.toDataURL('image/jpeg', 0.85) });
+          },
+          'image/jpeg',
+          0.85
+        );
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Image load failed'));
+      };
+      img.src = url;
+    });
+  }
+
+  // ═════════════════════════════════ Description editor ═════════════════════════════════
+
+  onDescriptionInput(event: Event): void {
+    this.description = (event.target as HTMLElement)?.innerHTML || '';
+    this.changed();
+  }
+
+  format(command: 'bold' | 'italic' | 'underline' | 'insertUnorderedList' | 'removeFormat'): void {
+    this.descEditor?.nativeElement?.focus();
+    document.execCommand(command, false);
+    this.description = this.descEditor?.nativeElement.innerHTML || '';
+    this.changed();
+  }
+
+  /** Pasted text keeps line breaks but drops foreign styling (fonts, colours, scripts). */
+  onPaste(event: ClipboardEvent): void {
+    event.preventDefault();
+    const text = event.clipboardData?.getData('text/plain') || '';
+    document.execCommand('insertText', false, text);
+  }
+
+  get descriptionLength(): number {
+    return this.plainText(this.description).length;
+  }
+
+  plainText(html: string): string {
+    return String(html || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  private syncEditorFromDescription(): void {
+    const el = this.descEditor?.nativeElement;
+    if (el && el.innerHTML !== (this.description || '')) el.innerHTML = this.description || '';
+  }
+
+  // ═════════════════════════════════ Draft (new events only) ═════════════════════════════════
+
+  /** Called after every edit: the draft is saved shortly after the creator stops typing. */
+  changed(): void {
+    if (this.isEdit) return;
+    if (this.draftTimer) clearTimeout(this.draftTimer);
+    this.draftTimer = setTimeout(() => this.saveDraft(), 600);
+  }
+
+  private saveDraft(): void {
+    const draft: Record<string, unknown> = {};
+    for (const key of DRAFT_FIELDS) draft[key] = (this as any)[key];
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch {
+      // Storage full or blocked: the draft is a convenience only.
+    }
+  }
+
+  private restoreDraft(): void {
+    let draft: Record<string, any> | null = null;
+    try {
+      draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+    } catch {
+      draft = null;
+    }
+    if (!draft || !String(draft['title'] || '').trim()) return;
+    for (const key of DRAFT_FIELDS) {
+      if (draft[key] !== undefined) (this as any)[key] = draft[key];
+    }
+    if (this.startDate && this.startDate < this.today) this.startDate = this.today;
+    if (this.endDate && this.endDate < this.startDate) this.endDate = this.startDate;
+    this.draftRestored = true;
+  }
+
+  discardDraft(): void {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      // ignore
+    }
+    window.location.reload();
+  }
+
+  // ═════════════════════════════════ Load (edit) ═════════════════════════════════
+
+  loadEvent(id: string): void {
     this.loading = true;
-
     this.es.getEventById(id).subscribe({
       next: (ev: any) => {
         this.title = ev.title || '';
         this.tagline = ev.tagline || '';
         this.description = ev.description || '';
-        this.syncEditorFromDescription();
-        // Schedule (new) with fallbacks to legacy `date`
-        const legacyIso = ev.date || '';
-        const legacyDate = legacyIso ? new Date(legacyIso) : null;
-
-        this.startDate = ev.startDate ? String(ev.startDate).slice(0, 10) : (legacyIso ? legacyIso.slice(0, 10) : '');
-        this.endDate = ev.endDate ? String(ev.endDate).slice(0, 10) : this.startDate;
-
-        if (Array.isArray(ev.showTimes) && ev.showTimes.length) {
-          this.showTimes = ev.showTimes.map((t: any) => String(t || '').trim()).filter(Boolean);
-        } else if (legacyDate && !Number.isNaN(legacyDate.getTime())) {
-          const hh = String(legacyDate.getHours()).padStart(2, '0');
-          const mm = String(legacyDate.getMinutes()).padStart(2, '0');
-          this.showTimes = [`${hh}:${mm}`];
-        } else {
-          this.showTimes = ['19:00'];
-        }
-
-        // Keep legacy date field (not shown in UI)
-        this.date = legacyIso ? legacyIso.slice(0, 16) : '';
-        this.venue = ev.venue || '';
-        this.meetingLink = ev.meetingLink || '';
-        this.price = ev.price || 0;
-        this.totalSeats = ev.totalSeats || 1;
-        this.existingImageUrl = ev.imageUrl || null;
-        this.applyCategory(ev.category || '');
-        this.locationType = ev.locationType || '';
         this.language = ev.language || this.language;
         this.ageRestriction = ev.ageRestriction || this.ageRestriction;
-        this.timezone = ev.timezone || this.timezone;
-        this.isMultiDate = !!ev.isMultiDate;
-        this.mapQuery = ev.mapQuery || '';
-        this.registrationTemplate = ev.registrationTemplate || this.registrationTemplate;
-        this.designTemplate = ev.designTemplate || this.designTemplate;
-        this.imagePreset = ev.imagePreset || this.imagePreset;
-        this.ticketMode = ev.ticketMode || this.ticketMode;
-        this.slug = ev.slug || '';
-        this.metaTitle = ev.metaTitle || '';
-        this.metaDescription = ev.metaDescription || '';
-        this.socialPreviewImage = ev.socialPreviewImage || '';
-        this.visibility = ev.visibility || this.visibility;
-        this.approvalRequired = !!ev.approvalRequired;
-        this.refundPolicy = ev.refundPolicy || '';
-        this.termsText = ev.termsText || '';
-        this.customSections = Array.isArray(ev.customSections) ? ev.customSections : [];
-        this.customFields = Array.isArray(ev.customFields) ? ev.customFields : [];
-        if (ev.designConfig && typeof ev.designConfig === 'object') {
-          this.designConfig = {
-            ...this.designConfig,
-            ...ev.designConfig
-          };
+        this.applyCategory(ev.category || '');
+        if (!this.categories.length) this.category = ev.category || '';
+
+        const legacy = ev.date ? new Date(ev.date) : null;
+        this.startDate = ev.startDate ? String(ev.startDate).slice(0, 10) : (ev.date ? String(ev.date).slice(0, 10) : '');
+        this.endDate = ev.endDate ? String(ev.endDate).slice(0, 10) : this.startDate;
+        this.multiDay = !!this.endDate && this.endDate !== this.startDate;
+        if (Array.isArray(ev.showTimes) && ev.showTimes.length) {
+          this.showTimes = ev.showTimes.map((t: any) => String(t || '').trim()).filter((t: string) => TIME_RE.test(t));
+        } else if (legacy && !Number.isNaN(legacy.getTime())) {
+          this.showTimes = [`${String(legacy.getHours()).padStart(2, '0')}:${String(legacy.getMinutes()).padStart(2, '0')}`];
         }
+
+        this.locationMode = ev.locationType === 'Online' ? 'Online' : 'Offline';
+        this.meetingLink = ev.meetingLink || (this.locationMode === 'Online' ? ev.venue || '' : '');
+        this.venue = this.locationMode === 'Offline' ? ev.venue || '' : '';
+        this.price = Number(ev.price) || 0;
+        this.isFree = this.price === 0;
+        if (this.isFree) this.price = null;
+        this.totalSeats = Number(ev.totalSeats) || 1;
+        this.existingImageUrl = ev.imageUrl || null;
+        this.designConfig = ev.designConfig && typeof ev.designConfig === 'object' ? ev.designConfig : {};
+        this.themeColor = this.designConfig['themeColor'] || this.themeColor;
+        this.customFields = Array.isArray(ev.customFields) ? ev.customFields : [];
+        // Editing an existing event: every step is reachable and validated right away.
+        this.steps.forEach((s) => this.attempted.add(s.key));
+        this.syncEditorFromDescription();
+        this.loading = false;
       },
-      error: () => this.errorMessage = 'Failed to load event',
-      complete: () => this.loading = false
+      error: () => {
+        this.errorMessage = 'Could not load this event. Please go back and try again.';
+        this.loading = false;
+      },
     });
   }
 
-  // =============================
-  // SUBMIT
-  // =============================
+  // ═════════════════════════════════ Submit ═════════════════════════════════
+
+  /** The public page layout follows the category. */
+  private get designTemplate(): string {
+    const c = this.resolvedCategory.toLowerCase();
+    if (c.includes('movie')) return 'movie';
+    if (c.includes('concert') || c.includes('music')) return 'concert';
+    if (c.includes('comedy')) return 'comedy';
+    return 'clean-hero';
+  }
+
   submit(): void {
-
-    if (!this.auth.isCreator() && !this.auth.isSuperAdmin()) {
-      this.router.navigate(['/events']);
-      return;
-    }
-
     this.errorMessage = '';
     this.successMessage = '';
-
-    if (!this.canPublish) {
-      this.errorMessage = 'Please complete all sections before publishing.';
+    this.steps.forEach((s) => this.attempted.add(s.key));
+    const firstIncomplete = this.steps.find((s) => !this.isComplete(s.key));
+    if (firstIncomplete) {
+      this.errorMessage = `Almost there — ${this.problems(firstIncomplete.key)[0].toLowerCase()}.`;
+      this.setStep(firstIncomplete.key);
       return;
     }
 
-    if (!this.title.trim()) { this.errorMessage = 'Title required'; return; }
-    if (!this.resolvedCategory) { this.errorMessage = 'Category required'; return; }
-    if (this.locationType === 'Online' && !this.meetingLink.trim()) { this.errorMessage = 'Meeting link required'; return; }
-    if (this.locationType !== 'Online' && !this.venue.trim()) { this.errorMessage = 'Venue required'; return; }
-    if (!this.startDate) { this.errorMessage = 'Start date required'; return; }
-    if (!this.endDate) { this.errorMessage = 'End date required'; return; }
-    if (!this.showTimes?.length) { this.errorMessage = 'At least 1 show time required'; return; }
-    if (!this.locationType) { this.errorMessage = 'Location type required'; return; }
-    if (this.totalSeats < 1) { this.errorMessage = 'Seats must be >= 1'; return; }
-    if (this.price < 0) { this.errorMessage = 'Price cannot be negative'; return; }
-
-    if (this.endDate < this.startDate) {
-      this.errorMessage = 'End date must be after start date';
-      return;
-    }
-
-    const times = this.showTimes
-      .map((t) => String(t || '').trim())
-      .filter(Boolean);
-
-    const invalidTime = times.find((t) => !/^([01]\d|2[0-3]):[0-5]\d$/.test(t));
-    if (invalidTime) {
-      this.errorMessage = `Invalid time: ${invalidTime}`;
-      return;
-    }
-
-    const legacyIso = this.buildLegacyDateIso();
-    if (!legacyIso) {
-      this.errorMessage = 'Invalid start date / show time';
-      return;
-    }
+    const times = this.validTimes;
+    const firstShow = new Date(`${this.startDate}T${times[0]}:00`);
+    const endDate = this.multiDay ? this.endDate : this.startDate;
+    const online = this.locationMode === 'Online';
+    const price = this.isFree ? 0 : Number(this.price);
 
     const fd = new FormData();
     fd.append('title', this.title.trim());
     fd.append('tagline', this.tagline.trim());
     fd.append('description', this.description.trim());
-    fd.append('date', legacyIso);
-    fd.append('startDate', this.startDate);
-    fd.append('endDate', this.endDate);
-    fd.append('showTimes', JSON.stringify(times));
-    fd.append('venue', this.locationType === 'Online' ? (this.meetingLink.trim() || this.venue.trim()) : this.venue.trim());
-    fd.append('price', String(this.price));
-    fd.append('totalSeats', String(this.totalSeats));
     fd.append('category', this.resolvedCategory);
-    fd.append('locationType', this.locationType);
-    fd.append('meetingLink', this.meetingLink.trim());
     fd.append('language', this.language);
     fd.append('ageRestriction', this.ageRestriction);
-    fd.append('timezone', this.timezone);
-    fd.append('isMultiDate', String(this.isMultiDate));
-    fd.append('mapQuery', this.mapQuery.trim());
-    fd.append('registrationTemplate', this.registrationTemplate);
+    fd.append('date', firstShow.toISOString());
+    fd.append('startDate', this.startDate);
+    fd.append('endDate', endDate);
+    fd.append('showTimes', JSON.stringify(times));
+    fd.append('locationType', this.locationMode);
+    fd.append('venue', online ? 'Online' : this.venue.trim());
+    fd.append('meetingLink', online ? this.meetingLink.trim() : '');
+    fd.append('price', String(price));
+    fd.append('totalSeats', String(Math.round(Number(this.totalSeats))));
     fd.append('designTemplate', this.designTemplate);
-    fd.append('imagePreset', this.imagePreset);
-    fd.append('ticketMode', this.ticketMode);
-    fd.append('customSections', JSON.stringify(this.customSections));
-    fd.append('slug', this.resolvedSlug);
-    fd.append('metaTitle', this.metaTitle.trim());
-    fd.append('metaDescription', this.metaDescription.trim());
-    fd.append('socialPreviewImage', this.socialPreviewImage.trim());
-    fd.append('visibility', this.visibility);
-    fd.append('approvalRequired', String(this.approvalRequired));
-    fd.append('refundPolicy', this.refundPolicy.trim());
-    fd.append('termsText', this.termsText.trim());
-    fd.append('designConfig', JSON.stringify(this.designConfig));
+    fd.append('designConfig', JSON.stringify({ ...this.designConfig, themeColor: this.themeColor }));
     fd.append('customFields', JSON.stringify(this.customFields));
+    if (this.selectedFile) fd.append('image', this.selectedFile);
 
-    if (this.selectedFile) {
-      fd.append('image', this.selectedFile);
-    }
-
-    this.loading = true;
-
-    if (this.isEdit && this.eventId) {
-
-      this.es.updateEvent(this.eventId, fd).subscribe({
-        next: () => {
-          this.successMessage = 'Event Updated Successfully';
-          setTimeout(() => this.router.navigate([this.dashboardRoute]), 800);
-        },
-        error: err => {
-          this.errorMessage = err?.error?.message || 'Update failed';
-        },
-        complete: () => this.loading = false
-      });
-
-    } else {
-
-      this.es.createEvent(fd).subscribe({
-        next: () => {
-          this.successMessage = 'Event Created Successfully';
-          setTimeout(() => this.router.navigate([this.dashboardRoute]), 800);
-        },
-        error: err => {
-          this.errorMessage = err?.error?.message || 'Create failed';
-        },
-        complete: () => this.loading = false
-      });
-
-    }
-  }
-
-  private resizeImage(file: File, targetW: number, targetH: number): Promise<{ resizedFile: File; previewUrl: string }> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = targetW;
-          canvas.height = targetH;
-
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            reject(new Error('Canvas not supported'));
-            return;
+    this.saving = true;
+    const request$ = this.isEdit && this.eventId ? this.es.updateEvent(this.eventId, fd) : this.es.createEvent(fd);
+    request$.subscribe({
+      next: () => {
+        this.saving = false;
+        if (!this.isEdit) {
+          try {
+            localStorage.removeItem(DRAFT_KEY);
+          } catch {
+            // ignore
           }
-
-          const scale = Math.max(targetW / img.width, targetH / img.height);
-          const drawW = img.width * scale;
-          const drawH = img.height * scale;
-          const dx = (targetW - drawW) / 2;
-          const dy = (targetH - drawH) / 2;
-
-          ctx.drawImage(img, dx, dy, drawW, drawH);
-
-          canvas.toBlob(
-            (blob) => {
-              if (!blob) {
-                reject(new Error('Blob failed'));
-                return;
-              }
-
-              const resizedFile = new File(
-                [blob],
-                this.getResizedFileName(file.name),
-                { type: 'image/jpeg' }
-              );
-
-              const previewUrl = canvas.toDataURL('image/jpeg', 0.85);
-              resolve({ resizedFile, previewUrl });
-            },
-            'image/jpeg',
-            0.85
-          );
-        };
-
-        img.onerror = () => reject(new Error('Image load failed'));
-        img.src = reader.result as string;
-      };
-
-      reader.onerror = () => reject(new Error('File read failed'));
-      reader.readAsDataURL(file);
+        }
+        this.successMessage = this.isEdit ? 'Changes saved! Taking you to your dashboard…' : 'Your event is live! 🎉 Taking you to your dashboard…';
+        setTimeout(() => this.router.navigate([this.dashboardRoute]), 1200);
+      },
+      error: (err) => {
+        this.saving = false;
+        this.errorMessage = err?.error?.message || (this.isEdit ? 'Could not save your changes. Please try again.' : 'Could not publish the event. Please try again.');
+      },
     });
-  }
-
-  private getResizedFileName(originalName: string) {
-    const base = originalName.replace(/\.[^/.]+$/, '');
-    return `${base}-1200x800.jpg`;
-  }
-
-  addCustomField() {
-    this.customFieldError = '';
-    const label = this.customFieldDraft.label.trim();
-    if (!label) {
-      this.customFieldError = 'Label is required.';
-      return;
-    }
-
-    if (!this.customFieldTypes.includes(this.customFieldDraft.type)) {
-      this.customFieldError = 'Invalid field type.';
-      return;
-    }
-
-    let options: string[] = [];
-    if (this.customFieldDraft.type === 'select') {
-      options = this.customFieldDraft.optionsText
-        .split(',')
-        .map((o) => o.trim())
-        .filter(Boolean);
-      if (!options.length) {
-        this.customFieldError = 'Select type requires options.';
-        return;
-      }
-    }
-
-    this.customFields.push({
-      label,
-      type: this.customFieldDraft.type,
-      required: this.customFieldDraft.required,
-      options: options.length ? options : undefined,
-    });
-
-    this.customFieldDraft = {
-      label: '',
-      type: 'text',
-      required: false,
-      optionsText: '',
-    };
-  }
-
-  removeCustomField(index: number) {
-    this.customFields.splice(index, 1);
-  }
-
-
-  get resolvedCategory(): string {
-    if (this.category !== this.customCategoryValue) return this.category;
-    return this.customCategory.trim();
-  }
-
-  get resolvedSlug(): string {
-    const base = this.slug.trim() || this.title.trim();
-    return base
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 80);
-  }
-
-  addCustomSection() {
-    const title = this.customSectionDraft.title.trim();
-    const body = this.customSectionDraft.body.trim();
-    if (!title || !body) return;
-    this.customSections = [...this.customSections, { title, body }];
-    this.customSectionDraft = { title: '', body: '' };
-  }
-
-  removeCustomSection(index: number) {
-    this.customSections = this.customSections.filter((_, i) => i !== index);
-  }
-
-  private applyCategory(value: string) {
-    if (!value) {
-      this.category = '';
-      this.customCategory = '';
-      return;
-    }
-    if (this.categories.includes(value)) {
-      this.category = value;
-      this.customCategory = '';
-      return;
-    }
-    this.category = this.customCategoryValue;
-    this.customCategory = value;
-  }
-
-  onDescriptionInput(event: Event) {
-    const el = event.target as HTMLElement | null;
-    if (!el) return;
-    this.description = el.innerHTML || '';
-  }
-
-  format(command: string, value?: string) {
-    this.descEditor?.nativeElement?.focus();
-    document.execCommand(command, false, value);
-    this.syncDescriptionFromEditor();
-  }
-
-  setFont(font: string) {
-    this.format('fontName', font);
-  }
-
-  setFontSize(size: number | string) {
-    const value = typeof size === 'string' ? Number(size) : size;
-    if (Number.isNaN(value)) return;
-    const map = this.mapFontSize(value);
-    this.format('fontSize', String(map));
-  }
-
-  setColor(color: string) {
-    this.format('foreColor', color);
-  }
-
-  private syncDescriptionFromEditor() {
-    const el = this.descEditor?.nativeElement;
-    if (!el) return;
-    this.description = el.innerHTML || '';
-  }
-
-  private syncEditorFromDescription() {
-    const el = this.descEditor?.nativeElement;
-    if (!el) return;
-    const next = this.description || '';
-    if (el.innerHTML !== next) {
-      el.innerHTML = next;
-    }
-  }
-
-  private mapFontSize(size: number): number {
-    if (size <= 12) return 1;
-    if (size <= 14) return 2;
-    if (size <= 16) return 3;
-    if (size <= 18) return 4;
-    if (size <= 20) return 5;
-    if (size <= 24) return 6;
-    return 7;
-  }
-
-  get previewImageUrl(): string {
-    return this.imagePreviewUrl || this.getImageUrl(this.existingImageUrl);
-  }
-
-  applyPreview() {
-    // Trigger change detection for preview bindings
-    this.designConfig = { ...this.designConfig };
   }
 }
-
-
-
-
-
-
-

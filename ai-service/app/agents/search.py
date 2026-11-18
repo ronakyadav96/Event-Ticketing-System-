@@ -62,19 +62,12 @@ def _result_lines(events: List[Dict[str, Any]], start: int = 1) -> str:
 
 
 def _intro(label: str, shown_from: int, shown_to: int, total: int, continuing: bool, language: Optional[str]) -> str:
-    """Deterministic, instant intro. The events themselves are rendered as cards by the UI."""
-    count = shown_to - shown_from + 1
+    """One short, instant line; the results themselves are shown as cards by the UI."""
     if continuing:
-        if count == 1:
-            return say(language, f"Here's one more ({shown_to} of {total}) 👇", f"Yeh raha ek aur ({shown_to} of {total}) 👇")
-        return say(language, f"Here are {count} more ({shown_from}–{shown_to} of {total}) 👇",
-                   f"Yeh rahe {count} aur ({shown_from}–{shown_to} of {total}) 👇")
+        return say(language, f"Here are more {label} 👇", f"Yeh rahe aur {label} 👇")
     if total == 1:
-        return say(language, f"I found 1 match for {label} 👇", f"Aapke liye 1 result — {label} 👇")
-    if total <= shown_to:
-        return say(language, f"I found {total} {label} 👇", f"Aapke liye {total} {label} 👇")
-    return say(language, f"I found {total} {label} — here are the top {shown_to} 👇",
-               f"Aapke liye {total} {label} — yeh rahe top {shown_to} 👇")
+        return say(language, f"Here's the best match for {label} 👇", f"Yeh raha best match — {label} 👇")
+    return say(language, f"Here are the top {label} 👇", f"Yeh rahe top {label} 👇")
 
 
 async def _fetch_filtered(filters: Dict[str, Any], rejected: List[str], page: int, seen: List[str]) -> Tuple[List[Dict[str, Any]], int, int]:
@@ -171,8 +164,8 @@ async def run_search(state: Dict[str, Any], entities: Dict[str, Any], query: str
                 has_more=False,
                 intro=say(
                     language,
-                    f"That's everything — you've seen all {total} {label}. What would you like to see next?",
-                    f"Bas itne hi the — aapne saare {total} {label} dekh liye. Ab kya dekhna chahenge?",
+                    f"That's all the {label} I have. What would you like to see next?",
+                    f"Bas itne hi {label} the. Ab kya dekhna chahenge?",
                 ),
                 exclude=exclude,
                 language=language,
@@ -200,9 +193,6 @@ async def run_search(state: Dict[str, Any], entities: Dict[str, Any], query: str
     if not any(e.get("upcoming") for e in events):
         text += say(language, "\n\nNone of these have upcoming shows to book right now.",
                     "\n\nInmein se kisi ka abhi koi upcoming show book karne ke liye nahi hai.")
-    else:
-        text += say(language, "\nTap **Book** on a card to choose your show and seats.",
-                    "\nKisi bhi card par **Book** dabaiye aur apna show aur seats chuniye.")
 
     quick = []
     if shown_to < total:

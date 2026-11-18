@@ -174,3 +174,55 @@ test('a superadmin can delete a booking and its seats are released', async () =>
   assert.equal(await Booking.findById(booking._id), null);
   assert.equal((await Event.findById(event._id)).bookedSeats, 0);
 });
+
+// ---------- Create / edit event ----------
+
+test('creating an event keeps its public-page details, and edits update them', async () => {
+  const { token } = await createUser('creator');
+  const created = await request(app)
+    .post('/api/events')
+    .set('Authorization', `Bearer ${token}`)
+    .field('title', 'Saturday Stand-up')
+    .field('category', 'Comedy')
+    .field('venue', 'Canvas Laugh Club')
+    .field('price', '499')
+    .field('totalSeats', '100')
+    .field('startDate', '2030-01-10')
+    .field('endDate', '2030-01-11')
+    .field('showTimes', JSON.stringify(['19:00', '21:30']))
+    .field('tagline', 'An evening of laughs')
+    .field('language', 'Hindi')
+    .field('ageRestriction', '16+');
+  assert.equal(created.status, 201);
+  assert.equal(created.body.tagline, 'An evening of laughs');
+  assert.equal(created.body.language, 'Hindi');
+  assert.equal(created.body.ageRestriction, '16+');
+
+  const updated = await request(app)
+    .put(`/api/events/${created.body._id}`)
+    .set('Authorization', `Bearer ${token}`)
+    .field('tagline', 'Now with two shows a night')
+    .field('ageRestriction', '18+');
+  assert.equal(updated.status, 200);
+  assert.equal(updated.body.tagline, 'Now with two shows a night');
+  assert.equal(updated.body.ageRestriction, '18+');
+  assert.equal(updated.body.language, 'Hindi');
+});
+
+test('an over-long description is a clear 400, not a server error', async () => {
+  const { token } = await createUser('creator');
+  const res = await request(app)
+    .post('/api/events')
+    .set('Authorization', `Bearer ${token}`)
+    .field('title', 'Long one')
+    .field('category', 'Comedy')
+    .field('venue', 'Somewhere')
+    .field('price', '0')
+    .field('totalSeats', '10')
+    .field('startDate', '2030-01-10')
+    .field('endDate', '2030-01-10')
+    .field('showTimes', JSON.stringify(['19:00']))
+    .field('description', 'x'.repeat(10001));
+  assert.equal(res.status, 400);
+  assert.match(res.body.message, /too long/);
+});

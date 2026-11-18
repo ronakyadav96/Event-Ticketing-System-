@@ -10,11 +10,18 @@ const eventSchema = new mongoose.Schema(
       maxlength: 200,
     },
 
+    // Rich text (HTML) from the create-event editor.
     description: {
       type: String,
       default: "",
-      maxlength: 2000,
+      maxlength: 10000,
     },
+
+    // Shown on the public event page.
+    tagline: { type: String, default: "", trim: true, maxlength: 140 },
+    language: { type: String, default: "", trim: true, maxlength: 40 },
+    ageRestriction: { type: String, default: "", trim: true, maxlength: 20 },
+    meetingLink: { type: String, default: "", trim: true, maxlength: 500 },
 
     // Primary (legacy) datetime for the event (kept for backward compatibility)
     date: {

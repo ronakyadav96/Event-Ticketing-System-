@@ -320,7 +320,7 @@ async def test_repeated_more_pages_through_all_matches_without_repeats(graph, fa
     comedy_total = sum(1 for e in fake_node.events.values() if e["category"] == "Comedy")
     assert len(shown) == comedy_total
     out = await chat.say("more")
-    assert out["reply"]["events"] == [] and "seen all" in out["reply"]["text"]
+    assert out["reply"]["events"] == [] and "That's all the" in out["reply"]["text"]
     # an event from the first page is still selectable by id
     model.on("details of the very first", intent="EVENT_DETAILS", event_id=shown[0])
     out = await chat.say("details of the very first")
@@ -599,7 +599,7 @@ async def test_quality_words_are_not_searched_as_a_title(graph, fake_node, model
 async def test_hinglish_message_gets_hinglish_fixed_replies(graph, fake_node, model):
     model.on("comedy wale dikhao", **search(category="Comedy"))
     out = await Chat(graph).say("comedy wale dikhao")
-    assert out["reply"]["text"].startswith("Aapke liye 11 comedy shows")
+    assert out["reply"]["text"] == "Yeh rahe top comedy shows 👇"
     model.on("mere bookings dikhao", intent="BOOKING_STATUS")
     guest = await Chat(graph, user_id="g1", authenticated=False).say("mere bookings dikhao")
     assert guest["reply"]["error"] == "LOGIN_REQUIRED" and "sign in kar lijiye" in guest["reply"]["text"]
@@ -610,7 +610,7 @@ async def test_one_more_result_reads_naturally(graph, fake_node, model):
     model.on("show more", **search(action="MORE"))
     chat = Chat(graph)
     await chat.say("show me movies")
-    assert (await chat.say("show more"))["reply"]["text"].startswith("That's everything")
+    assert (await chat.say("show more"))["reply"]["text"].startswith("That's all the movies")
 
 
 async def test_common_small_talk_is_instant_and_in_the_users_language(graph, fake_node, model):
@@ -629,3 +629,11 @@ async def test_hinglish_more_pages_forward_without_the_model(graph, fake_node, m
     more = await chat.say("aur dikhao")
     assert len(model.contexts) == calls
     assert more["reply"]["text"].startswith("Yeh rahe") and not first & {e["id"] for e in more["reply"]["events"]}
+
+
+async def test_search_reply_is_one_short_line_without_counts(graph, fake_node, model):
+    model.on("show me comedy", **search(category="Comedy"))
+    model.on("more", **search(action="MORE"))
+    chat = Chat(graph)
+    assert (await chat.say("show me comedy"))["reply"]["text"] == "Here are the top comedy shows 👇"
+    assert (await chat.say("more"))["reply"]["text"] == "Here are more comedy shows 👇"
